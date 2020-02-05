@@ -13,7 +13,9 @@ aws_cdk_reqs = [
     "aws-iam",
     "aws-lambda",
     "aws-efs",
-    "aws-batch"
+    "aws-ecs",
+    "aws-batch",
+    "aws-ecr-assets"
 ]
 
 inst_reqs = [

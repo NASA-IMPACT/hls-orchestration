@@ -5,9 +5,10 @@ from constructs.s3 import S3
 from constructs.efs import Efs
 from constructs.docker_batchjob import DockerBatchJob
 from constructs.batch import Batch
+from constructs.lambdafunc import Lambda
 
+STACKNAME = os.getenv("STACKNAME", "hls")
 LAADS_BUCKET = os.getenv("LAADS_BUCKET", f"{STACKNAME}-bucket")
-
 
 class HlsStack(core.Stack):
     def __init__(
@@ -55,4 +56,10 @@ class HlsStack(core.Stack):
             timeout=259200,
             memory=10000,
             vcpus=4,
+        )
+
+        self.pr2mgrs_lambda = Lambda(
+            self,
+            "Pr2Mgrs",
+            asset_dir="hls-pr2mgrs/hls_pr2mgrs"
         )

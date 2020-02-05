@@ -108,3 +108,6 @@ package.zip
 
 cdk.out/
 .vscode/
+node_modules/
+package-lock.json
+yarn.lock
