@@ -6,6 +6,7 @@ from aws_cdk import (
     aws_iam,
     core,
 )
+from constructs.network import Network
 import os
 
 dirname = os.path.dirname(os.path.realpath(__file__))
@@ -16,17 +17,32 @@ class Batch(core.Construct):
         self,
         scope: core.Construct,
         id: str,
-        vpc: aws_ec2.Vpc = None,
-        security_group: aws_ec2.SecurityGroup = None,
+        network: Network,
         efs: aws_efs.CfnFileSystem = None,
         efs_arn: str = None,
+        efs_uri: str = None,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
 
+        self.ecs_host_security_group = aws_ec2.CfnSecurityGroup(
+            self,
+            "EcsHostSecurityGroup",
+            vpc_id=network.vpc.ref,
+            group_description="Security Group for ECS Host"
+        )
+        
+        self.ecs_security_group_ingress_from_self = aws_ec2.CfnSecurityGroupIngress(
+            self,
+            "EcsSecurityGroupIngressFromSelf",
+            group_id=self.ecs_host_security_group.ref,
+            ip_protocol="-1",
+            source_security_group_id=self.ecs_host_security_group.ref,
+        )
+
         batch_service_role = aws_iam.Role(
             self,
-            f"batchservicerole",
+            "BatchServiceRole",
             assumed_by=aws_iam.ServicePrincipal(
                 "batch.amazonaws.com"
             ),
@@ -38,7 +54,7 @@ class Batch(core.Construct):
         )
 
         efs_policy_statement = aws_iam.PolicyStatement(
-            resources=[efs_arn],
+            resources=["*"],
             actions=[
                 "elasticfilesystem:DescribeMountTargets",
                 "elasticfilesystem:DescribeFileSystems",
@@ -51,7 +67,7 @@ class Batch(core.Construct):
 
         ecs_instance_role = aws_iam.Role(
             self,
-            f"ecsinstancerole",
+            f"EcsInstanceRole",
             assumed_by=aws_iam.ServicePrincipal("ec2.amazonaws.com"),
             managed_policies=[
                 aws_iam.ManagedPolicy.from_aws_managed_policy_name(
@@ -63,7 +79,7 @@ class Batch(core.Construct):
 
         ecs_instance_profile = aws_iam.CfnInstanceProfile(
             self,
-            f"ecsinstanceprofile",
+            f"EcsInstanceProfile",
             roles=[ecs_instance_role.role_name],
         )
 
@@ -73,14 +89,15 @@ class Batch(core.Construct):
         user_data = aws_ec2.UserData.for_linux()
         user_data_string = str(userdata_file, "utf-8").format(efs.ref)
         user_data.add_commands(user_data_string)
+        user_data_str = "\n".join(user_data.render().split("\n")[1:])
 
         launch_template_data = aws_ec2.CfnLaunchTemplate.LaunchTemplateDataProperty(
-            user_data=core.Fn.base64(user_data.render())
+            user_data=core.Fn.base64(user_data_str)
         )
 
         launch_template = aws_ec2.CfnLaunchTemplate(
             self,
-            f"launch-template",
+            f"LaunchTemplate",
             launch_template_data=launch_template_data,
         )
 
@@ -103,14 +120,14 @@ class Batch(core.Construct):
             launch_template=launch_template_props,
             maxv_cpus=40,
             minv_cpus=0,
-            security_group_ids=[security_group.security_group_id],
-            subnets=[s.subnet_id for s in vpc.public_subnets],
+            security_group_ids=[self.ecs_host_security_group.ref],
+            subnets=[s.ref for s in network.public_subnets],
             type="EC2",
         )
 
-        batch = aws_batch.CfnComputeEnvironment(
+        compute_environment = aws_batch.CfnComputeEnvironment(
             self,
-            f"batch",
+            f"ComputeEnvironment",
             compute_resources=compute_resources,
             service_role=batch_service_role.role_arn,
             type="MANAGED",
@@ -118,18 +135,16 @@ class Batch(core.Construct):
 
         jobqueue = aws_batch.CfnJobQueue(
             self,
-            f"jobqueue",
+            f"JobQueue",
             priority=1,
             compute_environment_order=[
                 aws_batch.CfnJobQueue.ComputeEnvironmentOrderProperty(
-                    compute_environment=batch.ref, order=1
+                    compute_environment=compute_environment.ref, order=1
                 )
             ],
         )
 
-        self.batch = batch
-        self.efs = efs
-        self.vpc = vpc
+        self.compute_environment = compute_environment
         self.jobqueue = jobqueue
 
         core.CfnOutput(self, f"job_queue", value=jobqueue.ref)

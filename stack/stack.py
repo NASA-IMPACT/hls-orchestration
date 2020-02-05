@@ -6,9 +6,7 @@ from constructs.efs import Efs
 from constructs.docker_batchjob import DockerBatchJob
 from constructs.batch import Batch
 
-STACKNAME = os.getenv("STACKNAME", "hls")
-LAADS_BUCKET = os.getenv("LAADS_BUCKET", "bitner-devseed-hls-ouput")
-LAADS_SCHEDULE = os.getenv("LAADS_SCHEDULE", "cron(0 0/12 * * ? *)")
+LAADS_BUCKET = os.getenv("LAADS_BUCKET", f"{STACKNAME}-bucket")
 
 
 class HlsStack(core.Stack):
@@ -17,19 +15,16 @@ class HlsStack(core.Stack):
     ) -> None:
         super().__init__(scope, id, **kwargs)
 
-        self.network = Network(self, "network")
-        security_group = self.network.security_group
-        vpc = self.network.vpc
+        self.network = Network(self, "Network")
 
         self.laads_bucket = S3(
-            self, "s3", bucket_name=LAADS_BUCKET
+            self, "S3", bucket_name=LAADS_BUCKET
         )
 
         self.efs = Efs(
             self,
-            "efs",
-            vpc=vpc,
-            security_group=security_group,
+            "Efs",
+            network=self.network
         )
         filesystem = self.efs.filesystem
         filesystem_arn = core.Arn.format(
@@ -40,31 +35,24 @@ class HlsStack(core.Stack):
             },
             self
         )
-
+        filesystem_uri = f"{filesystem.ref}.efs.{self.region}.amazonaws.com"
+        
         self.batch = Batch(
             self,
-            "batch",
-            vpc=vpc,
+            "Batch",
+            network=self.network,
             efs_arn=filesystem_arn,
             efs=filesystem,
-            security_group=security_group,
+            efs_uri=filesystem_uri
         )
-
+        
         self.laads_task = DockerBatchJob(
             self,
-            "laads-task",
-            dockerdir="laads",
-            bucket=LAADS_BUCKET,
+            "LaadsTask",
+            dockerdir="hls-laads",
+            bucket=self.laads_bucket.bucket,
             mountpath="/var/lasrc_aux",
             timeout=259200,
             memory=10000,
             vcpus=4,
         )
-
-app = core.App()
-hls_stack = HlsStack(
-    app,
-    STACKNAME,
-    stack_name=STACKNAME,
-)
-app.synth()

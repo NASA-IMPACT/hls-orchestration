@@ -1,6 +1,7 @@
 from aws_cdk import (
     aws_ecr_assets,
     aws_batch,
+    aws_ecs,
     aws_iam,
     aws_s3,
     core,
@@ -28,7 +29,10 @@ class DockerBatchJob(core.Construct):
         policies = None
         if bucket is not None:
             s3_policy_statement = aws_iam.PolicyStatement(
-                resources=[bucket.ref, f"{bucket.ref}/*"],
+                resources=[
+                    bucket.bucket_arn,
+                    f"{bucket.bucket_arn}/*",
+                ],
                 actions=[
                     "s3:Get*",
                     "s3:Put*",
@@ -50,8 +54,12 @@ class DockerBatchJob(core.Construct):
             inline_policies=policies,
         )
 
+        host = aws_batch.CfnJobDefinition.VolumesHostProperty(
+            source_path="/mnt/efs"
+        )
+
         volume = aws_batch.CfnJobDefinition.VolumesProperty(
-            name=f"volume", host={"source_path": "/mnt/efs"}
+            name=f"volume", host=host,
         )
 
         image = aws_ecr_assets.DockerImageAsset(
@@ -59,19 +67,20 @@ class DockerBatchJob(core.Construct):
             "DockerImageAsset",
             directory=os.path.join(
                 dirname, "..", "docker", dockerdir
-            )
+            ),
+        )
+
+        mount_point = aws_batch.CfnJobDefinition.MountPointsProperty(
+            source_volume=volume.name,
+            container_path=mountpath,
+            read_only=False,
         )
 
         container_properties = aws_batch.CfnJobDefinition.ContainerPropertiesProperty(
             image=image.image_uri,
             job_role_arn=role.role_arn,
             memory=memory,
-            mount_points=[
-                {
-                    "SourceVolume": volume.name,
-                    "ContainerPath": mountpath,
-                }
-            ],
+            mount_points=[mount_point],
             vcpus=vcpus,
             volumes=[volume],
         )
