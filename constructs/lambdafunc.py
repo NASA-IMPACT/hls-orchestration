@@ -1,5 +1,7 @@
 from aws_cdk import aws_lambda, core
 import os
+from typing import Dict
+
 
 
 class Lambda(core.Construct):
@@ -12,6 +14,7 @@ class Lambda(core.Construct):
         memory: int = 512, 
         timeout: int = 5,
         asset_dir: str = None,
+        env: Dict = None,
     ) -> None:
         """Create AWS Lambda stack."""
         super().__init__(app, id)
@@ -28,6 +31,7 @@ class Lambda(core.Construct):
             memory_size=memory,
             timeout=core.Duration.seconds(timeout),
             runtime=aws_lambda.Runtime.PYTHON_3_7,
+            environment=env,
         )
         
         core.CfnOutput(self, "lambdafunc", value=self.lambdaFn.function_arn)

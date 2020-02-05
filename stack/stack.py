@@ -63,3 +63,10 @@ class HlsStack(core.Stack):
             "Pr2Mgrs",
             asset_dir="hls-pr2mgrs/hls_pr2mgrs"
         )
+
+        self.laads_available = Lambda(
+            self,
+            "LaadsAvailable",
+            asset_dir="hls-laads-available/hls_laads_available",
+            env={"LAADS_BUCKET": LAADS_BUCKET}
+        )
