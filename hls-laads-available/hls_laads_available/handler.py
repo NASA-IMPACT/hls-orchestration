@@ -14,6 +14,7 @@ import re
 import boto3
 from botocore.errorfactory import ClientError
 from datetime import date
+import json
 
 s3 = boto3.client('s3')
 bucket = os.getenv("LAADS_BUCKET", None)
@@ -69,11 +70,11 @@ def handler(event: Dict, context: Dict):
         if exists:
             return {
                 "statusCode": 200,
-                "body": True
+                "body": json.dumps({'available':'TRUE'})
             }
         return {
                 "statusCode": 404,
-                "body": False
+                "body": json.dumps({'available':'FALSE'})
             }
     if exists:
         return True

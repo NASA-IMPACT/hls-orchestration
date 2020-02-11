@@ -15,7 +15,10 @@ aws_cdk_reqs = [
     "aws-efs",
     "aws-ecs",
     "aws-batch",
-    "aws-ecr-assets"
+    "aws-ecr-assets",
+    "aws-events",
+    "aws-events-targets",
+    "aws-stepfunctions",
 ]
 
 inst_reqs = [
