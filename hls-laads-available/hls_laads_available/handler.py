@@ -53,6 +53,7 @@ def handler(event: Dict, context: Dict):
     """AWS Lambda handler."""
     # Get date from direct call or from query parameters via gateway call
     gateway = False
+    
     date_str = event.get("date", None)
     if date_str is None:
         date_str = event.get("queryStringParameters").get("date")
@@ -70,11 +71,11 @@ def handler(event: Dict, context: Dict):
         if exists:
             return {
                 "statusCode": 200,
-                "body": json.dumps({'available':'TRUE'})
+                "body": json.dumps({'available':True})
             }
         return {
                 "statusCode": 404,
-                "body": json.dumps({'available':'FALSE'})
+                "body": json.dumps({'available':False})
             }
     if exists:
         return True

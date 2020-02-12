@@ -16,6 +16,7 @@ class DockerBatchJob(core.Construct):
         self,
         scope: core.Construct,
         id: str,
+        role: aws_iam.Role,
         dockerdir: str,
         bucket: aws_s3.Bucket = None,
         timeout: int = 3600,
@@ -25,34 +26,6 @@ class DockerBatchJob(core.Construct):
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
-
-        policies = None
-        if bucket is not None:
-            s3_policy_statement = aws_iam.PolicyStatement(
-                resources=[
-                    bucket.bucket_arn,
-                    f"{bucket.bucket_arn}/*",
-                ],
-                actions=[
-                    "s3:Get*",
-                    "s3:Put*",
-                    "s3:List*",
-                    "s3:AbortMultipartUpload",
-                ],
-            )
-            s3_policy_document = aws_iam.PolicyDocument(
-                statements=[s3_policy_statement]
-            )
-            policies = [s3_policy_document]
-
-        role = aws_iam.Role(
-            self,
-            "taskrole",
-            assumed_by=aws_iam.ServicePrincipal(
-                "ecs-tasks.amazonaws.com"
-            ),
-            inline_policies=policies,
-        )
 
         host = aws_batch.CfnJobDefinition.VolumesHostProperty(
             source_path="/mnt/efs"
@@ -98,8 +71,17 @@ class DockerBatchJob(core.Construct):
             type="Container",
         )
 
+        self.policy_statement = aws_iam.PolicyStatement(
+            resources=[
+                job.ref
+            ],
+            actions=[
+                "batch:SubmitJob",
+            ],
+        )
+        role.add_to_policy(self.policy_statement)
+
         self.image = image
         self.job = job
-        self.role = role
 
         core.CfnOutput(self, f"jobdef", value=job.ref)

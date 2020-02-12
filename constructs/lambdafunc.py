@@ -1,5 +1,5 @@
-from aws_cdk import aws_lambda, core, aws_stepfunctions, aws_stepfunctions_tasks
 import os
+from aws_cdk import aws_lambda, core, aws_iam
 from typing import Dict
 
 
@@ -11,6 +11,7 @@ class Lambda(core.Construct):
         self, 
         scope: core.Construct, 
         id: str, 
+        role: aws_iam.Role,
         memory: int = 512, 
         timeout: int = 5,
         asset_dir: str = None,
@@ -29,16 +30,21 @@ class Lambda(core.Construct):
             "function",
             code=self.code,
             handler="handler.handler",
+            # role=role,
             memory_size=memory,
             timeout=core.Duration.seconds(timeout),
             runtime=aws_lambda.Runtime.PYTHON_3_7,
             environment=env,
         )
 
-        self.task = aws_stepfunctions.Task(
-            self,
-            'SfTask',
-            task=aws_stepfunctions_tasks.InvokeFunction(self.lambdaFn)
+        self.policy_statement = aws_iam.PolicyStatement(
+            resources=[self.lambdaFn.function_arn],
+            actions=[
+                "lambda:InvokeFunction",
+            ],
         )
+
+        role.add_to_policy(self.policy_statement)
+
         
         core.CfnOutput(self, "lambdafunc", value=self.lambdaFn.function_arn)

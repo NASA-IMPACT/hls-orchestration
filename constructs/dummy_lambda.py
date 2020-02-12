@@ -1,4 +1,4 @@
-from aws_cdk import core, aws_lambda, aws_stepfunctions, aws_stepfunctions_tasks
+from aws_cdk import core, aws_lambda, aws_iam
 from utils import aws_env, align
 from typing import Dict
 
@@ -10,6 +10,7 @@ class Dummy(core.Construct):
         self,
         scope: core.Construct,
         id: str,
+        role: aws_iam.Role,
         env: Dict = {},
         timeout: int = 10,
         **kwargs,
@@ -27,15 +28,19 @@ class Dummy(core.Construct):
         self.lambdaFn = aws_lambda.Function(
             self,
             "Dummy",
+            # role=role,
             code=aws_lambda.InlineCode(code=code),
             timeout=core.Duration.seconds(timeout),
             handler="index.handler",
             runtime=aws_lambda.Runtime.PYTHON_3_7,
         )
 
-        self.task = aws_stepfunctions.Task(
-            self,
-            'DummyTask',
-            task=aws_stepfunctions_tasks.InvokeFunction(self.lambdaFn)
+        self.policy_statement = aws_iam.PolicyStatement(
+            resources=[self.lambdaFn.function_arn],
+            actions=[
+                "lambda:InvokeFunction",
+            ],
         )
+        
+        role.add_to_policy(self.policy_statement)
 

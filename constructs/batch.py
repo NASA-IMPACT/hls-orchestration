@@ -18,9 +18,8 @@ class Batch(core.Construct):
         scope: core.Construct,
         id: str,
         network: Network,
+        role: aws_iam.Role,
         efs: aws_efs.CfnFileSystem = None,
-        efs_arn: str = None,
-        efs_uri: str = None,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -40,47 +39,18 @@ class Batch(core.Construct):
             source_security_group_id=self.ecs_host_security_group.ref,
         )
 
-        batch_service_role = aws_iam.Role(
-            self,
-            "BatchServiceRole",
-            assumed_by=aws_iam.ServicePrincipal(
-                "batch.amazonaws.com"
-            ),
-            managed_policies=[
-                aws_iam.ManagedPolicy.from_aws_managed_policy_name(
-                    "service-role/AWSBatchServiceRole"
-                )
-            ],
+        role.add_managed_policy(
+            policy=aws_iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AWSBatchServiceRole")
         )
 
-        efs_policy_statement = aws_iam.PolicyStatement(
-            resources=["*"],
-            actions=[
-                "elasticfilesystem:DescribeMountTargets",
-                "elasticfilesystem:DescribeFileSystems",
-            ],
-        )
-
-        efs_policy_document = aws_iam.PolicyDocument(
-            statements=[efs_policy_statement]
-        )
-
-        ecs_instance_role = aws_iam.Role(
-            self,
-            f"EcsInstanceRole",
-            assumed_by=aws_iam.ServicePrincipal("ec2.amazonaws.com"),
-            managed_policies=[
-                aws_iam.ManagedPolicy.from_aws_managed_policy_name(
-                    "service-role/AmazonEC2ContainerServiceforEC2Role"
-                )
-            ],
-            inline_policies=[efs_policy_document],
+        role.add_managed_policy(
+            policy=aws_iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AmazonEC2ContainerServiceforEC2Role")
         )
 
         ecs_instance_profile = aws_iam.CfnInstanceProfile(
             self,
             f"EcsInstanceProfile",
-            roles=[ecs_instance_role.role_name],
+            roles=[role.role_name],
         )
 
         userdata_file = open(
@@ -129,7 +99,7 @@ class Batch(core.Construct):
             self,
             f"ComputeEnvironment",
             compute_resources=compute_resources,
-            service_role=batch_service_role.role_arn,
+            service_role=role.role_arn,
             type="MANAGED",
         )
 
@@ -143,6 +113,16 @@ class Batch(core.Construct):
                 )
             ],
         )
+
+        self.policy_statement = aws_iam.PolicyStatement(
+            resources=[
+                jobqueue.ref
+            ],
+            actions=[
+                "batch:SubmitJob",
+            ],
+        )
+        role.add_to_policy(self.policy_statement)
 
         self.compute_environment = compute_environment
         self.jobqueue = jobqueue

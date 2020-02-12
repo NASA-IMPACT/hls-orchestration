@@ -1,4 +1,4 @@
-from aws_cdk import aws_efs, aws_ec2, core
+from aws_cdk import aws_efs, aws_ec2, core, aws_iam
 from constructs.network import Network
 
 
@@ -8,6 +8,7 @@ class Efs(core.Construct):
         scope: core.Construct,
         id: str,
         network: Network,
+        role: aws_iam.Role,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -41,5 +42,15 @@ class Efs(core.Construct):
                 subnet_id=subnet.ref,
             )
             mount_targets.append(mount_target)
+
+        self.policy_statement = aws_iam.PolicyStatement(
+            resources=[self.filesystem.ref],
+            actions=[
+                "elasticfilesystem:DescribeMountTargets",
+                "elasticfilesystem:DescribeFileSystems",
+            ],
+        )
+
+        role.add_to_policy(self.policy_statement)
 
         core.CfnOutput(self, "filesystem", value=self.filesystem.ref)

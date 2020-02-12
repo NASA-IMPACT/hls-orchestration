@@ -1,6 +1,6 @@
 import os
 import json
-from aws_cdk import core, aws_stepfunctions
+from aws_cdk import core, aws_stepfunctions, aws_iam
 from constructs.network import Network
 from constructs.s3 import S3
 from constructs.efs import Efs
@@ -24,34 +24,33 @@ class HlsStack(core.Stack):
     def __init__(self, scope: core.Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
 
+        self.role = aws_iam.Role(
+            self,
+            "StackRole",
+            assumed_by=aws_iam.OrganizationPrincipal(
+                organization_id=core.Aws.ACCOUNT_ID
+            )
+        )
+        self.role.grant_pass_role(aws_iam.ServicePrincipal("batch.amazonaws.com"))
+
         self.network = Network(self, "Network")
 
-        self.laads_bucket = S3(self, "S3", bucket_name=LAADS_BUCKET)
+        self.laads_bucket = S3(self, "S3", bucket_name=LAADS_BUCKET, role=self.role)
 
-        self.efs = Efs(self, "Efs", network=self.network)
-        filesystem = self.efs.filesystem
-        filesystem_arn = core.Arn.format(
-            {
-                "resource-name": filesystem.ref,
-                "service": "elasticfilesystem",
-                "resource": "file-system",
-            },
-            self,
-        )
-        filesystem_uri = f"{filesystem.ref}.efs.{self.region}.amazonaws.com"
+        self.efs = Efs(self, "Efs", network=self.network, role=self.role)
 
         self.batch = Batch(
             self,
             "Batch",
             network=self.network,
-            efs_arn=filesystem_arn,
-            efs=filesystem,
-            efs_uri=filesystem_uri,
+            role=self.role,
+            efs=self.efs.filesystem,
         )
 
         self.laads_task = DockerBatchJob(
             self,
             "LaadsTask",
+            role=self.role,
             dockerdir="hls-laads",
             bucket=self.laads_bucket.bucket,
             mountpath="/var/lasrc_aux",
@@ -61,12 +60,13 @@ class HlsStack(core.Stack):
         )
 
         self.pr2mgrs_lambda = Lambda(
-            self, "Pr2Mgrs", asset_dir="hls-pr2mgrs/hls_pr2mgrs"
+            self, "Pr2Mgrs", role=self.role, asset_dir="hls-pr2mgrs/hls_pr2mgrs"
         )
 
         self.laads_available = Lambda(
             self,
             "LaadsAvailable",
+            role=self.role,
             asset_dir="hls-laads-available/hls_laads_available",
             env={"LAADS_BUCKET": LAADS_BUCKET},
         )
@@ -74,6 +74,7 @@ class HlsStack(core.Stack):
         self.laads_cron = BatchCron(
             self,
             "LaadsAvailableCron",
+            role=self.role,
             cron_str=LAADS_CRON,
             batch=self.batch,
             job=self.laads_task,
@@ -84,23 +85,70 @@ class HlsStack(core.Stack):
             },
         )
 
-        self.wait = aws_stepfunctions.Wait(
+        self.process_sentinel = Dummy(
             self,
-            "wait",
-            time=aws_stepfunctions.WaitTime.duration(core.Duration.seconds(3600)),
+            'ProcessSentinelTask',
+            role=self.role
         )
 
-        self.process_sentinel = Dummy(self, "ProcessSentinel")
+        sentinel_state_definition = {
+            "Comment": "Sentinel Step Function",
+            "StartAt": "CheckLaads",
+            "States": {
+                "CheckLaads": {
+                    "Type": "Task",
+                    "Resource": self.laads_available.lambdaFn.function_arn,
+                    "ResultPath": "$.available",
+                    "Next": "LaadsAvailable",
+                    "Retry": [
+                        {
+                        "ErrorEquals": ["States.ALL"],
+                        "IntervalSeconds": 1,
+                        "MaxAttempts": 3,
+                        "BackoffRate": 2
+                        }
+                    ]
+                },
+                "LaadsAvailable": {
+                    "Type": "Choice",
+                    "Choices": [
+                        {
+                            "Variable": "$.available",
+                            "BooleanEquals": True,
+                            "Next": "ProcessSentinel"
+                        }
+                    ],
+                    "Default": "Wait"
+                },
+                "Wait": {
+                    "Type": "Wait",
+                    "Seconds": 3600,
+                    "Next": "CheckLaads"
+                },
+                "ProcessSentinel": {
+                    "Type": "Task",
+                    "Resource": self.process_sentinel.lambdaFn.function_arn,
+                    "Next": "Done",
+                    "InputPath": "$.available",
+                    "ResultPath": "$.available",
+                    "Retry": [
+                        {
+                        "ErrorEquals": ["States.ALL"],
+                        "IntervalSeconds": 1,
+                        "MaxAttempts": 3,
+                        "BackoffRate": 2
+                        }
+                    ]
+                },
+                "Done": {
+                    "Type": "Succeed"
+                }
+            }
+        }
 
-        self.sentinel_step_definition = self.laads_available.task.next(
-            aws_stepfunctions.Choice(self, "laads_available")
-            .when(
-                aws_stepfunctions.Condition.string_equals("$.available", "TRUE"),
-                self.process_sentinel.task,
-            )
-            .otherwise(self.wait)
-        )
-
-        self.sentinel_state_machine = aws_stepfunctions.StateMachine(
-            self, "SentinelStateMachine", definition=self.sentinel_step_definition
+        sentinel_state = aws_stepfunctions.CfnStateMachine(
+            self,
+            'SentinelStateMachine',
+            definition_string=json.dumps(sentinel_state_definition),
+            role_arn=self.role.role_arn,
         )

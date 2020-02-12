@@ -15,6 +15,7 @@ class BatchCron(core.Construct):
         self,
         scope: core.Construct,
         id: str,
+        role: aws_iam.Role,
         cron_str: str,
         batch: Batch,
         job: DockerBatchJob,
@@ -26,16 +27,6 @@ class BatchCron(core.Construct):
         
         queue=batch.jobqueue.ref
         jobdef=job.job.ref
-
-        policy_statement = aws_iam.PolicyStatement(
-            resources=[
-                batch.jobqueue.ref,
-                job.job.ref
-            ],
-            actions=[
-                "batch:SubmitJob",
-            ],
-        )
 
         env_str = aws_env(env)
 
@@ -62,17 +53,25 @@ class BatchCron(core.Construct):
         self.lambdaFn = aws_lambda.Function(
             self,
             'EventLambda',
+            # role=role,
             code=aws_lambda.InlineCode(code=code),
             timeout=core.Duration.seconds(timeout),
             handler='index.handler',
             runtime=aws_lambda.Runtime.PYTHON_3_7
         )
 
-        self.lambdaFn.add_to_role_policy(policy_statement)
+        self.policy_statement = aws_iam.PolicyStatement(
+            resources=[self.lambdaFn.function_arn],
+            actions=[
+                "lambda:InvokeFunction",
+            ],
+        )
+
+        role.add_to_policy(self.policy_statement)
 
         self.rule = aws_events.Rule(
             self,
-            "rule",
+            "Rule",
             schedule=aws_events.Schedule.expression(cron_str),
         )
 
