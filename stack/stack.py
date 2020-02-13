@@ -14,7 +14,7 @@ STACKNAME = os.getenv("STACKNAME", "hls")
 LAADS_BUCKET = os.getenv("LAADS_BUCKET", f"{STACKNAME}-bucket")
 LAADS_TOKEN = os.getenv("LAADS_TOKEN", None)
 LAADS_CRON = os.getenv("LAADS_CRON", "cron(0 0/12 * * ? *)")
-
+LAADS_BUCKET_BOOTSTRAP = LAADS_BUCKET
 
 if LAADS_TOKEN is None:
     raise Exception("LAADS_TOKEN Env Var must be set")
@@ -24,14 +24,15 @@ class HlsStack(core.Stack):
     def __init__(self, scope: core.Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
 
+        self.principals = aws_iam.CompositePrincipal(aws_iam.ServicePrincipal('batch.amazonaws.com'))
+        # self.principals.grant_principal(aws_iam.ServicePrincipal('batch.amazonaws.com'))
+        self.principals.add_principals(aws_iam.ServicePrincipal('elasticfilesystem.amazonaws.com'))
+
         self.role = aws_iam.Role(
             self,
             "StackRole",
-            assumed_by=aws_iam.OrganizationPrincipal(
-                organization_id=core.Aws.ACCOUNT_ID
-            )
+            assumed_by=self.principals,
         )
-        self.role.grant_pass_role(aws_iam.ServicePrincipal("batch.amazonaws.com"))
 
         self.network = Network(self, "Network")
 
@@ -146,9 +147,14 @@ class HlsStack(core.Stack):
             }
         }
 
-        sentinel_state = aws_stepfunctions.CfnStateMachine(
+        self.sentinel_state = aws_stepfunctions.CfnStateMachine(
             self,
             'SentinelStateMachine',
             definition_string=json.dumps(sentinel_state_definition),
             role_arn=self.role.role_arn,
         )
+
+        # permissions
+        # self.laads_cron.lambdaFn.add_to_role_policy(self.laads_task.policy_statement)
+        self.laads_cron.lambdaFn.add_to_role_policy(self.batch.policy_statement)
+        self.laads_available.lambdaFn.add_to_role_policy(self.laads_bucket.policy_statement)

@@ -46,5 +46,4 @@ class Lambda(core.Construct):
 
         role.add_to_policy(self.policy_statement)
 
-        
         core.CfnOutput(self, "lambdafunc", value=self.lambdaFn.function_arn)

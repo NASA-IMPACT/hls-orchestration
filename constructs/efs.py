@@ -44,7 +44,7 @@ class Efs(core.Construct):
             mount_targets.append(mount_target)
 
         self.policy_statement = aws_iam.PolicyStatement(
-            resources=[self.filesystem.ref],
+            resources=["*"],
             actions=[
                 "elasticfilesystem:DescribeMountTargets",
                 "elasticfilesystem:DescribeFileSystems",

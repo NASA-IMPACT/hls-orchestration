@@ -44,3 +44,4 @@ class Dummy(core.Construct):
         
         role.add_to_policy(self.policy_statement)
 
+

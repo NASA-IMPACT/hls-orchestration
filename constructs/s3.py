@@ -40,7 +40,6 @@ class S3(core.Construct):
                 "s3:AbortMultipartUpload",
             ],
         )
-        role.add_to_policy(self.policy_statement)
 
         self.bucket = bucket
         self.bucket_name = bucket.bucket_name
