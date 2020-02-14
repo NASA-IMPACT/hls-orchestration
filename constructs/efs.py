@@ -4,12 +4,7 @@ from constructs.network import Network
 
 class Efs(core.Construct):
     def __init__(
-        self,
-        scope: core.Construct,
-        id: str,
-        network: Network,
-        role: aws_iam.Role,
-        **kwargs,
+        self, scope: core.Construct, id: str, network: Network, **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
 
@@ -50,7 +45,5 @@ class Efs(core.Construct):
                 "elasticfilesystem:DescribeFileSystems",
             ],
         )
-
-        role.add_to_policy(self.policy_statement)
 
         core.CfnOutput(self, "filesystem", value=self.filesystem.ref)

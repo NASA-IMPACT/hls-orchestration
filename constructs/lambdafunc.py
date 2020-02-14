@@ -1,49 +1,62 @@
 import os
 from aws_cdk import aws_lambda, core, aws_iam
 from typing import Dict
-
+from utils import align
 
 
 class Lambda(core.Construct):
     """AWS Lambda Construct."""
 
     def __init__(
-        self, 
-        scope: core.Construct, 
-        id: str, 
-        role: aws_iam.Role,
-        memory: int = 512, 
+        self,
+        scope: core.Construct,
+        id: str,
+        memory: int = 512,
         timeout: int = 5,
-        asset_dir: str = None,
+        code_dir: str = None,
+        code_file: str = None,
+        code_str: str = None,
         env: Dict = None,
+        runtime: aws_lambda.Runtime = aws_lambda.Runtime.PYTHON_3_7,
+        handler: str = "index.handler",
         **kwargs,
     ) -> None:
         """Create AWS Lambda stack."""
         super().__init__(scope, id, **kwargs)
 
-        self.code = aws_lambda.Code.from_asset(
-            os.path.join(os.path.dirname(__file__), "..", asset_dir)
-        )
+        if code_dir is not None:
+            self.code = aws_lambda.Code.from_asset(
+                os.path.join(os.path.dirname(__file__), "..", code_dir)
+            )
+        elif code_file is not None:
+            file = os.path.join(os.path.dirname(__file__), "..", code_file)
+            with open(file, encoding="utf8") as fp:
+                code_str = fp.read()
+            self.code = aws_lambda.InlineCode(code=code_str)
+            self.handler = "index.handler"
+        elif code_str is not None:
+            code_str = align(code_str)
+            self.code = aws_lambda.InlineCode(code=code_str)
+            self.handler = "index.handler"
 
-        self.lambdaFn = aws_lambda.Function(
+        if self.code is None:
+            raise Exception("Must define function code")
+
+        self.handler = handler
+
+        self.function = aws_lambda.Function(
             self,
             "function",
             code=self.code,
-            handler="handler.handler",
-            # role=role,
+            handler=self.handler,
             memory_size=memory,
             timeout=core.Duration.seconds(timeout),
-            runtime=aws_lambda.Runtime.PYTHON_3_7,
+            runtime=runtime,
             environment=env,
         )
 
         self.policy_statement = aws_iam.PolicyStatement(
-            resources=[self.lambdaFn.function_arn],
-            actions=[
-                "lambda:InvokeFunction",
-            ],
+            resources=[self.function.function_arn], actions=["lambda:InvokeFunction",],
         )
 
-        role.add_to_policy(self.policy_statement)
-
-        core.CfnOutput(self, "lambdafunc", value=self.lambdaFn.function_arn)
+        core.CfnOutput(self, "Function", value=self.function.function_arn)

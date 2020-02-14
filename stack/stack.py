@@ -7,7 +7,7 @@ from constructs.efs import Efs
 from constructs.docker_batchjob import DockerBatchJob
 from constructs.batch import Batch
 from constructs.lambdafunc import Lambda
-from constructs.batch_event import BatchCron
+from constructs.batch_cron import BatchCron
 from constructs.dummy_lambda import Dummy
 
 STACKNAME = os.getenv("STACKNAME", "hls")
@@ -15,6 +15,11 @@ LAADS_BUCKET = os.getenv("LAADS_BUCKET", f"{STACKNAME}-bucket")
 LAADS_TOKEN = os.getenv("LAADS_TOKEN", None)
 LAADS_CRON = os.getenv("LAADS_CRON", "cron(0 0/12 * * ? *)")
 LAADS_BUCKET_BOOTSTRAP = LAADS_BUCKET
+SENTINEL_ECR_URI = os.getenv(
+    "SENTINEL_ECR_URI",
+    "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-sentinel:latest",
+)
+SENTINEL_BUCKET = os.getenv("SENTINEL_BUCKET", f"{STACKNAME}-sentinel-output")
 
 if LAADS_TOKEN is None:
     raise Exception("LAADS_TOKEN Env Var must be set")
@@ -24,34 +29,21 @@ class HlsStack(core.Stack):
     def __init__(self, scope: core.Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
 
-        self.principals = aws_iam.CompositePrincipal(aws_iam.ServicePrincipal('batch.amazonaws.com'))
-        # self.principals.grant_principal(aws_iam.ServicePrincipal('batch.amazonaws.com'))
-        self.principals.add_principals(aws_iam.ServicePrincipal('elasticfilesystem.amazonaws.com'))
-
-        self.role = aws_iam.Role(
-            self,
-            "StackRole",
-            assumed_by=self.principals,
-        )
-
         self.network = Network(self, "Network")
 
-        self.laads_bucket = S3(self, "S3", bucket_name=LAADS_BUCKET, role=self.role)
+        self.laads_bucket = S3(self, "LaadsBucket", bucket_name=LAADS_BUCKET)
 
-        self.efs = Efs(self, "Efs", network=self.network, role=self.role)
+        self.sentinel_bucket = S3(self, "SentinelBucket", bucket_name=SENTINEL_BUCKET)
+
+        self.efs = Efs(self, "Efs", network=self.network)
 
         self.batch = Batch(
-            self,
-            "Batch",
-            network=self.network,
-            role=self.role,
-            efs=self.efs.filesystem,
+            self, "Batch", network=self.network, efs=self.efs.filesystem,
         )
 
         self.laads_task = DockerBatchJob(
             self,
             "LaadsTask",
-            role=self.role,
             dockerdir="hls-laads",
             bucket=self.laads_bucket.bucket,
             mountpath="/var/lasrc_aux",
@@ -60,22 +52,35 @@ class HlsStack(core.Stack):
             vcpus=4,
         )
 
+        self.sentinel_task = DockerBatchJob(
+            self,
+            "SentinelTask",
+            dockeruri=SENTINEL_ECR_URI,
+            bucket=self.sentinel_bucket.bucket,
+            mountpath="/var/lasrc_aux",
+            timeout=3600,
+            memory=10000,
+            vcpus=4,
+        )
+
         self.pr2mgrs_lambda = Lambda(
-            self, "Pr2Mgrs", role=self.role, asset_dir="hls-pr2mgrs/hls_pr2mgrs"
+            self,
+            "Pr2Mgrs",
+            code_dir="hls-pr2mgrs/hls_pr2mgrs",
+            handler="handler.handler",
         )
 
         self.laads_available = Lambda(
             self,
             "LaadsAvailable",
-            role=self.role,
-            asset_dir="hls-laads-available/hls_laads_available",
+            code_dir="hls-laads-available/hls_laads_available",
             env={"LAADS_BUCKET": LAADS_BUCKET},
+            handler="handler.handler",
         )
 
         self.laads_cron = BatchCron(
             self,
             "LaadsAvailableCron",
-            role=self.role,
             cron_str=LAADS_CRON,
             batch=self.batch,
             job=self.laads_task,
@@ -83,14 +88,11 @@ class HlsStack(core.Stack):
                 "LAADS_BUCKET": LAADS_BUCKET,
                 "L8_AUX_DIR": "/var/lasrc_aux",
                 "LAADS_TOKEN": LAADS_TOKEN,
+                "LAADS_BUCKET_BOOTSTRAP": LAADS_BUCKET_BOOTSTRAP,
             },
         )
 
-        self.process_sentinel = Dummy(
-            self,
-            'ProcessSentinelTask',
-            role=self.role
-        )
+        self.process_sentinel = Dummy(self, "ProcessSentinelTask",)
 
         sentinel_state_definition = {
             "Comment": "Sentinel Step Function",
@@ -98,17 +100,17 @@ class HlsStack(core.Stack):
             "States": {
                 "CheckLaads": {
                     "Type": "Task",
-                    "Resource": self.laads_available.lambdaFn.function_arn,
-                    "ResultPath": "$.available",
+                    "Resource": self.laads_available.function.function_arn,
+                    "ResultPath": "$",
                     "Next": "LaadsAvailable",
                     "Retry": [
                         {
-                        "ErrorEquals": ["States.ALL"],
-                        "IntervalSeconds": 1,
-                        "MaxAttempts": 3,
-                        "BackoffRate": 2
+                            "ErrorEquals": ["States.ALL"],
+                            "IntervalSeconds": 1,
+                            "MaxAttempts": 3,
+                            "BackoffRate": 2,
                         }
-                    ]
+                    ],
                 },
                 "LaadsAvailable": {
                     "Type": "Choice",
@@ -116,45 +118,71 @@ class HlsStack(core.Stack):
                         {
                             "Variable": "$.available",
                             "BooleanEquals": True,
-                            "Next": "ProcessSentinel"
+                            "Next": "ProcessSentinel",
                         }
                     ],
-                    "Default": "Wait"
+                    "Default": "Wait",
                 },
-                "Wait": {
-                    "Type": "Wait",
-                    "Seconds": 3600,
-                    "Next": "CheckLaads"
-                },
+                "Wait": {"Type": "Wait", "Seconds": 3600, "Next": "CheckLaads"},
                 "ProcessSentinel": {
                     "Type": "Task",
-                    "Resource": self.process_sentinel.lambdaFn.function_arn,
+                    "Resource": "arn:aws:states:::batch:submitJob.sync",
+                    "Parameters": {
+                        "JobName": "BatchJobNotification",
+                        "JobQueue": self.batch.jobqueue.ref,
+                        "JobDefinition": self.sentinel_task.job.ref,
+                        "ContainerOverrides": {
+                            "Command": ["ls /var/lasrc_aux && sentinel.sh"],
+                            "Memory": 10000,
+                            "Environment": [
+                                {"Name": "GRANULE_LIST", "Value.$": "$.granule"},
+                                {"Name": "OUTPUT_BUCKET", "Value": SENTINEL_BUCKET},
+                                {"Name": "LASRC_AUX_DIR", "Value": "/var/lasrc_aux"},
+                            ],
+                        },
+                    },
                     "Next": "Done",
-                    "InputPath": "$.available",
-                    "ResultPath": "$.available",
-                    "Retry": [
-                        {
-                        "ErrorEquals": ["States.ALL"],
-                        "IntervalSeconds": 1,
-                        "MaxAttempts": 3,
-                        "BackoffRate": 2
-                        }
-                    ]
                 },
-                "Done": {
-                    "Type": "Succeed"
-                }
-            }
+                "Done": {"Type": "Succeed"},
+            },
         }
+
+        self.steps_role = aws_iam.Role(
+            self,
+            "StepsRole",
+            assumed_by=aws_iam.ServicePrincipal("states.amazonaws.com"),
+        )
 
         self.sentinel_state = aws_stepfunctions.CfnStateMachine(
             self,
-            'SentinelStateMachine',
+            "SentinelStateMachine",
             definition_string=json.dumps(sentinel_state_definition),
-            role_arn=self.role.role_arn,
+            role_arn=self.steps_role.role_arn,
         )
 
         # permissions
-        # self.laads_cron.lambdaFn.add_to_role_policy(self.laads_task.policy_statement)
-        self.laads_cron.lambdaFn.add_to_role_policy(self.batch.policy_statement)
-        self.laads_available.lambdaFn.add_to_role_policy(self.laads_bucket.policy_statement)
+        self.laads_cron.function.add_to_role_policy(self.laads_task.policy_statement)
+        self.laads_cron.function.add_to_role_policy(self.batch.policy_statement)
+        self.laads_cron.function.add_to_role_policy(self.laads_bucket.policy_statement)
+        self.laads_available.function.add_to_role_policy(
+            self.laads_bucket.policy_statement
+        )
+        self.steps_role.add_to_policy(self.laads_available.policy_statement)
+        self.steps_role.add_to_policy(self.sentinel_task.policy_statement)
+
+        region = core.Aws.REGION
+        acountid = core.Aws.ACCOUNT_ID
+        self.steps_role.add_to_policy(
+            aws_iam.PolicyStatement(
+                resources=[
+                    f"arn:aws:events:{region}:{acountid}:rule/StepFunctionsGetEventsForBatchJobsRule",
+                ],
+                actions=["events:PutTargets", "events:PutRule", "events:DescribeRule"],
+            )
+        )
+        self.steps_role.add_to_policy(
+            aws_iam.PolicyStatement(
+                resources=["*",],
+                actions=["batch:SubmitJob", "batch:DescribeJobs", "batch:TerminateJob"],
+            )
+        )

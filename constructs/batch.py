@@ -18,7 +18,6 @@ class Batch(core.Construct):
         scope: core.Construct,
         id: str,
         network: Network,
-        role: aws_iam.Role,
         efs: aws_efs.CfnFileSystem = None,
         **kwargs,
     ) -> None:
@@ -28,9 +27,9 @@ class Batch(core.Construct):
             self,
             "EcsHostSecurityGroup",
             vpc_id=network.vpc.ref,
-            group_description="Security Group for ECS Host"
+            group_description="Security Group for ECS Host",
         )
-        
+
         self.ecs_security_group_ingress_from_self = aws_ec2.CfnSecurityGroupIngress(
             self,
             "EcsSecurityGroupIngressFromSelf",
@@ -39,23 +38,44 @@ class Batch(core.Construct):
             source_security_group_id=self.ecs_host_security_group.ref,
         )
 
-        role.add_managed_policy(
-            policy=aws_iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AWSBatchServiceRole")
+        batch_service_role = aws_iam.Role(
+            self,
+            "BatchServiceRole",
+            assumed_by=aws_iam.ServicePrincipal("batch.amazonaws.com"),
+            managed_policies=[
+                aws_iam.ManagedPolicy.from_aws_managed_policy_name(
+                    "service-role/AWSBatchServiceRole"
+                )
+            ],
         )
 
-        role.add_managed_policy(
-            policy=aws_iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AmazonEC2ContainerServiceforEC2Role")
+        efs_policy_statement = aws_iam.PolicyStatement(
+            resources=["*"],
+            actions=[
+                "elasticfilesystem:DescribeMountTargets",
+                "elasticfilesystem:DescribeFileSystems",
+            ],
+        )
+
+        efs_policy_document = aws_iam.PolicyDocument(statements=[efs_policy_statement])
+
+        ecs_instance_role = aws_iam.Role(
+            self,
+            f"EcsInstanceRole",
+            assumed_by=aws_iam.ServicePrincipal("ec2.amazonaws.com"),
+            managed_policies=[
+                aws_iam.ManagedPolicy.from_aws_managed_policy_name(
+                    "service-role/AmazonEC2ContainerServiceforEC2Role"
+                )
+            ],
+            inline_policies=[efs_policy_document],
         )
 
         ecs_instance_profile = aws_iam.CfnInstanceProfile(
-            self,
-            f"EcsInstanceProfile",
-            roles=[role.role_name],
+            self, f"EcsInstanceProfile", roles=[ecs_instance_role.role_name],
         )
 
-        userdata_file = open(
-            os.path.join(dirname, "userdata.txt"), "rb"
-        ).read()
+        userdata_file = open(os.path.join(dirname, "userdata.txt"), "rb").read()
         user_data = aws_ec2.UserData.for_linux()
         user_data_string = str(userdata_file, "utf-8").format(efs.ref)
         user_data.add_commands(user_data_string)
@@ -66,20 +86,14 @@ class Batch(core.Construct):
         )
 
         launch_template = aws_ec2.CfnLaunchTemplate(
-            self,
-            f"LaunchTemplate",
-            launch_template_data=launch_template_data,
+            self, f"LaunchTemplate", launch_template_data=launch_template_data,
         )
 
         launch_template_props = aws_batch.CfnComputeEnvironment.LaunchTemplateSpecificationProperty(
             launch_template_id=launch_template.ref
         )
 
-        image_id = (
-            aws_ecs.EcsOptimizedImage.amazon_linux2()
-            .get_image(self)
-            .image_id
-        )
+        image_id = aws_ecs.EcsOptimizedImage.amazon_linux2().get_image(self).image_id
 
         compute_resources = aws_batch.CfnComputeEnvironment.ComputeResourcesProperty(
             allocation_strategy="BEST_FIT_PROGRESSIVE",
@@ -99,7 +113,7 @@ class Batch(core.Construct):
             self,
             f"ComputeEnvironment",
             compute_resources=compute_resources,
-            service_role=role.role_arn,
+            service_role=batch_service_role.role_arn,
             type="MANAGED",
         )
 
@@ -115,14 +129,9 @@ class Batch(core.Construct):
         )
 
         self.policy_statement = aws_iam.PolicyStatement(
-            resources=[
-                jobqueue.ref
-            ],
-            actions=[
-                "batch:SubmitJob",
-            ],
+            resources=[jobqueue.ref],
+            actions=["batch:SubmitJob", "batch:DescribeJobs", "batch:TerminateJob"],
         )
-        role.add_to_policy(self.policy_statement)
 
         self.compute_environment = compute_environment
         self.jobqueue = jobqueue

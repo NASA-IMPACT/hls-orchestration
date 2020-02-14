@@ -16,8 +16,8 @@ class DockerBatchJob(core.Construct):
         self,
         scope: core.Construct,
         id: str,
-        role: aws_iam.Role,
-        dockerdir: str,
+        dockerdir: str = None,
+        dockeruri: str = None,
         bucket: aws_s3.Bucket = None,
         timeout: int = 3600,
         memory: int = 10000,
@@ -27,30 +27,36 @@ class DockerBatchJob(core.Construct):
     ) -> None:
         super().__init__(scope, id, **kwargs)
 
-        host = aws_batch.CfnJobDefinition.VolumesHostProperty(
-            source_path="/mnt/efs"
-        )
-
-        volume = aws_batch.CfnJobDefinition.VolumesProperty(
-            name=f"volume", host=host,
-        )
-
-        image = aws_ecr_assets.DockerImageAsset(
+        role = aws_iam.Role(
             self,
-            "DockerImageAsset",
-            directory=os.path.join(
-                dirname, "..", "docker", dockerdir
-            ),
+            "TaskRole",
+            assumed_by=aws_iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
         )
+
+        host = aws_batch.CfnJobDefinition.VolumesHostProperty(source_path="/mnt/efs")
+
+        volume = aws_batch.CfnJobDefinition.VolumesProperty(name=f"volume", host=host,)
+
+        if dockerdir is not None:
+            image = aws_ecr_assets.DockerImageAsset(
+                self,
+                "DockerImageAsset",
+                directory=os.path.join(dirname, "..", "docker", dockerdir),
+            )
+            image_uri = image.image_uri
+        elif dockeruri is not None:
+            image_uri = dockeruri
+        else:
+            raise Exception(
+                "must define docker image with either dockerdir or dockeruri"
+            )
 
         mount_point = aws_batch.CfnJobDefinition.MountPointsProperty(
-            source_volume=volume.name,
-            container_path=mountpath,
-            read_only=False,
+            source_volume=volume.name, container_path=mountpath, read_only=False,
         )
 
         container_properties = aws_batch.CfnJobDefinition.ContainerPropertiesProperty(
-            image=image.image_uri,
+            image=image_uri,
             job_role_arn=role.role_arn,
             memory=memory,
             mount_points=[mount_point],
@@ -62,9 +68,7 @@ class DockerBatchJob(core.Construct):
             self,
             f"batchjob",
             container_properties=container_properties,
-            retry_strategy=aws_batch.CfnJobDefinition.RetryStrategyProperty(
-                attempts=1
-            ),
+            retry_strategy=aws_batch.CfnJobDefinition.RetryStrategyProperty(attempts=1),
             timeout=aws_batch.CfnJobDefinition.TimeoutProperty(
                 attempt_duration_seconds=timeout
             ),
@@ -72,16 +76,18 @@ class DockerBatchJob(core.Construct):
         )
 
         self.policy_statement = aws_iam.PolicyStatement(
-            resources=[
-                job.ref
-            ],
-            actions=[
-                "batch:SubmitJob",
-            ],
+            resources=[job.ref],
+            actions=["batch:SubmitJob", "batch:DescribeJobs", "batch:TerminateJob"],
         )
         role.add_to_policy(self.policy_statement)
+        role.add_to_policy(
+            aws_iam.PolicyStatement(
+                resources=[bucket.bucket_arn, f"{bucket.bucket_arn}/*",],
+                actions=["s3:Get*", "s3:Put*", "s3:List*", "s3:AbortMultipartUpload",],
+            )
+        )
 
-        self.image = image
+        self.image_uri = image_uri
         self.job = job
 
         core.CfnOutput(self, f"jobdef", value=job.ref)

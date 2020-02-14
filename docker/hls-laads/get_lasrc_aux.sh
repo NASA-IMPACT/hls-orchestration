@@ -2,8 +2,6 @@
 cd /var/lasrc_aux/
 ls 
 df -h
-cat /etc/fstab
-cat /etc/ecs/ecs.config
 if [ -n "$LAADS_BUCKET_BOOTSTRAP" ]; then
 echo "syncing existing laads data from aws s3 bucket s3://$LAADS_BUCKET_BOOTSTRAP/lasrc_aux/"
 aws s3 sync s3://$LAADS_BUCKET_BOOTSTRAP/lasrc_aux/ .
@@ -32,7 +30,13 @@ updatelads.py $LADSFLAG
 echo "Creating listing of dates available."
 find . | grep -oP "L8ANC([0-9][0-9][0-9][0-9][0-9][0-9])\.hdf_fused$" > laadsavailable.txt
 
+# cleanup
+rm MSILUT.tar.gz*
+rm lasrc_aux.2013-2017.tar.gz*
+
 if [ -n "$LAADS_BUCKET" ]; then
 echo "syncing data to s3 bucket s3://$LAADS_BUCKET/lasrc_aux/"
 aws s3 sync . s3://$LAADS_BUCKET/lasrc_aux/
 fi
+
+

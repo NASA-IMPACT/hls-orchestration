@@ -3,9 +3,7 @@ from aws_cdk import aws_ec2
 
 
 class Network(core.Construct):
-    def __init__(
-        self, scope: core.Construct, id: str, **kwargs
-    ) -> None:
+    def __init__(self, scope: core.Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
 
         self.vpc = aws_ec2.CfnVPC(
@@ -16,9 +14,7 @@ class Network(core.Construct):
             enable_dns_support=True,
         )
 
-        self.internet_gateway = aws_ec2.CfnInternetGateway(
-            self, "InternetGateway"
-        )
+        self.internet_gateway = aws_ec2.CfnInternetGateway(self, "InternetGateway")
 
         self.gateway_attachment = aws_ec2.CfnVPCGatewayAttachment(
             self,
@@ -47,9 +43,7 @@ class Network(core.Construct):
                 f"PublicSubnet{s}",
                 vpc_id=self.vpc.ref,
                 cidr_block=f"10.0.{s-1}.0/24",
-                availability_zone=core.Fn.select(
-                    s - 1, core.Fn.get_azs()
-                ),
+                availability_zone=core.Fn.select(s - 1, core.Fn.get_azs()),
                 map_public_ip_on_launch=True,
             )
             route_table_association = aws_ec2.CfnSubnetRouteTableAssociation(
@@ -59,8 +53,6 @@ class Network(core.Construct):
                 route_table_id=self.public_route_table.ref,
             )
             self.public_subnets.append(subnet)
-            self.public_subnet_route_associations.append(
-                route_table_association
-            )
+            self.public_subnet_route_associations.append(route_table_association)
 
         core.CfnOutput(self, "vpcid", value=self.vpc.ref)

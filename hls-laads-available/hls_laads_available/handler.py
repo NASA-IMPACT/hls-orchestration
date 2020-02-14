@@ -16,25 +16,26 @@ from botocore.errorfactory import ClientError
 from datetime import date
 import json
 
-s3 = boto3.client('s3')
+s3 = boto3.client("s3")
 bucket = os.getenv("LAADS_BUCKET", None)
 if bucket is None:
-    raise Exception('No Bucket set')
+    raise Exception("No Bucket set")
+
 
 def key_exists(bucket: str, key: str):
     try:
         s3.head_object(Bucket=bucket, Key=key)
     except ClientError as e:
         print(e)
-        if e.response['Error']['Code'] == '404':
+        if e.response["Error"]["Code"] == "404":
             return False
     return True
 
 
 def getyyyydoy(date_str: str):
     # Setup regular expressions for getting date
-    dmy = re.compile('(20[0-9][0-9])-?([0-9][0-9])-?([0-9][0-9])')
-    ydoy = re.compile('(20[0-9][0-9])-?([0-9][0-9][0-9])$')
+    dmy = re.compile("(20[0-9][0-9])-?([0-9][0-9])-?([0-9][0-9])")
+    ydoy = re.compile("(20[0-9][0-9])-?([0-9][0-9][0-9])$")
     matches = dmy.search(date_str)
     if matches is not None:
         year = int(matches[1])
@@ -49,15 +50,20 @@ def getyyyydoy(date_str: str):
         print(doy)
         return f"{year}{doy}", str(year)
 
+
 def handler(event: Dict, context: Dict):
     """AWS Lambda handler."""
     # Get date from direct call or from query parameters via gateway call
-    gateway = False
-    
+
     date_str = event.get("date", None)
     if date_str is None:
-        date_str = event.get("queryStringParameters").get("date")
-        gateway = True
+        date_str = event.get("granule")
+    if event.get("queryStringParameters") is not None:
+        params=event.get("queryStringParameters")
+    if date_str is None:
+        date_str = params.get("date")
+    if date_str is None:
+        date_str = params.get("granule")
 
     if date_str is None:
         raise Exception("Missing Date Parameter")
@@ -66,19 +72,16 @@ def handler(event: Dict, context: Dict):
     key = f"lasrc_aux/LADS/{year}/L8ANC{ydoy}.hdf_fused"
     print(f"------{bucket}    {key} ------")
     exists = key_exists(bucket, key)
-    print(gateway, exists)
-    if gateway:
-        if exists:
-            return {
-                "statusCode": 200,
-                "body": json.dumps({'available':True})
-            }
-        return {
-                "statusCode": 404,
-                "body": json.dumps({'available':False})
-            }
+    output={
+        "granule": date_str,
+        "year": year,
+        "doy": ydoy,
+        "bucket": bucket,
+        "key": key,
+        "available": False
+    }
     if exists:
-        return True
-    return False
+        output['available']=True
+        return output
+    return output
 
-    
