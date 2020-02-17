@@ -21,29 +21,21 @@ aws_cdk_reqs = [
     "aws-stepfunctions",
 ]
 
-inst_reqs = [
-    "boto3"
-]
+inst_reqs = ["boto3"]
 
 inst_reqs.append([f"aws_cdk.{x}>={aws_cdk_min_version}" for x in aws_cdk_reqs])
 
-extra_reqs = {
-    "test": [
-        "pytest", 
-        "pytest-cov",
-        "black",
-        "flake8"
-    ]
-}
+extra_reqs = {"test": ["pytest", "pytest-cov", "black", "flake8"]}
 
 setup(
     name="hls-orchestration",
     version="0.0.1",
     python_requires=">=3.7",
-    author=u"Vincent Sarago",
+    author="Vincent Sarago",
     author_email="vincent@developmentseed.org",
     packages=find_packages(exclude=["ez_setup", "examples", "tests"]),
-    package_data={"*": ["data/*.txt"]},
+    package_data={'.':['docker/*', 'scripts/*', 'cdk.json']},
     install_requires=inst_reqs,
     extras_require=extra_reqs,
+    include_package_data=False,
 )
