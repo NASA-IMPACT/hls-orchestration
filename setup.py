@@ -34,7 +34,10 @@ setup(
     author="Vincent Sarago",
     author_email="vincent@developmentseed.org",
     packages=find_packages(exclude=["ez_setup", "examples", "tests"]),
-    package_data={'.':['docker/*', 'scripts/*', 'cdk.json']},
+    package_data={
+        ".": ["scripts/*", "cdk.json"],
+        "constructs": ["userdata.txt"],
+    },
     install_requires=inst_reqs,
     extras_require=extra_reqs,
     include_package_data=False,
