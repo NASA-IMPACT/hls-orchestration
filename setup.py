@@ -33,12 +33,18 @@ setup(
     python_requires=">=3.7",
     author="Vincent Sarago",
     author_email="vincent@developmentseed.org",
-    packages=find_packages(exclude=["ez_setup", "examples", "tests"]),
+    packages=find_packages(),
     package_data={
-        ".": ["scripts/*", "cdk.json"],
-        "constructs": ["userdata.txt"],
+        ".": [
+            "docker/hls-laads/*",
+            "scripts/*",
+            "cdk.json",
+            "hls-p2mgrs/hls_pr2mgrs/*",
+            "hls-laads-available/hls_laads_available/*",
+            "constructs/userdata.txt"
+        ],
     },
     install_requires=inst_reqs,
     extras_require=extra_reqs,
-    include_package_data=False,
+    include_package_data=True,
 )
