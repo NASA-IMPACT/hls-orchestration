@@ -1,68 +1,42 @@
-# hls-pr2mgrs
+# hls-orchestration
 
-Landsat 8 PathRow to Sentinel 2 Tiles.
+Orchestration for creating a stack to process HLS
 
-### Install
-
+### Regular Install
+Installs cdk using yarn.
+Installs python requirements and hls-orchestration package in a local virtual environment (venv)
 ```
-$ pip install pip -U
-$ pip install .[deploy]
-```
-
-### Deploy 
-
-```
-$ cd stack
-$ cdk init && cdk deploy
+$ make install
 ```
 
+### Environment
+The following Environment variables must be set
+```
+$ export STACKNAME=<Name of your stack>
+$ export LAADS_TOKEN=<Token used for accessing the Laads Data>
+```
 
-### Lambda Invocation
+### Synth
+Display generated cloud formation template that will be used to deploy.
+```
+$ make synth
+```
 
-The lambda handler accepts either `PATHROW` or `MGRS` argument passed in a dictionary
+### Diff
+Display a diff of the current deployment and any changes created.
+```
+$ make synth
+```
 
-```python
-from hls_pr2mgrs.handler import handler
+### Deploy
+Deploys current created stack.
+```
+$ make deploy
+```
 
->> handler({"PATHROW": "001001"}, {})                                                                                                  
->> ['29XNK',
- '29XNL',
- '30XVQ',
- '30XVR',
- '30XWP',
- '30XWQ',
- '30XWR',
- '31XDJ',
- '31XDK',
- '31XDL',
- '31XEJ',
- '31XEK',
- '31XEL']
-
->> handler({"MGRS": "29XNK"}, {})                                                                                                 
->> ['001001',
- '001002',
- '002001',
- '002002',
- '003001',
- '003002',
- '004001',
- '004002',
- '005001',
- '005002',
- '006001',
- '006002',
- '007001',
- '007002',
- '008001',
- '009001',
- '010001',
- '011001',
- '229003',
- '230002',
- '230003',
- '231002',
- '232002',
- '233002',
- '233003']
+### Cleanup
+Cleans out all files and prereqs created in the installation process.
+You will need to reinstall after running this.
+```
+$ make clean
 ```
