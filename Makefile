@@ -7,10 +7,11 @@ $(foreach bin,$(REQUIRED_BINS),\
 .PHONY: check-envfile check-env-% check-env cdk venv dev clean synth diff deploy fresh freshdev
 
 check-envfile:
-	[[ ! -f env.sh ]] && echo "Please copy and edit env.sh.sample to env.sh" && exit 1
+	test -f env.sh || { echo "Please copy and edit env.sh.sample to env.sh"; exit 1; }
 
 check-env-%:
-	[[ ! -v ${*} ]] && echo "Environment variable $* not set" && exit 1
+	source env.sh
+	[[ -v ${*} ]] || { echo "Environment variable $* not set"; exit 1; }
 
 check-env: check-envfile check-env-HLS_STACKNAME check-env-HLS_LAADS_TOKEN
 
@@ -21,11 +22,11 @@ cdk:
 venv:
 	test -d venv || virtualenv venv
 
-install: check-env cdk venv
+install: cdk venv
 	source venv/bin/activate
 	pip install . --no-binary :.:
 
-dev: check-env cdk venv
+dev: cdk venv
 	source venv/bin/activate
 	pip install -e .[test] --no-binary :.:
 
