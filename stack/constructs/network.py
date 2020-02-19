@@ -55,4 +55,4 @@ class Network(core.Construct):
             self.public_subnets.append(subnet)
             self.public_subnet_route_associations.append(route_table_association)
 
-        core.CfnOutput(self, "vpcid", value=self.vpc.ref)
+        core.CfnOutput(self, "vpcid", value=self.vpc.ref, export_name="vpcid")

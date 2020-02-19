@@ -136,4 +136,4 @@ class Batch(core.Construct):
         self.compute_environment = compute_environment
         self.jobqueue = jobqueue
 
-        core.CfnOutput(self, f"job_queue", value=jobqueue.ref)
+        core.CfnOutput(self, f"hls_job_queue", value=jobqueue.ref)

@@ -25,7 +25,9 @@ inst_reqs = ["boto3"]
 
 inst_reqs.append([f"aws_cdk.{x}>={aws_cdk_min_version}" for x in aws_cdk_reqs])
 
-extra_reqs = {"test": ["pytest", "pytest-cov", "black", "flake8"]}
+extra_reqs = {
+    "test": ["pytest", "pytest-cov", "black", "flake8"]
+}
 
 setup(
     name="hls-orchestration",
@@ -39,9 +41,9 @@ setup(
             "docker/hls-laads/*",
             "scripts/*",
             "cdk.json",
-            "hls-p2mgrs/hls_pr2mgrs/*",
-            "hls-laads-available/hls_laads_available/*",
-            "constructs/userdata.txt"
+            "lambda/p2mgrs/hls_pr2mgrs/*",
+            "lambda/laads-available/hls_laads_available/*",
+            "stack/constructs/userdata.txt",
         ],
     },
     install_requires=inst_reqs,

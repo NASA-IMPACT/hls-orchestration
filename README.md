@@ -10,10 +10,12 @@ $ make install
 ```
 
 ### Environment
-The following Environment variables must be set
+Environment variables are set in env.sh. A sample env.sh is at env.sh.sample, you must copy this file 
+to env.sh before running make synth, make diff, or make deploy
+The following variables can be overridden from the calling shell's environment
 ```
-$ export STACKNAME=<Name of your stack>
-$ export LAADS_TOKEN=<Token used for accessing the Laads Data>
+$ export HLS_STACKNAME=<Name of your stack>
+$ export HLS_LAADS_TOKEN=<Token used for accessing the Laads Data>
 ```
 
 ### Synth

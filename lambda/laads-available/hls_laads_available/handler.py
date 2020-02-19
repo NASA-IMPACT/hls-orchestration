@@ -59,7 +59,7 @@ def handler(event: Dict, context: Dict):
     if date_str is None:
         date_str = event.get("granule")
     if event.get("queryStringParameters") is not None:
-        params=event.get("queryStringParameters")
+        params = event.get("queryStringParameters")
     if date_str is None:
         date_str = params.get("date")
     if date_str is None:
@@ -72,16 +72,15 @@ def handler(event: Dict, context: Dict):
     key = f"lasrc_aux/LADS/{year}/L8ANC{ydoy}.hdf_fused"
     print(f"------{bucket}    {key} ------")
     exists = key_exists(bucket, key)
-    output={
+    output = {
         "granule": date_str,
         "year": year,
         "doy": ydoy,
         "bucket": bucket,
         "key": key,
-        "available": False
+        "available": False,
     }
     if exists:
-        output['available']=True
+        output["available"] = True
         return output
     return output
-

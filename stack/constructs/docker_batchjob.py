@@ -41,7 +41,7 @@ class DockerBatchJob(core.Construct):
             image = aws_ecr_assets.DockerImageAsset(
                 self,
                 "DockerImageAsset",
-                directory=os.path.join(dirname, "..", "docker", dockerdir),
+                directory=os.path.join(dirname, "..", "..", "docker", dockerdir),
             )
             image_uri = image.image_uri
         elif dockeruri is not None:
@@ -90,4 +90,4 @@ class DockerBatchJob(core.Construct):
         self.image_uri = image_uri
         self.job = job
 
-        core.CfnOutput(self, f"jobdef", value=job.ref)
+        core.CfnOutput(self, f"hls_job_def", value=job.ref)

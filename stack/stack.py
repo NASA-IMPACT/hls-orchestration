@@ -10,19 +10,19 @@ from constructs.lambdafunc import Lambda
 from constructs.batch_cron import BatchCron
 from constructs.dummy_lambda import Dummy
 
-STACKNAME = os.getenv("STACKNAME", "hls")
-LAADS_BUCKET = os.getenv("LAADS_BUCKET", f"{STACKNAME}-bucket")
-LAADS_TOKEN = os.getenv("LAADS_TOKEN", None)
-LAADS_CRON = os.getenv("LAADS_CRON", "cron(0 0/12 * * ? *)")
+STACKNAME = os.getenv("HLS_STACKNAME", "hls")
+LAADS_BUCKET = os.getenv("HLS_LAADS_BUCKET", f"{STACKNAME}-bucket")
+LAADS_TOKEN = os.getenv("HLS_LAADS_TOKEN", None)
+LAADS_CRON = os.getenv("HLS_LAADS_CRON", "cron(0 0/12 * * ? *)")
 LAADS_BUCKET_BOOTSTRAP = LAADS_BUCKET
 SENTINEL_ECR_URI = os.getenv(
-    "SENTINEL_ECR_URI",
+    "HLS_SENTINEL_ECR_URI",
     "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-sentinel:latest",
 )
-SENTINEL_BUCKET = os.getenv("SENTINEL_BUCKET", f"{STACKNAME}-sentinel-output")
+SENTINEL_BUCKET = os.getenv("HLS_SENTINEL_BUCKET", f"{STACKNAME}-sentinel-output")
 
 if LAADS_TOKEN is None:
-    raise Exception("LAADS_TOKEN Env Var must be set")
+    raise Exception("HLS_LAADS_TOKEN Env Var must be set")
 
 
 class HlsStack(core.Stack):
@@ -66,14 +66,14 @@ class HlsStack(core.Stack):
         self.pr2mgrs_lambda = Lambda(
             self,
             "Pr2Mgrs",
-            code_dir="hls-pr2mgrs/hls_pr2mgrs",
+            code_dir="pr2mgrs/hls_pr2mgrs",
             handler="handler.handler",
         )
 
         self.laads_available = Lambda(
             self,
             "LaadsAvailable",
-            code_dir="hls-laads-available/hls_laads_available",
+            code_dir="laads-available/hls_laads_available",
             env={"LAADS_BUCKET": LAADS_BUCKET},
             handler="handler.handler",
         )
@@ -159,6 +159,14 @@ class HlsStack(core.Stack):
             definition_string=json.dumps(sentinel_state_definition),
             role_arn=self.steps_role.role_arn,
         )
+
+        core.CfnOutput(
+             self, 
+            "SentinelState", 
+            value=self.sentinel_state.ref, 
+            export_name='SentinelState'
+        )
+
 
         # permissions
         self.laads_cron.function.add_to_role_policy(self.laads_task.policy_statement)
