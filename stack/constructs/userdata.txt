@@ -1,0 +1,25 @@
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="==MYBOUNDARY=="
+
+--==MYBOUNDARY==
+Content-Type: text/cloud-boothook; charset="us-ascii"
+
+# Install amazon-efs-utils
+cloud-init-per once yum_update yum update -y
+cloud-init-per once install_amazon-efs-utils yum install -y amazon-efs-utils
+
+# Create /efs folder
+cloud-init-per once mkdir_efs mkdir /mnt/efs
+
+# Mount /efs
+cloud-init-per once mount_efs echo -e '{}:/ /mnt/efs efs defaults,_netdev 0 0' >> /etc/fstab
+mount -a
+
+--==MYBOUNDARY==
+Content-Type: text/x-shellscript; charset="us-ascii"
+
+#!/bin/bash -xe
+
+echo ECS_IMAGE_PULL_BEHAVIOR=always >> /etc/ecs/ecs.config
+df -h
+--==MYBOUNDARY==--
