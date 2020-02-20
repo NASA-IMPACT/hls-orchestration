@@ -19,6 +19,7 @@ aws_cdk_reqs = [
     "aws-events",
     "aws-events-targets",
     "aws-stepfunctions",
+    "aws-rds",
 ]
 
 inst_reqs = ["boto3"]

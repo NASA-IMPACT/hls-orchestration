@@ -26,7 +26,7 @@ class Batch(core.Construct):
         self.ecs_host_security_group = aws_ec2.CfnSecurityGroup(
             self,
             "EcsHostSecurityGroup",
-            vpc_id=network.vpc.ref,
+            vpc_id=network.vpc.vpc_id,
             group_description="Security Group for ECS Host",
         )
 
@@ -105,7 +105,7 @@ class Batch(core.Construct):
             maxv_cpus=40,
             minv_cpus=0,
             security_group_ids=[self.ecs_host_security_group.ref],
-            subnets=[s.ref for s in network.public_subnets],
+            subnets=[s.subnet_id for s in network.public_subnets],
             type="EC2",
         )
 
