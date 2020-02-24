@@ -64,10 +64,7 @@ class HlsStack(core.Stack):
         )
 
         self.pr2mgrs_lambda = Lambda(
-            self,
-            "Pr2Mgrs",
-            code_dir="pr2mgrs/hls_pr2mgrs",
-            handler="handler.handler",
+            self, "Pr2Mgrs", code_dir="pr2mgrs/hls_pr2mgrs", handler="handler.handler",
         )
 
         self.laads_available = Lambda(
@@ -161,12 +158,11 @@ class HlsStack(core.Stack):
         )
 
         core.CfnOutput(
-             self, 
-            "SentinelState", 
-            value=self.sentinel_state.ref, 
-            export_name='SentinelState'
+            self,
+            "SentinelState",
+            value=self.sentinel_state.ref,
+            export_name="SentinelState",
         )
-
 
         # permissions
         self.laads_cron.function.add_to_role_policy(self.laads_task.policy_statement)
@@ -183,7 +179,8 @@ class HlsStack(core.Stack):
         self.steps_role.add_to_policy(
             aws_iam.PolicyStatement(
                 resources=[
-                    f"arn:aws:events:{region}:{acountid}:rule/StepFunctionsGetEventsForBatchJobsRule",
+                    f"arn:aws:events:{region}:{acountid}:rule/"
+                    "StepFunctionsGetEventsForBatchJobsRule",
                 ],
                 actions=["events:PutTargets", "events:PutRule", "events:DescribeRule"],
             )

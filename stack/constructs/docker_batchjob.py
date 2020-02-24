@@ -1,7 +1,6 @@
 from aws_cdk import (
     aws_ecr_assets,
     aws_batch,
-    aws_ecs,
     aws_iam,
     aws_s3,
     core,
