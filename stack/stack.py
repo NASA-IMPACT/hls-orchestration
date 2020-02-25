@@ -4,6 +4,7 @@ from aws_cdk import core, aws_stepfunctions, aws_iam
 from constructs.network import Network
 from constructs.s3 import S3
 from constructs.efs import Efs
+from constructs.rds import Rds
 from constructs.docker_batchjob import DockerBatchJob
 from constructs.batch import Batch
 from constructs.lambdafunc import Lambda
@@ -37,6 +38,8 @@ class HlsStack(core.Stack):
 
         self.efs = Efs(self, "Efs", network=self.network)
 
+        self.rds = Rds(self, "Rds", network=self.network)
+
         self.batch = Batch(
             self, "Batch", network=self.network, efs=self.efs.filesystem,
         )
@@ -64,10 +67,7 @@ class HlsStack(core.Stack):
         )
 
         self.pr2mgrs_lambda = Lambda(
-            self,
-            "Pr2Mgrs",
-            code_dir="pr2mgrs/hls_pr2mgrs",
-            handler="handler.handler",
+            self, "Pr2Mgrs", code_dir="pr2mgrs/hls_pr2mgrs", handler="handler.handler",
         )
 
         self.laads_available = Lambda(
@@ -161,12 +161,11 @@ class HlsStack(core.Stack):
         )
 
         core.CfnOutput(
-             self, 
-            "SentinelState", 
-            value=self.sentinel_state.ref, 
-            export_name='SentinelState'
+            self,
+            "SentinelState",
+            value=self.sentinel_state.ref,
+            export_name="SentinelState",
         )
-
 
         # permissions
         self.laads_cron.function.add_to_role_policy(self.laads_task.policy_statement)
