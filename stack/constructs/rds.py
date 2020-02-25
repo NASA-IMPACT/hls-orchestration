@@ -1,4 +1,4 @@
-from aws_cdk import aws_rds, aws_ec2, core, aws_iam
+from aws_cdk import aws_rds, aws_ec2, core, aws_iam, aws_secretsmanager
 from constructs.network import Network
 
 
@@ -8,26 +8,69 @@ class Rds(core.Construct):
     ) -> None:
         super().__init__(scope, id, **kwargs)
 
-        self.database = aws_rds.DatabaseCluster(
-            self, 
-            "Rds",
-            default_database_name="hls",
-            engine_version="10.7",
-            engine=aws_rds.DatabaseInstanceEngine.AURORA_POSTGRESQL,
-            master_user=aws_rds.Login(
-                username='admin',
-            ),
-            instance_props=aws_rds.InstanceProps(
-                instance_type=aws_ec2.InstanceType('db.t3.small'),
-                vpc=network.vpc
-            ),
-            instances=1,
+        self.subnet_group = aws_rds.CfnDBSubnetGroup(
+            self,
+            "RdsSubnetGroup",
+            db_subnet_group_description="Rds Subnet Group",
+            subnet_ids=network.vpc.select_subnets(one_per_az=True).subnet_ids,
         )
-        
-        # enable_http_endpoint is not made available on DatabaseCluster
-        # so we need to add it onto the child CfnDBCluster manually
-        cfndb = self.database.node.default_child
-        cfndb.enable_http_endpoint=True
+
+        self.security_group = aws_ec2.CfnSecurityGroup(
+            self,
+            "RdsSecurityGroup",
+            vpc_id=network.vpc.vpc_id,
+            group_description="Security Group for RDS",
+            security_group_ingress=[
+                aws_ec2.CfnSecurityGroup.IngressProperty(
+                    ip_protocol="-1", cidr_ip="0.0.0.0/0",
+                )
+            ],
+            security_group_egress=[
+                aws_ec2.CfnSecurityGroup.EgressProperty(
+                    ip_protocol="-1", cidr_ip="0.0.0.0/0",
+                )
+            ],
+        )
+
+        self.secret = aws_secretsmanager.Secret(
+            self,
+            "RdsSecret",
+            description="Login for Rds",
+            generate_secret_string=aws_secretsmanager.SecretStringGenerator(
+                exclude_characters='"@/\\',
+                generate_string_key="password",
+                password_length=30,
+                secret_string_template='{"username":"master"}',
+            ),
+        )
+
+        self.database = aws_rds.CfnDBCluster(
+            self,
+            "RdsCluster",
+            engine="aurora-postgresql",
+            engine_mode="serverless",
+            engine_version="10.7",
+            database_name="hls",
+            db_subnet_group_name=self.subnet_group.ref,
+            enable_http_endpoint=True,
+            master_username=core.Fn.join(
+                "",
+                [
+                    "{{resolve:secretsmanager:",
+                    self.secret.secret_arn,
+                    ":SecretString:username}}",
+                ],
+            ),
+            master_user_password=core.Fn.join(
+                "",
+                [
+                    "{{resolve:secretsmanager:",
+                    self.secret.secret_arn,
+                    ":SecretString:password}}",
+                ],
+            ),
+            vpc_security_group_ids=[self.security_group.ref],
+        )
 
         self.secrets_policy_statement = aws_iam.PolicyStatement(
             resources=["arn:aws:secretsmanager:*:*:secret:rds-db-credentials/*"],
@@ -37,7 +80,7 @@ class Rds(core.Construct):
                 "secretsmanager:PutSecretValue",
                 "secretsmanager:DeleteSecret",
                 "secretsmanager:DescribeSecret",
-                "secretsmanager:TagResource"
+                "secretsmanager:TagResource",
             ],
         )
 
@@ -52,6 +95,6 @@ class Rds(core.Construct):
                 "rds-data:BeginTransaction",
                 "rds-data:CommitTransaction",
                 "rds-data:ExecuteStatement",
-                "rds-data:RollbackTransaction"
+                "rds-data:RollbackTransaction",
             ],
         )

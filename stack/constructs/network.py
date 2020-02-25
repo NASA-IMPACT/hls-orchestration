@@ -15,17 +15,22 @@ class Network(core.Construct):
             nat_gateways=0,
             subnet_configuration=[
                 aws_ec2.SubnetConfiguration(
-                    name='PublicSubnet1',
-                    subnet_type=aws_ec2.SubnetType.PUBLIC,
+                    name="PublicSubnet1", subnet_type=aws_ec2.SubnetType.PUBLIC,
                 ),
                 aws_ec2.SubnetConfiguration(
-                    name='PublicSubnet2',
-                    subnet_type=aws_ec2.SubnetType.PUBLIC,
+                    name="PublicSubnet2", subnet_type=aws_ec2.SubnetType.PUBLIC,
                 ),
             ],
-            max_azs=1,
+            max_azs=2,
         )
-        
+
         self.public_subnets = self.vpc.public_subnets
+
+        self.az1_public_subnets = []
+        az = None
+        for s in self.vpc.select_subnets(subnet_type=aws_ec2.SubnetType.PUBLIC).subnets:
+            if az is None or az == s.availability_zone:
+                az = s.availability_zone
+                self.az1_public_subnets.append(s)
 
         core.CfnOutput(self, "vpcid", value=self.vpc.vpc_id, export_name="vpcid")
