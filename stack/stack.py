@@ -115,5 +115,9 @@ class HlsStack(core.Stack):
         self.laads_available.function.add_to_role_policy(
             self.laads_bucket.policy_statement
         )
-        self.sentinel_step_function.steps_role.add_to_policy(self.laads_available.policy_statement)
-        self.sentinel_step_function.steps_role.add_to_policy(self.sentinel_task.policy_statement)
+        self.sentinel_step_function.steps_role.add_to_policy(
+            self.laads_available.policy_statement
+        )
+        self.sentinel_step_function.steps_role.add_to_policy(
+            self.sentinel_task.policy_statement
+        )
