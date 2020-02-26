@@ -66,7 +66,7 @@ class DockerBatchJob(core.Construct):
 
         job = aws_batch.CfnJobDefinition(
             self,
-            f"batchjob",
+            f"BatchJob",
             container_properties=container_properties,
             retry_strategy=aws_batch.CfnJobDefinition.RetryStrategyProperty(attempts=1),
             timeout=aws_batch.CfnJobDefinition.TimeoutProperty(

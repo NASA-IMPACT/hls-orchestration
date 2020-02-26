@@ -40,6 +40,18 @@ class HlsStack(core.Stack):
 
         self.rds = Rds(self, "Rds", network=self.network)
 
+        self.lambda_logger = Lambda(
+            self,
+            "LambdaLogger",
+            code_file="logger.py",
+            env={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
+            },
+            timeout=30,
+        )
+
         self.batch = Batch(
             self, "Batch", network=self.network, efs=self.efs.filesystem,
         )
@@ -127,8 +139,9 @@ class HlsStack(core.Stack):
                 "ProcessSentinel": {
                     "Type": "Task",
                     "Resource": "arn:aws:states:::batch:submitJob.sync",
+                    "ResultPath": "$",
                     "Parameters": {
-                        "JobName": "BatchJobNotification",
+                        "JobName": "ProcessSentinel",
                         "JobQueue": self.batch.jobqueue.ref,
                         "JobDefinition": self.sentinel_task.job.ref,
                         "ContainerOverrides": {
@@ -141,7 +154,21 @@ class HlsStack(core.Stack):
                             ],
                         },
                     },
+                    "Next": "LogProcessSentinel",
+                },
+                "LogProcessSentinel": {
+                    "Type": "Task",
+                    "Resource": self.lambda_logger.function.function_arn,
+                    "ResultPath": "$",
                     "Next": "Done",
+                    "Retry": [
+                        {
+                            "ErrorEquals": ["States.ALL"],
+                            "IntervalSeconds": 1,
+                            "MaxAttempts": 3,
+                            "BackoffRate": 2,
+                        }
+                    ],
                 },
                 "Done": {"Type": "Succeed"},
             },
@@ -171,11 +198,16 @@ class HlsStack(core.Stack):
         self.laads_cron.function.add_to_role_policy(self.laads_task.policy_statement)
         self.laads_cron.function.add_to_role_policy(self.batch.policy_statement)
         self.laads_cron.function.add_to_role_policy(self.laads_bucket.policy_statement)
+
+        self.lambda_logger.function.add_to_role_policy(self.rds.policy_statement)
+
         self.laads_available.function.add_to_role_policy(
             self.laads_bucket.policy_statement
         )
+
         self.steps_role.add_to_policy(self.laads_available.policy_statement)
         self.steps_role.add_to_policy(self.sentinel_task.policy_statement)
+        self.steps_role.add_to_policy(self.lambda_logger.policy_statement)
 
         region = core.Aws.REGION
         acountid = core.Aws.ACCOUNT_ID
