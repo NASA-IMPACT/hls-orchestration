@@ -1,4 +1,6 @@
 from aws_cdk import core, aws_events, aws_lambda, aws_events_targets, aws_iam
+import boto3
+import json
 from typing import Dict
 from constructs.batch import Batch
 from constructs.lambdafunc import Lambda
