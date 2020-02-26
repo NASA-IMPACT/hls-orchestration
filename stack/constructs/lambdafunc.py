@@ -60,5 +60,3 @@ class Lambda(core.Construct):
         self.policy_statement = aws_iam.PolicyStatement(
             resources=[self.function.function_arn], actions=["lambda:InvokeFunction",],
         )
-
-        core.CfnOutput(self, "Function", value=self.function.function_arn)

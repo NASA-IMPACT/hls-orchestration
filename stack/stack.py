@@ -101,13 +101,6 @@ class HlsStack(core.Stack):
             jobqueue=self.batch.jobqueue.ref,
         )
 
-        core.CfnOutput(
-            self,
-            "SentinelState",
-            value=self.sentinel_step_function.sentinel_state_machine.ref,
-            export_name="SentinelState",
-        )
-
         # Cross construct permissions
         self.laads_cron.function.add_to_role_policy(self.laads_task.policy_statement)
         self.laads_cron.function.add_to_role_policy(self.batch.policy_statement)
@@ -121,3 +114,8 @@ class HlsStack(core.Stack):
         self.sentinel_step_function.steps_role.add_to_policy(
             self.sentinel_task.policy_statement
         )
+
+        # Stack exports
+        core.CfnOutput(self, f"{STACKNAME}-hls_job_queue", value=self.batch.jobqueue.ref)
+        core.CfnOutput(self, f"{STACKNAME}-sentinel_state_machine",
+                       value=self.sentinel_step_function.sentinel_state_machine.ref)

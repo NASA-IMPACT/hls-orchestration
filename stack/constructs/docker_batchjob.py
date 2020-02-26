@@ -89,5 +89,3 @@ class DockerBatchJob(core.Construct):
 
         self.image_uri = image_uri
         self.job = job
-
-        core.CfnOutput(self, f"hls_job_def", value=job.ref)
