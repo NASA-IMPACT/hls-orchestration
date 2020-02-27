@@ -27,6 +27,3 @@ class S3(core.Construct):
         self.bucket = bucket
         self.bucket_name = bucket.bucket_name
         self.bucket_arn = bucket.bucket_arn
-
-        core.CfnOutput(self, "BucketArn", value=bucket.bucket_arn)
-        core.CfnOutput(self, "BucketName", value=bucket.bucket_name)

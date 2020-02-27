@@ -14,7 +14,6 @@ import re
 import boto3
 from botocore.errorfactory import ClientError
 from datetime import date
-import json
 
 s3 = boto3.client("s3")
 bucket = os.getenv("LAADS_BUCKET", None)

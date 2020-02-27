@@ -45,5 +45,3 @@ class Efs(core.Construct):
                 "elasticfilesystem:DescribeFileSystems",
             ],
         )
-
-        core.CfnOutput(self, "filesystem", value=self.filesystem.ref)

@@ -1,11 +1,11 @@
-from aws_cdk import core, aws_lambda, aws_iam
+from aws_cdk import core, aws_lambda
 from utils import aws_env, align
 from typing import Dict
 from constructs.lambdafunc import Lambda
 
 
 class Dummy(Lambda):
-    """Dummy Lambda to use for testing that just kicks the event out to Cloud Watch Logs."""
+    """Dummy Lambda to use for testing."""
 
     def __init__(
         self,
