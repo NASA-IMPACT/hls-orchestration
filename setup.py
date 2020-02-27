@@ -19,15 +19,15 @@ aws_cdk_reqs = [
     "aws-events",
     "aws-events-targets",
     "aws-stepfunctions",
+    "aws-rds",
+    "aws-secretsmanager",
 ]
 
 inst_reqs = ["boto3"]
 
 inst_reqs.append([f"aws_cdk.{x}>={aws_cdk_min_version}" for x in aws_cdk_reqs])
 
-extra_reqs = {
-    "test": ["pytest", "pytest-cov", "black", "flake8"]
-}
+extra_reqs = {"test": ["pytest", "pytest-cov", "black", "flake8"]}
 
 setup(
     name="hls-orchestration",

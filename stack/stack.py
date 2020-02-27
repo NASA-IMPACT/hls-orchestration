@@ -4,6 +4,7 @@ from aws_cdk import core, aws_stepfunctions, aws_iam
 from constructs.network import Network
 from constructs.s3 import S3
 from constructs.efs import Efs
+from constructs.rds import Rds
 from constructs.docker_batchjob import DockerBatchJob
 from constructs.batch import Batch
 from constructs.lambdafunc import Lambda
@@ -37,6 +38,8 @@ class HlsStack(core.Stack):
         self.sentinel_bucket = S3(self, "SentinelBucket", bucket_name=SENTINEL_BUCKET)
 
         self.efs = Efs(self, "Efs", network=self.network)
+
+        self.rds = Rds(self, "Rds", network=self.network)
 
         self.batch = Batch(
             self, "Batch", network=self.network, efs=self.efs.filesystem,
