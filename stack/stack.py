@@ -154,6 +154,9 @@ class HlsStack(core.Stack):
                             ],
                         },
                     },
+                    "Catch": [
+                        {"ErrorEquals": ["States.ALL"], "Next": "LogProcessSentinel"}
+                    ],
                     "Next": "LogProcessSentinel",
                 },
                 "LogProcessSentinel": {
