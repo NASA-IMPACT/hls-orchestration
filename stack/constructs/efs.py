@@ -28,7 +28,7 @@ class Efs(core.Construct):
         )
 
         mount_targets = []
-        for subnet in network.az1_public_subnets:
+        for subnet in network.vpc.select_subnets(one_per_az=True).subnets:
             mount_target = aws_efs.CfnMountTarget(
                 self,
                 f"MountTarget{len(mount_targets)+1}",

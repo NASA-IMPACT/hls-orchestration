@@ -33,8 +33,8 @@ execute_statement(ddl)
 
 def handler(event, context):
     print(event)
-    if event.get('Cause'):
-        event['Cause']=json.loads(event['Cause'])
+    if event.get("Cause"):
+        event["Cause"] = json.loads(event["Cause"])
     q = "INSERT INTO eventlog (event) VALUES (:event::jsonb);"
     execute_statement(
         q,

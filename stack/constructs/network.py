@@ -9,7 +9,7 @@ class Network(core.Construct):
         self.vpc = aws_ec2.Vpc(
             self,
             "Vpc",
-            cidr="10.0.0.0/16",
+            cidr="10.1.0.0/16",
             enable_dns_hostnames=True,
             enable_dns_support=True,
             nat_gateways=0,
@@ -17,9 +17,9 @@ class Network(core.Construct):
                 aws_ec2.SubnetConfiguration(
                     name="PublicSubnet1", subnet_type=aws_ec2.SubnetType.PUBLIC,
                 ),
-                aws_ec2.SubnetConfiguration(
-                    name="PublicSubnet2", subnet_type=aws_ec2.SubnetType.PUBLIC,
-                ),
+                # aws_ec2.SubnetConfiguration(
+                #    name="PublicSubnet2", subnet_type=aws_ec2.SubnetType.PUBLIC,
+                #),
             ],
             max_azs=2,
         )
