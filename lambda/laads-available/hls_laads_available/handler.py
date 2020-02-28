@@ -56,7 +56,7 @@ def handler(event: Dict, context: Dict):
 
     date_str = event.get("date", None)
     if date_str is None:
-        date_str = event.get("granule")
+        date_str = event.get("granulelist")
     if event.get("queryStringParameters") is not None:
         params = event.get("queryStringParameters")
     if date_str is None:
