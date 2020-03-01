@@ -27,7 +27,7 @@ class DockerBatchJob(core.Construct):
     ) -> None:
         super().__init__(scope, id, **kwargs)
 
-        role = aws_iam.Role(
+        self.role = aws_iam.Role(
             self,
             "TaskRole",
             assumed_by=aws_iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
@@ -57,7 +57,7 @@ class DockerBatchJob(core.Construct):
 
         container_properties = aws_batch.CfnJobDefinition.ContainerPropertiesProperty(
             image=image_uri,
-            job_role_arn=role.role_arn,
+            job_role_arn=self.role.role_arn,
             memory=memory,
             mount_points=[mount_point],
             vcpus=vcpus,
@@ -79,8 +79,8 @@ class DockerBatchJob(core.Construct):
             resources=[job.ref],
             actions=["batch:SubmitJob", "batch:DescribeJobs", "batch:TerminateJob"],
         )
-        role.add_to_policy(self.policy_statement)
-        role.add_to_policy(
+        self.role.add_to_policy(self.policy_statement)
+        self.role.add_to_policy(
             aws_iam.PolicyStatement(
                 resources=[bucket.bucket_arn, f"{bucket.bucket_arn}/*",],
                 actions=["s3:Get*", "s3:Put*", "s3:List*", "s3:AbortMultipartUpload",],
