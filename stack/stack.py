@@ -24,8 +24,7 @@ SENTINEL_ECR_URI = os.getenv(
 )
 SENTINEL_BUCKET = os.getenv("HLS_SENTINEL_BUCKET", f"{STACKNAME}-sentinel-output")
 SENTINEL_INPUT_BUCKET = os.getenv(
-    "HLS_SENTINEL_INPUT_BUCKET",
-    f"{STACKNAME}-sentinel-input"
+    "HLS_SENTINEL_INPUT_BUCKET", f"{STACKNAME}-sentinel-input"
 )
 
 if LAADS_TOKEN is None:
@@ -114,7 +113,7 @@ class HlsStack(core.Stack):
             self,
             "SentinelStepFunctionTrigger",
             input_bucket_name=SENTINEL_INPUT_BUCKET,
-            state_machine=self.sentinel_step_function.sentinel_state_machine.ref
+            state_machine=self.sentinel_step_function.sentinel_state_machine.ref,
         )
 
         # Cross construct permissions
@@ -141,8 +140,15 @@ class HlsStack(core.Stack):
             )
         )
         # Stack exports
-        core.CfnOutput(self, "jobqueueexport", export_name=f"{STACKNAME}-jobqueue",
-                       value=self.batch.jobqueue.ref)
-        core.CfnOutput(self, "sentinelstatemachineexport",
-                       export_name=f"{STACKNAME}-setinelstatemachine",
-                       value=self.sentinel_step_function.sentinel_state_machine.ref)
+        core.CfnOutput(
+            self,
+            "jobqueueexport",
+            export_name=f"{STACKNAME}-jobqueue",
+            value=self.batch.jobqueue.ref,
+        )
+        core.CfnOutput(
+            self,
+            "sentinelstatemachineexport",
+            export_name=f"{STACKNAME}-setinelstatemachine",
+            value=self.sentinel_step_function.sentinel_state_machine.ref,
+        )
