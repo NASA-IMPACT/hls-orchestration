@@ -15,19 +15,20 @@ def test_handler_keyError(capsys):
 @patch("hls_execute_step_function.handler.boto3.client")
 def test_handler(client):
     """Test handler."""
-    expected_input = '{"granule": "S2A_MSIL1C_20191001T201241_N0208_R028_T09WXT_20191001T220736A"}'
-    start_execution_response = {
-        "executionArn": "arn",
-        "startDate": 10
-    }
+    expected_input = (
+        '{"granule": "S2A_MSIL1C_20191001T201241_N0208_R028_T09WXT_20191001T220736A"}'
+    )
+    start_execution_response = {"executionArn": "arn", "startDate": 10}
     event = {
-        "Records": [{
-            "s3": {
-                "object": {
-                    "key": "S2A_MSIL1C_20191001T201241_N0208_R028_T09WXT_20191001T220736A.zip"
+        "Records": [
+            {
+                "s3": {
+                    "object": {
+                        "key": "S2A_MSIL1C_20191001T201241_N0208_R028_T09WXT_20191001T220736A.zip"
+                    }
                 }
             }
-        }]
+        ]
     }
     client.return_value.start_execution.return_value = start_execution_response
     handler(event, {})

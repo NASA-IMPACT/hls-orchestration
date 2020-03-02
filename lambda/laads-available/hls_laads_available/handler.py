@@ -58,11 +58,11 @@ def handler(event: Dict, context: Dict):
     if date_str is None:
         date_str = event.get("granule")
     # if event.get("queryStringParameters") is not None:
-        # params = event.get("queryStringParameters")
+    # params = event.get("queryStringParameters")
     # if date_str is None:
-        # date_str = params.get("date")
+    # date_str = params.get("date")
     # if date_str is None:
-        # date_str = params.get("granule")
+    # date_str = params.get("granule")
 
     if date_str is None:
         raise Exception("Missing Date Parameter")
