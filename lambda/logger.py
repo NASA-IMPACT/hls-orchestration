@@ -20,21 +20,11 @@ def execute_statement(sql, sql_parameters=[]):
     return response
 
 
-ddl = """
-CREATE TABLE IF NOT EXISTS eventlog (
-    id bigserial primary key,
-    ts timestamptz default now() not null,
-    event jsonb
-);
-"""
-
-execute_statement(ddl)
-
-
 def handler(event, context):
     print(event)
+    print(context)
     if event.get("Cause"):
-        event["Cause"] = json.loads(event["Cause"])
+        event = json.loads(event["Cause"])
     q = "INSERT INTO eventlog (event) VALUES (:event::jsonb);"
     execute_statement(
         q,

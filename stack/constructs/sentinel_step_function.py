@@ -15,6 +15,7 @@ class SentinelStepFunction(core.Construct):
         outputbucket: str,
         sentinel_job_definition: str,
         jobqueue: str,
+        lambda_logger: str,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -34,6 +35,12 @@ class SentinelStepFunction(core.Construct):
                             "IntervalSeconds": 1,
                             "MaxAttempts": 3,
                             "BackoffRate": 2,
+                        }
+                    ],
+                    "Catch": [
+                        {
+                            "ErrorEquals": ["States.ALL"],
+                            "Next": "LogError",
                         }
                     ],
                 },
@@ -57,7 +64,7 @@ class SentinelStepFunction(core.Construct):
                         "JobQueue": jobqueue,
                         "JobDefinition": sentinel_job_definition,
                         "ContainerOverrides": {
-                            "Command": ["ls /var/lasrc_aux && sentinel.sh"],
+                            "Command": ["export && sentinel.sh"],
                             "Memory": 10000,
                             "Environment": [
                                 {"Name": "GRANULE_LIST", "Value.$": "$.granule"},
@@ -69,14 +76,14 @@ class SentinelStepFunction(core.Construct):
                     "Catch": [
                         {
                             "ErrorEquals": ["States.ALL"],
-                            "Next": "LogProcessSentinelError",
+                            "Next": "LogError",
                         }
                     ],
-                    "Next": "LogProcessSentinel",
+                    "Next": "Log",
                 },
-                "LogProcessSentinel": {
+                "Log": {
                     "Type": "Task",
-                    "Resource": self.lambda_logger.function.function_arn,
+                    "Resource": lambda_logger,
                     "ResultPath": "$",
                     "Next": "Done",
                     "Retry": [
@@ -88,11 +95,11 @@ class SentinelStepFunction(core.Construct):
                         }
                     ],
                 },
-                "LogProcessSentinelError": {
+                "LogError": {
                     "Type": "Task",
-                    "Resource": self.lambda_logger.function.function_arn,
+                    "Resource": lambda_logger,
                     "ResultPath": "$",
-                    "Next": "Done",
+                    "Next": "Error",
                     "Retry": [
                         {
                             "ErrorEquals": ["States.ALL"],
