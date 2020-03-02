@@ -134,8 +134,15 @@ class HlsStack(core.Stack):
         )
 
         # Stack exports
-        core.CfnOutput(self, "jobqueueexport", export_name=f"{STACKNAME}-jobqueue",
-                       value=self.batch.jobqueue.ref)
-        core.CfnOutput(self, "sentinelstatemachineexport",
-                       export_name=f"{STACKNAME}-setinelstatemachine",
-                       value=self.sentinel_step_function.sentinel_state_machine.ref)
+        core.CfnOutput(
+            self,
+            "jobqueueexport",
+            export_name=f"{STACKNAME}-jobqueue",
+            value=self.batch.jobqueue.ref,
+        )
+        core.CfnOutput(
+            self,
+            "sentinelstatemachineexport",
+            export_name=f"{STACKNAME}-setinelstatemachine",
+            value=self.sentinel_step_function.sentinel_state_machine.ref,
+        )

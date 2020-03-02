@@ -17,9 +17,6 @@ class Network(core.Construct):
                 aws_ec2.SubnetConfiguration(
                     name="PublicSubnet1", subnet_type=aws_ec2.SubnetType.PUBLIC,
                 ),
-                # aws_ec2.SubnetConfiguration(
-                #    name="PublicSubnet2", subnet_type=aws_ec2.SubnetType.PUBLIC,
-                #),
             ],
             max_azs=2,
         )
