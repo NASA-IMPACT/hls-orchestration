@@ -66,9 +66,44 @@ class SentinelStepFunction(core.Construct):
                             ],
                         },
                     },
+                    "Catch": [
+                        {
+                            "ErrorEquals": ["States.ALL"],
+                            "Next": "LogProcessSentinelError",
+                        }
+                    ],
+                    "Next": "LogProcessSentinel",
+                },
+                "LogProcessSentinel": {
+                    "Type": "Task",
+                    "Resource": self.lambda_logger.function.function_arn,
+                    "ResultPath": "$",
                     "Next": "Done",
+                    "Retry": [
+                        {
+                            "ErrorEquals": ["States.ALL"],
+                            "IntervalSeconds": 1,
+                            "MaxAttempts": 3,
+                            "BackoffRate": 2,
+                        }
+                    ],
+                },
+                "LogProcessSentinelError": {
+                    "Type": "Task",
+                    "Resource": self.lambda_logger.function.function_arn,
+                    "ResultPath": "$",
+                    "Next": "Done",
+                    "Retry": [
+                        {
+                            "ErrorEquals": ["States.ALL"],
+                            "IntervalSeconds": 1,
+                            "MaxAttempts": 3,
+                            "BackoffRate": 2,
+                        }
+                    ],
                 },
                 "Done": {"Type": "Succeed"},
+                "Error": {"Type": "Fail"},
             },
         }
 
