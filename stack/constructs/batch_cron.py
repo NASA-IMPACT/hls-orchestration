@@ -1,6 +1,5 @@
 from aws_cdk import core, aws_events, aws_lambda, aws_events_targets
 from typing import Dict
-import boto3
 from constructs.batch import Batch
 from constructs.lambdafunc import Lambda
 from constructs.docker_batchjob import DockerBatchJob
