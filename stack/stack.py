@@ -10,6 +10,7 @@ from constructs.batch import Batch
 from constructs.lambdafunc import Lambda
 from constructs.batch_cron import BatchCron
 from constructs.dummy_lambda import Dummy
+from constructs.sentinel_step_function import SentinelStepFunction
 
 STACKNAME = os.getenv("HLS_STACKNAME", "hls")
 LAADS_BUCKET = os.getenv("HLS_LAADS_BUCKET", f"{STACKNAME}-bucket")
@@ -106,98 +107,16 @@ class HlsStack(core.Stack):
 
         self.process_sentinel = Dummy(self, "ProcessSentinelTask",)
 
-        sentinel_state_definition = {
-            "Comment": "Sentinel Step Function",
-            "StartAt": "CheckLaads",
-            "States": {
-                "CheckLaads": {
-                    "Type": "Task",
-                    "Resource": self.laads_available.function.function_arn,
-                    "ResultPath": "$",
-                    "Next": "LaadsAvailable",
-                    "Retry": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": 1,
-                            "MaxAttempts": 3,
-                            "BackoffRate": 2,
-                        }
-                    ],
-                },
-                "LaadsAvailable": {
-                    "Type": "Choice",
-                    "Choices": [
-                        {
-                            "Variable": "$.available",
-                            "BooleanEquals": True,
-                            "Next": "ProcessSentinel",
-                        }
-                    ],
-                    "Default": "Wait",
-                },
-                "Wait": {"Type": "Wait", "Seconds": 3600, "Next": "CheckLaads"},
-                "ProcessSentinel": {
-                    "Type": "Task",
-                    "Resource": "arn:aws:states:::batch:submitJob.sync",
-                    "ResultPath": "$",
-                    "Parameters": {
-                        "JobName": "ProcessSentinel",
-                        "JobQueue": self.batch.jobqueue.ref,
-                        "JobDefinition": self.sentinel_task.job.ref,
-                        "ContainerOverrides": {
-                            "Command": ["ls /var/lasrc_aux && echo $OUTPUT_BUCKET && sentinel.sh"],
-                            "Memory": 10000,
-                            "Environment": [
-                                {"Name": "GRANULE_LIST", "Value.$": "$.granule"},
-                                {"Name": "OUTPUT_BUCKET", "Value": SENTINEL_BUCKET},
-                                {"Name": "LASRC_AUX_DIR", "Value": "/var/lasrc_aux"},
-                            ],
-                        },
-                    },
-                    "Catch": [
-                        {"ErrorEquals": ["States.ALL"], "Next": "LogProcessSentinel"}
-                    ],
-                    "Next": "LogProcessSentinel",
-                },
-                "LogProcessSentinel": {
-                    "Type": "Task",
-                    "Resource": self.lambda_logger.function.function_arn,
-                    "ResultPath": "$",
-                    "Next": "Done",
-                    "Retry": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": 1,
-                            "MaxAttempts": 3,
-                            "BackoffRate": 2,
-                        }
-                    ],
-                },
-                "Done": {"Type": "Succeed"},
-            },
-        }
-
-        self.steps_role = aws_iam.Role(
-            self,
-            "StepsRole",
-            assumed_by=aws_iam.ServicePrincipal("states.amazonaws.com"),
-        )
-
-        self.sentinel_state = aws_stepfunctions.CfnStateMachine(
+        self.sentinel_step_function = SentinelStepFunction(
             self,
             "SentinelStateMachine",
-            definition_string=json.dumps(sentinel_state_definition),
-            role_arn=self.steps_role.role_arn,
+            laads_available_function=self.laads_available.function.function_arn,
+            outputbucket=SENTINEL_BUCKET,
+            sentinel_job_definition=self.sentinel_task.job.ref,
+            jobqueue=self.batch.jobqueue.ref,
         )
 
-        core.CfnOutput(
-            self,
-            "SentinelState",
-            value=self.sentinel_state.ref,
-            export_name="SentinelState",
-        )
-
-        # permissions
+        # Cross construct permissions
         self.laads_cron.function.add_to_role_policy(self.laads_task.policy_statement)
         self.laads_cron.function.add_to_role_policy(self.batch.policy_statement)
         self.laads_cron.function.add_to_role_policy(self.laads_bucket.policy_statement)
@@ -207,24 +126,16 @@ class HlsStack(core.Stack):
         self.laads_available.function.add_to_role_policy(
             self.laads_bucket.policy_statement
         )
-
-        self.steps_role.add_to_policy(self.laads_available.policy_statement)
-        self.steps_role.add_to_policy(self.sentinel_task.policy_statement)
-        self.steps_role.add_to_policy(self.lambda_logger.policy_statement)
-
-        region = core.Aws.REGION
-        acountid = core.Aws.ACCOUNT_ID
-        self.steps_role.add_to_policy(
-            aws_iam.PolicyStatement(
-                resources=[
-                    f"arn:aws:events:{region}:{acountid}:rule/StepFunctionsGetEventsForBatchJobsRule",
-                ],
-                actions=["events:PutTargets", "events:PutRule", "events:DescribeRule"],
-            )
+        self.sentinel_step_function.steps_role.add_to_policy(
+            self.laads_available.policy_statement
         )
-        self.steps_role.add_to_policy(
-            aws_iam.PolicyStatement(
-                resources=["*",],
-                actions=["batch:SubmitJob", "batch:DescribeJobs", "batch:TerminateJob"],
-            )
+        self.sentinel_step_function.steps_role.add_to_policy(
+            self.sentinel_task.policy_statement
         )
+
+        # Stack exports
+        core.CfnOutput(self, "jobqueueexport", export_name=f"{STACKNAME}-jobqueue",
+                       value=self.batch.jobqueue.ref)
+        core.CfnOutput(self, "sentinelstatemachineexport",
+                       export_name=f"{STACKNAME}-setinelstatemachine",
+                       value=self.sentinel_step_function.sentinel_state_machine.ref)

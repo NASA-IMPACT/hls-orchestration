@@ -32,5 +32,3 @@ class Network(core.Construct):
             if az is None or az == s.availability_zone:
                 az = s.availability_zone
                 self.az1_public_subnets.append(s)
-
-        core.CfnOutput(self, "vpcid", value=self.vpc.vpc_id, export_name="vpcid")

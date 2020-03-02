@@ -1,13 +1,10 @@
-from aws_cdk import core, aws_events, aws_lambda, aws_events_targets, aws_iam
+from aws_cdk import core, aws_events, aws_lambda, aws_events_targets
 from typing import Dict
 import boto3
 from constructs.batch import Batch
 from constructs.lambdafunc import Lambda
 from constructs.docker_batchjob import DockerBatchJob
 from utils import aws_env, align
-
-
-batch_client = boto3.client("batch")
 
 
 class BatchCron(Lambda):
