@@ -145,7 +145,7 @@ class HlsStack(core.Stack):
                         "JobQueue": self.batch.jobqueue.ref,
                         "JobDefinition": self.sentinel_task.job.ref,
                         "ContainerOverrides": {
-                            "Command": ["ls /var/lasrc_aux && sentinel.sh"],
+                            "Command": ["ls /var/lasrc_aux && echo $OUTPUT_BUCKET && sentinel.sh"],
                             "Memory": 10000,
                             "Environment": [
                                 {"Name": "GRANULE_LIST", "Value.$": "$.granule"},
