@@ -13,6 +13,7 @@ class SentinelStepFunction(core.Construct):
         id: str,
         laads_available_function: str,
         outputbucket: str,
+        inputbucket: str,
         sentinel_job_definition: str,
         jobqueue: str,
         lambda_logger: str,
@@ -64,6 +65,7 @@ class SentinelStepFunction(core.Construct):
                             "Environment": [
                                 {"Name": "GRANULE_LIST", "Value.$": "$.granule"},
                                 {"Name": "OUTPUT_BUCKET", "Value": outputbucket},
+                                {"Name": "INPUT_BUCKET", "Value": inputbucket},
                                 {"Name": "LASRC_AUX_DIR", "Value": "/var/lasrc_aux"},
                             ],
                         },
