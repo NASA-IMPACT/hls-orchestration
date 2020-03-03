@@ -10,8 +10,7 @@ check-envfile:
 	test -f env.sh || { echo "Please copy and edit env.sh.sample to env.sh"; exit 1; }
 
 check-env-%:
-	source env.sh
-	[[ -v ${*} ]] || { echo "Environment variable $* not set"; exit 1; }
+	[[ ! -z "${$*}" ]] || { echo "Environment variable $* not set"; exit 1; }
 
 check-env: check-envfile check-env-HLS_STACKNAME check-env-HLS_LAADS_TOKEN
 
@@ -20,7 +19,7 @@ cdk:
 	yarn add cdk
 
 venv:
-	test -d venv || virtualenv venv
+	test -d venv || virtualenv venv --system-site-packages
 
 install: cdk venv
 	source venv/bin/activate
@@ -35,7 +34,7 @@ clean:
 	rm -fr dist
 	rm -fr cdk.out 
 	rm -fr node_modules
-	find -iname "*.pyc" -delete
+	find . -iname "*.pyc" -delete
 	rm package.json
 	rm yarn.lock
 	rm -fr *.egg-info
