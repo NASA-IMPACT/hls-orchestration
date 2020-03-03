@@ -11,6 +11,7 @@ from constructs.lambdafunc import Lambda
 from constructs.batch_cron import BatchCron
 from constructs.dummy_lambda import Dummy
 from constructs.sentinel_step_function import SentinelStepFunction
+from constructs.step_function_trigger import StepFunctionTrigger
 
 STACKNAME = os.getenv("HLS_STACKNAME", "hls")
 LAADS_BUCKET = os.getenv("HLS_LAADS_BUCKET", f"{STACKNAME}-bucket")
@@ -22,6 +23,9 @@ SENTINEL_ECR_URI = os.getenv(
     "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-sentinel:latest",
 )
 SENTINEL_BUCKET = os.getenv("HLS_SENTINEL_BUCKET", f"{STACKNAME}-sentinel-output")
+SENTINEL_INPUT_BUCKET = os.getenv(
+    "HLS_SENTINEL_INPUT_BUCKET", f"{STACKNAME}-sentinel-input"
+)
 
 if LAADS_TOKEN is None:
     raise Exception("HLS_LAADS_TOKEN Env Var must be set")
@@ -100,8 +104,16 @@ class HlsStack(core.Stack):
             "SentinelStateMachine",
             laads_available_function=self.laads_available.function.function_arn,
             outputbucket=SENTINEL_BUCKET,
+            inputbucket=SENTINEL_INPUT_BUCKET,
             sentinel_job_definition=self.sentinel_task.job.ref,
             jobqueue=self.batch.jobqueue.ref,
+        )
+
+        self.step_function_trigger = StepFunctionTrigger(
+            self,
+            "SentinelStepFunctionTrigger",
+            input_bucket_name=SENTINEL_INPUT_BUCKET,
+            state_machine=self.sentinel_step_function.sentinel_state_machine.ref,
         )
 
         # Cross construct permissions
@@ -118,9 +130,25 @@ class HlsStack(core.Stack):
             self.sentinel_task.policy_statement
         )
 
+        self.sentinel_task.role.add_to_policy(
+            aws_iam.PolicyStatement(
+                resources=[
+                    self.step_function_trigger.bucket.bucket_arn,
+                    f"{self.step_function_trigger.bucket.bucket_arn}/*",
+                ],
+                actions=["s3:Get*", "s3:Put*", "s3:List*", "s3:AbortMultipartUpload",],
+            )
+        )
         # Stack exports
-        core.CfnOutput(self, "jobqueueexport", export_name=f"{STACKNAME}-jobqueue",
-                       value=self.batch.jobqueue.ref)
-        core.CfnOutput(self, "sentinelstatemachineexport",
-                       export_name=f"{STACKNAME}-setinelstatemachine",
-                       value=self.sentinel_step_function.sentinel_state_machine.ref)
+        core.CfnOutput(
+            self,
+            "jobqueueexport",
+            export_name=f"{STACKNAME}-jobqueue",
+            value=self.batch.jobqueue.ref,
+        )
+        core.CfnOutput(
+            self,
+            "sentinelstatemachineexport",
+            export_name=f"{STACKNAME}-setinelstatemachine",
+            value=self.sentinel_step_function.sentinel_state_machine.ref,
+        )
