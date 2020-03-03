@@ -3,7 +3,7 @@
 if [ -z $HLSSTACK_SENTINELSTATEMACHINEEXPORT ];
 then
     echo "HLSSTACK_SENTINELSTATEMACHINEEXPORT variable must be set"
-    echo "try running 'source env.sh'"
+    echo "try running 'source env.sh' from base directory"
     exit 1
 fi
 SM=$HLSSTACK_SENTINELSTATEMACHINEEXPORT
