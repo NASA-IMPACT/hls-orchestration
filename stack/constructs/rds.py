@@ -1,3 +1,4 @@
+import os
 from aws_cdk import aws_rds, aws_ec2, core, aws_iam, aws_secretsmanager
 from constructs.network import Network
 
@@ -53,6 +54,7 @@ class Rds(core.Construct):
             database_name="hls",
             db_subnet_group_name=self.subnet_group.ref,
             enable_http_endpoint=True,
+            db_cluster_identifier=f"rds-{os.getenv('HLS_STACKNAME')}",
             master_username=core.Fn.join(
                 "",
                 [
@@ -72,21 +74,16 @@ class Rds(core.Construct):
             vpc_security_group_ids=[self.security_group.ref],
         )
 
-        self.secrets_policy_statement = aws_iam.PolicyStatement(
-            resources=["arn:aws:secretsmanager:*:*:secret:rds-db-credentials/*"],
-            actions=[
-                "secretsmanager:GetSecretValue",
-                "secretsmanager:PutResourcePolicy",
-                "secretsmanager:PutSecretValue",
-                "secretsmanager:DeleteSecret",
-                "secretsmanager:DescribeSecret",
-                "secretsmanager:TagResource",
-            ],
+        region = core.Aws.REGION
+        accountid = core.Aws.ACCOUNT_ID
+        self.arn = core.Fn.join(
+            ":", ["arn:aws:rds", region, accountid, "cluster", self.database.ref]
         )
 
-        self.rds_policy_statement = aws_iam.PolicyStatement(
-            resources=["*"],
+        self.policy_statement = aws_iam.PolicyStatement(
+            resources=[self.arn, self.secret.secret_arn],
             actions=[
+                "secretsmanager:GetSecretValue",
                 "secretsmanager:CreateSecret",
                 "secretsmanager:ListSecrets",
                 "secretsmanager:GetRandomPassword",

@@ -1,4 +1,7 @@
 #!/bin/bash -x
+# Make sure that /var/lasrc_aux is a mountpoint
+echo "checking mount status"
+mount | grep -q /var/lasrc_aux || exit 1
 cd /var/lasrc_aux/
 ls 
 df -h

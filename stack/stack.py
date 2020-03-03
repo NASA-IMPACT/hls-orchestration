@@ -45,6 +45,30 @@ class HlsStack(core.Stack):
 
         self.rds = Rds(self, "Rds", network=self.network)
 
+        self.rds_bootstrap = Lambda(
+            self,
+            "LambdaDBBootstrap",
+            code_file="setupdb.py",
+            env={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
+            },
+            timeout=300,
+        )
+
+        self.lambda_logger = Lambda(
+            self,
+            "LambdaLogger",
+            code_file="logger.py",
+            env={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
+            },
+            timeout=30,
+        )
+
         self.batch = Batch(
             self, "Batch", network=self.network, efs=self.efs.filesystem,
         )
@@ -97,8 +121,6 @@ class HlsStack(core.Stack):
             },
         )
 
-        self.process_sentinel = Dummy(self, "ProcessSentinelTask",)
-
         self.sentinel_step_function = SentinelStepFunction(
             self,
             "SentinelStateMachine",
@@ -107,6 +129,7 @@ class HlsStack(core.Stack):
             inputbucket=SENTINEL_INPUT_BUCKET,
             sentinel_job_definition=self.sentinel_task.job.ref,
             jobqueue=self.batch.jobqueue.ref,
+            lambda_logger=self.lambda_logger.function.function_arn,
         )
 
         self.step_function_trigger = StepFunctionTrigger(
@@ -120,6 +143,10 @@ class HlsStack(core.Stack):
         self.laads_cron.function.add_to_role_policy(self.laads_task.policy_statement)
         self.laads_cron.function.add_to_role_policy(self.batch.policy_statement)
         self.laads_cron.function.add_to_role_policy(self.laads_bucket.policy_statement)
+
+        self.lambda_logger.function.add_to_role_policy(self.rds.policy_statement)
+        self.rds_bootstrap.function.add_to_role_policy(self.rds.policy_statement)
+
         self.laads_available.function.add_to_role_policy(
             self.laads_bucket.policy_statement
         )
@@ -128,6 +155,9 @@ class HlsStack(core.Stack):
         )
         self.sentinel_step_function.steps_role.add_to_policy(
             self.sentinel_task.policy_statement
+        )
+        self.sentinel_step_function.steps_role.add_to_policy(
+            self.lambda_logger.policy_statement
         )
 
         self.sentinel_task.role.add_to_policy(
@@ -151,4 +181,10 @@ class HlsStack(core.Stack):
             "sentinelstatemachineexport",
             export_name=f"{STACKNAME}-setinelstatemachine",
             value=self.sentinel_step_function.sentinel_state_machine.ref,
+        )
+        core.CfnOutput(
+            self,
+            "setupdbexport",
+            export_name=f"{STACKNAME}-setupdb",
+            value=self.rds_bootstrap.function.function_arn,
         )

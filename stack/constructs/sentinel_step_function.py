@@ -16,6 +16,7 @@ class SentinelStepFunction(core.Construct):
         inputbucket: str,
         sentinel_job_definition: str,
         jobqueue: str,
+        lambda_logger: str,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -37,6 +38,7 @@ class SentinelStepFunction(core.Construct):
                             "BackoffRate": 2,
                         }
                     ],
+                    "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "LogError",}],
                 },
                 "LaadsAvailable": {
                     "Type": "Choice",
@@ -58,7 +60,7 @@ class SentinelStepFunction(core.Construct):
                         "JobQueue": jobqueue,
                         "JobDefinition": sentinel_job_definition,
                         "ContainerOverrides": {
-                            "Command": ["ls /var/lasrc_aux && sentinel.sh"],
+                            "Command": ["export && sentinel.sh"],
                             "Memory": 10000,
                             "Environment": [
                                 {"Name": "GRANULE_LIST", "Value.$": "$.granule"},
@@ -68,9 +70,39 @@ class SentinelStepFunction(core.Construct):
                             ],
                         },
                     },
+                    "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "LogError",}],
+                    "Next": "Log",
+                },
+                "Log": {
+                    "Type": "Task",
+                    "Resource": lambda_logger,
+                    "ResultPath": "$",
                     "Next": "Done",
+                    "Retry": [
+                        {
+                            "ErrorEquals": ["States.ALL"],
+                            "IntervalSeconds": 1,
+                            "MaxAttempts": 3,
+                            "BackoffRate": 2,
+                        }
+                    ],
+                },
+                "LogError": {
+                    "Type": "Task",
+                    "Resource": lambda_logger,
+                    "ResultPath": "$",
+                    "Next": "Error",
+                    "Retry": [
+                        {
+                            "ErrorEquals": ["States.ALL"],
+                            "IntervalSeconds": 1,
+                            "MaxAttempts": 3,
+                            "BackoffRate": 2,
+                        }
+                    ],
                 },
                 "Done": {"Type": "Succeed"},
+                "Error": {"Type": "Fail"},
             },
         }
 
