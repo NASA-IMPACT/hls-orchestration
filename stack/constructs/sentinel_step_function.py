@@ -37,12 +37,7 @@ class SentinelStepFunction(core.Construct):
                             "BackoffRate": 2,
                         }
                     ],
-                    "Catch": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "Next": "LogError",
-                        }
-                    ],
+                    "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "LogError",}],
                 },
                 "LaadsAvailable": {
                     "Type": "Choice",
@@ -73,12 +68,7 @@ class SentinelStepFunction(core.Construct):
                             ],
                         },
                     },
-                    "Catch": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "Next": "LogError",
-                        }
-                    ],
+                    "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "LogError",}],
                     "Next": "Log",
                 },
                 "Log": {
