@@ -10,8 +10,7 @@ check-envfile:
 	test -f env.sh || { echo "Please copy and edit env.sh.sample to env.sh"; exit 1; }
 
 check-env-%:
-	source env.sh
-	[[ -v ${*} ]] || { echo "Environment variable $* not set"; exit 1; }
+	[[ ! -z "${$*}" ]] || { echo "Environment variable $* not set"; exit 1; }
 
 check-env: check-envfile check-env-HLS_STACKNAME check-env-HLS_LAADS_TOKEN
 
