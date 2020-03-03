@@ -35,7 +35,7 @@ clean:
 	rm -fr dist
 	rm -fr cdk.out 
 	rm -fr node_modules
-	find -iname "*.pyc" -delete
+	find . -iname "*.pyc" -delete
 	rm package.json
 	rm yarn.lock
 	rm -fr *.egg-info
