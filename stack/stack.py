@@ -26,7 +26,7 @@ SENTINEL_BUCKET = os.getenv("HLS_SENTINEL_BUCKET", f"{STACKNAME}-sentinel-output
 SENTINEL_INPUT_BUCKET = os.getenv(
     "HLS_SENTINEL_INPUT_BUCKET", f"{STACKNAME}-sentinel-input"
 )
-MAX_VCPUS = os.getenv("HLS_MAX_VCPUS", 200)
+MAXV_CPUS = os.getenv("HLS_MAXV_CPUS", 200)
 
 
 if LAADS_TOKEN is None:
@@ -76,7 +76,7 @@ class HlsStack(core.Stack):
             "Batch",
             network=self.network,
             efs=self.efs.filesystem,
-            max_vcpus=MAX_VCPUS,
+            maxv_cpus=MAXV_CPUS,
             instance_types=["m4.xlarge"],
         )
 
