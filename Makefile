@@ -19,7 +19,7 @@ cdk:
 	yarn add cdk
 
 venv:
-	test -d venv || virtualenv venv
+	test -d venv || virtualenv venv --system-site-packages
 
 install: cdk venv
 	source venv/bin/activate
