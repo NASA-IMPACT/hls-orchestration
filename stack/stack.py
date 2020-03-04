@@ -160,6 +160,15 @@ class HlsStack(core.Stack):
             self.lambda_logger.policy_statement
         )
 
+        # Add policies for Lambda to listen for bucket events and trigger step
+        # function
+        cw_events_full = aws_iam.ManagedPolicy.from_managed_policy_arn(
+            self,
+            "cweventsfull",
+            "arn:aws:iam::aws:policy/CloudWatchEventsFullAccess"
+        )
+        self.sentinel_step_function.steps_role.add_managed_policy(cw_events_full)
+
         self.sentinel_task.role.add_to_policy(
             aws_iam.PolicyStatement(
                 resources=[
