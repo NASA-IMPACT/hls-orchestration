@@ -26,6 +26,8 @@ SENTINEL_BUCKET = os.getenv("HLS_SENTINEL_BUCKET", f"{STACKNAME}-sentinel-output
 SENTINEL_INPUT_BUCKET = os.getenv(
     "HLS_SENTINEL_INPUT_BUCKET", f"{STACKNAME}-sentinel-input"
 )
+MAXV_CPUS = os.getenv("HLS_MAXV_CPUS", 200)
+
 
 if LAADS_TOKEN is None:
     raise Exception("HLS_LAADS_TOKEN Env Var must be set")
@@ -70,7 +72,12 @@ class HlsStack(core.Stack):
         )
 
         self.batch = Batch(
-            self, "Batch", network=self.network, efs=self.efs.filesystem,
+            self,
+            "Batch",
+            network=self.network,
+            efs=self.efs.filesystem,
+            maxv_cpus=MAXV_CPUS,
+            instance_types=["m4.xlarge"],
         )
 
         self.laads_task = DockerBatchJob(
