@@ -22,10 +22,3 @@ class Network(core.Construct):
         )
 
         self.public_subnets = self.vpc.public_subnets
-
-        self.az1_public_subnets = []
-        az = None
-        for s in self.vpc.select_subnets(subnet_type=aws_ec2.SubnetType.PUBLIC).subnets:
-            if az is None or az == s.availability_zone:
-                az = s.availability_zone
-                self.az1_public_subnets.append(s)

@@ -28,6 +28,7 @@ class Efs(core.Construct):
         )
 
         mount_targets = []
+        # Only create one mount target per availability zone
         for subnet in network.vpc.select_subnets(one_per_az=True).subnets:
             mount_target = aws_efs.CfnMountTarget(
                 self,
