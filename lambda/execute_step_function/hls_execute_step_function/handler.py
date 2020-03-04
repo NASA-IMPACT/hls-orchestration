@@ -17,12 +17,12 @@ def handler(event: Dict, context: Dict):
         key = event["Records"][0]["s3"]["object"]["key"]
         keyroot = Path(key).stem
         try:
-            reponse = step_functions.start_execution(
+            step_functions.start_execution(
                 stateMachineArn=state_machine,
                 name=f"{prefix}_{keyroot}",
                 input='{"granule": "' + keyroot + '"}',
             )
-            return reponse
+            return event
         except ClientError as ce:
             print(ce)
 
