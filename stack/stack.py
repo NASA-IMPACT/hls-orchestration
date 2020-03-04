@@ -109,7 +109,7 @@ class HlsStack(core.Stack):
         self.laads_available = Lambda(
             self,
             "LaadsAvailable",
-            code_dir="laads-available/hls_laads_available",
+            code_dir="laads_available/hls_laads_available",
             env={"LAADS_BUCKET": LAADS_BUCKET},
             handler="handler.handler",
         )
