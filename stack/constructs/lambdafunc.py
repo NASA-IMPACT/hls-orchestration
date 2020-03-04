@@ -32,7 +32,7 @@ class Lambda(core.Construct):
             )
         elif code_file is not None:
             file = os.path.join(
-                os.path.dirname(__file__), "..", "..", "lambda", code_file
+                os.path.dirname(__file__), "..", "..", "lambda_functions", code_file
             )
             with open(file, encoding="utf8") as fp:
                 code_str = fp.read()
