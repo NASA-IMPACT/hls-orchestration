@@ -45,10 +45,9 @@ event
 from eventlog WHERE granule(event) IS NOT NULL;
 """
 
-execute_statement(ddl)
-
 
 def handler(event, context):
     print(event)
     print(context)
+    execute_statement(ddl)
     return event

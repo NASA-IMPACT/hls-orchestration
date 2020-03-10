@@ -1,8 +1,8 @@
-"""test handler."""
-
 import pytest
 from unittest.mock import patch
-from hls_execute_step_function.handler import handler
+from lambda_functions.execute_step_function.hls_execute_step_function.handler import (
+    handler,
+)
 
 
 def test_handler_keyError(capsys):
@@ -12,7 +12,9 @@ def test_handler_keyError(capsys):
     assert out == expected
 
 
-@patch("hls_execute_step_function.handler.boto3.client")
+@patch(
+    "lambda_functions.execute_step_function.hls_execute_step_function.handler.boto3.client"
+)
 def test_handler(client):
     """Test handler."""
     expected_input = (

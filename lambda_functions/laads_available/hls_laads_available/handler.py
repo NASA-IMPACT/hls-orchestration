@@ -17,6 +17,7 @@ from datetime import date
 
 s3 = boto3.client("s3")
 bucket = os.getenv("LAADS_BUCKET", None)
+print(bucket)
 if bucket is None:
     raise Exception("No Bucket set")
 
@@ -28,6 +29,8 @@ def key_exists(bucket: str, key: str):
         print(e)
         if e.response["Error"]["Code"] == "404":
             return False
+        else:
+            raise Exception(e)
     return True
 
 
@@ -57,12 +60,6 @@ def handler(event: Dict, context: Dict):
     date_str = event.get("date", None)
     if date_str is None:
         date_str = event.get("granule")
-    # if event.get("queryStringParameters") is not None:
-    # params = event.get("queryStringParameters")
-    # if date_str is None:
-    # date_str = params.get("date")
-    # if date_str is None:
-    # date_str = params.get("granule")
 
     if date_str is None:
         raise Exception("Missing Date Parameter")

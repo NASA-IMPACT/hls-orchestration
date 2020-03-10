@@ -1,9 +1,5 @@
-"""test handler."""
-
 import pytest
-
-
-from hls_pr2mgrs.handler import handler
+from lambda_functions.pr2mgrs.hls_pr2mgrs.handler import handler
 
 
 def test_handler():

@@ -26,11 +26,13 @@ class Lambda(core.Construct):
 
         if code_dir is not None:
             self.code = aws_lambda.Code.from_asset(
-                os.path.join(os.path.dirname(__file__), "..", "..", "lambda", code_dir)
+                os.path.join(
+                    os.path.dirname(__file__), "..", "..", "lambda_functions", code_dir
+                )
             )
         elif code_file is not None:
             file = os.path.join(
-                os.path.dirname(__file__), "..", "..", "lambda", code_file
+                os.path.dirname(__file__), "..", "..", "lambda_functions", code_file
             )
             with open(file, encoding="utf8") as fp:
                 code_str = fp.read()
