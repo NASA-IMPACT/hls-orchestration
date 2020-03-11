@@ -43,7 +43,9 @@ class HlsStack(core.Stack):
 
         self.sentinel_bucket = S3(self, "SentinelBucket", bucket_name=SENTINEL_BUCKET)
 
-        self.sentinel_input_bucket = S3(self, "SentinelInputBucket", bucket_name=SENTINEL_INPUT_BUCKET)
+        self.sentinel_input_bucket = S3(
+            self, "SentinelInputBucket", bucket_name=SENTINEL_INPUT_BUCKET
+        )
 
         self.efs = Efs(self, "Efs", network=self.network)
 

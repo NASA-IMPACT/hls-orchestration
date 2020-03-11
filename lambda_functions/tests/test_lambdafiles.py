@@ -8,6 +8,7 @@ def env_setup(monkeypatch):
     monkeypatch.setenv("HLS_SECRETS", "secrets")
     monkeypatch.setenv("HLS_DB_NAME", "dbname")
     monkeypatch.setenv("HLS_DB_ARN", "dbarn")
+    monkeypatch.setenv("SENTINEL_INPUT_BUCKET", "sentinelinput")
 
 
 def test_logger(monkeypatch):
@@ -68,3 +69,29 @@ def test_setupdb(monkeypatch):
     event_success = {"Hello": True}
 
     assert handler(event_success, {}) == event_success
+
+
+def test_twin_granules(monkeypatch):
+    from lambda_functions.twin_granule import (
+        s3,
+        handler,
+    )
+
+    def test_lo(
+        Bucket: str, Prefix: str,
+    ):
+        response = {"Contents": [{"Key": "one.zip"}]}
+        if Prefix == "one":
+            return response
+        if Prefix == "two":
+            response["Contents"].append({"Key": "two.zip"})
+            return response
+        else:
+            return {}
+
+    monkeypatch.setattr(s3, "list_objects_v2", test_lo)
+
+    assert handler({"granule": "one123456"}, {}) == {"granule": "one"}
+    assert handler({"granule": "two123456"}, {}) == {"granule": "one,two"}
+    with pytest.raises(KeyError):
+        handler({"granule": "bogus123456"}, {})

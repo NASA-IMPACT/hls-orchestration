@@ -54,6 +54,6 @@ deploy: check-env
 fresh: clean dev synth
 
 test: dev
-	pytest lambda_functions --cov lambda_functions --cov-report term-missing --ignore venv
+	python -m pytest lambda_functions --cov lambda_functions --cov-report term-missing --ignore venv
 
 
