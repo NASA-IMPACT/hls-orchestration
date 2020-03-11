@@ -11,6 +11,7 @@ class SentinelStepFunction(core.Construct):
         self,
         scope: core.Construct,
         id: str,
+        check_granule: str,
         laads_available_function: str,
         outputbucket: str,
         inputbucket: str,
@@ -23,8 +24,23 @@ class SentinelStepFunction(core.Construct):
 
         sentinel_state_definition = {
             "Comment": "Sentinel Step Function",
-            "StartAt": "CheckLaads",
+            "StartAt": "CheckGranule",
             "States": {
+                "CheckGranule": {
+                    "Type": "Task",
+                    "Resource": check_granule,
+                    "ResultPath": "$",
+                    "Next": "CheckLaads",
+                    "Retry": [
+                        {
+                            "ErrorEquals": ["States.ALL"],
+                            "IntervalSeconds": 1,
+                            "MaxAttempts": 3,
+                            "BackoffRate": 2,
+                        }
+                    ],
+                    "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "LogError",}],
+                },
                 "CheckLaads": {
                     "Type": "Task",
                     "Resource": laads_available_function,
