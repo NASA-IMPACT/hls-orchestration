@@ -43,6 +43,10 @@ class HlsStack(core.Stack):
 
         self.sentinel_bucket = S3(self, "SentinelBucket", bucket_name=SENTINEL_BUCKET)
 
+        self.sentinel_input_bucket = S3(
+            self, "SentinelInputBucket", bucket_name=SENTINEL_INPUT_BUCKET
+        )
+
         self.efs = Efs(self, "Efs", network=self.network)
 
         self.rds = Rds(self, "Rds", network=self.network)
@@ -114,6 +118,13 @@ class HlsStack(core.Stack):
             handler="handler.handler",
         )
 
+        self.check_granule = Lambda(
+            self,
+            "CheckGranule",
+            code_file="twin_granule.py",
+            env={"SENTINEL_INPUT_BUCKET": SENTINEL_INPUT_BUCKET},
+        )
+
         self.laads_cron = BatchCron(
             self,
             "LaadsAvailableCron",
@@ -131,6 +142,7 @@ class HlsStack(core.Stack):
         self.sentinel_step_function = SentinelStepFunction(
             self,
             "SentinelStateMachine",
+            check_granule=self.check_granule.function.function_arn,
             laads_available_function=self.laads_available.function.function_arn,
             outputbucket=SENTINEL_BUCKET,
             inputbucket=SENTINEL_INPUT_BUCKET,
@@ -156,6 +168,12 @@ class HlsStack(core.Stack):
 
         self.laads_available.function.add_to_role_policy(
             self.laads_bucket.policy_statement
+        )
+        self.check_granule.function.add_to_role_policy(
+            self.sentinel_input_bucket.policy_statement
+        )
+        self.sentinel_step_function.steps_role.add_to_policy(
+            self.check_granule.policy_statement
         )
         self.sentinel_step_function.steps_role.add_to_policy(
             self.laads_available.policy_statement
