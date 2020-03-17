@@ -43,10 +43,6 @@ class HlsStack(core.Stack):
 
         self.sentinel_bucket = S3(self, "SentinelBucket", bucket_name=SENTINEL_BUCKET)
 
-        self.sentinel_input_bucket = S3(
-            self, "SentinelInputBucket", bucket_name=SENTINEL_INPUT_BUCKET
-        )
-
         self.efs = Efs(self, "Efs", network=self.network)
 
         self.rds = Rds(self, "Rds", network=self.network)
@@ -170,7 +166,13 @@ class HlsStack(core.Stack):
             self.laads_bucket.policy_statement
         )
         self.check_granule.function.add_to_role_policy(
-            self.sentinel_input_bucket.policy_statement
+            aws_iam.PolicyStatement(
+                resources=[
+                    self.step_function_trigger.bucket.bucket_arn,
+                    f"{self.step_function_trigger.bucket.bucket_arn}/*",
+                ],
+                actions=["s3:Get*", "s3:List*",],
+            )
         )
         self.sentinel_step_function.steps_role.add_to_policy(
             self.check_granule.policy_statement
