@@ -15,12 +15,11 @@ class StepFunctionTrigger(core.Construct):
         self,
         scope: core.Construct,
         id: str,
-        input_bucket_name: str,
+        input_bucket: aws_s3.Bucket,
         state_machine: str,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
-        self.bucket = aws_s3.Bucket(self, "InputBucket", bucket_name=input_bucket_name)
         self.execute_step_function = Lambda(
             self,
             "ExecuteStepFunction",
@@ -30,7 +29,7 @@ class StepFunctionTrigger(core.Construct):
         )
 
         self.s3_event_source = aws_lambda_event_sources.S3EventSource(
-            bucket=self.bucket, events=[aws_s3.EventType.OBJECT_CREATED]
+            bucket=input_bucket, events=[aws_s3.EventType.OBJECT_CREATED]
         )
         self.execute_step_function.function.add_event_source(self.s3_event_source)
         self.execute_step_function.function.add_to_role_policy(

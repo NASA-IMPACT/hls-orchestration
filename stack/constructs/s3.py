@@ -19,11 +19,6 @@ class S3(core.Construct):
         except botocore.exceptions.ClientError:
             bucket = aws_s3.Bucket(self, f"bucket", bucket_name=bucket_name)
 
-        self.policy_statement = aws_iam.PolicyStatement(
-            resources=[bucket.bucket_arn, f"{bucket.bucket_arn}/*",],
-            actions=["s3:Get*", "s3:Put*", "s3:List*", "s3:AbortMultipartUpload",],
-        )
-
         self.bucket = bucket
         self.bucket_name = bucket.bucket_name
         self.bucket_arn = bucket.bucket_arn

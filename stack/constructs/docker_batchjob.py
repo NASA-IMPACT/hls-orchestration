@@ -75,11 +75,6 @@ class DockerBatchJob(core.Construct):
             type="Container",
         )
 
-        self.policy_statement = aws_iam.PolicyStatement(
-            resources=[job.ref],
-            actions=["batch:SubmitJob", "batch:DescribeJobs", "batch:TerminateJob"],
-        )
-        self.role.add_to_policy(self.policy_statement)
         self.role.add_to_policy(
             aws_iam.PolicyStatement(
                 resources=[bucket.bucket_arn, f"{bucket.bucket_arn}/*",],
