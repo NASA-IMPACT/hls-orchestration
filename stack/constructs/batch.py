@@ -130,10 +130,5 @@ class Batch(core.Construct):
             ],
         )
 
-        self.policy_statement = aws_iam.PolicyStatement(
-            resources=[jobqueue.ref],
-            actions=["batch:SubmitJob", "batch:DescribeJobs", "batch:TerminateJob"],
-        )
-
         self.compute_environment = compute_environment
         self.jobqueue = jobqueue

@@ -59,6 +59,6 @@ class Lambda(core.Construct):
             environment=env,
         )
 
-        self.policy_statement = aws_iam.PolicyStatement(
+        self.invoke_policy_statement = aws_iam.PolicyStatement(
             resources=[self.function.function_arn], actions=["lambda:InvokeFunction",],
         )

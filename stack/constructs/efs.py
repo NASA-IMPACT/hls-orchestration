@@ -38,11 +38,3 @@ class Efs(core.Construct):
                 subnet_id=subnet.subnet_id,
             )
             mount_targets.append(mount_target)
-
-        self.policy_statement = aws_iam.PolicyStatement(
-            resources=["*"],
-            actions=[
-                "elasticfilesystem:DescribeMountTargets",
-                "elasticfilesystem:DescribeFileSystems",
-            ],
-        )

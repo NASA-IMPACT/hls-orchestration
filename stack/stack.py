@@ -1,6 +1,6 @@
 import os
 import json
-from aws_cdk import core, aws_stepfunctions, aws_iam
+from aws_cdk import core, aws_stepfunctions, aws_iam, aws_s3
 from constructs.network import Network
 from constructs.s3 import S3
 from constructs.efs import Efs
@@ -43,17 +43,17 @@ class HlsStack(core.Stack):
 
         self.sentinel_bucket = S3(self, "SentinelBucket", bucket_name=SENTINEL_BUCKET)
 
-        self.sentinel_input_bucket = S3(
-            self, "SentinelInputBucket", bucket_name=SENTINEL_INPUT_BUCKET
-        )
+        # Must be created as part of the stack due to trigger requirements
+        self.sentinel_input_bucket = aws_s3.Bucket(self,
+                                                   "SenineleInputBucket",
+                                                   bucket_name=SENTINEL_INPUT_BUCKET)
 
         self.efs = Efs(self, "Efs", network=self.network)
 
         self.rds = Rds(self, "Rds", network=self.network)
 
         self.rds_bootstrap = Lambda(
-            self,
-            "LambdaDBBootstrap",
+            self, "LambdaDBBootstrap",
             code_file="setupdb.py",
             env={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
@@ -154,35 +154,60 @@ class HlsStack(core.Stack):
         self.step_function_trigger = StepFunctionTrigger(
             self,
             "SentinelStepFunctionTrigger",
-            input_bucket_name=SENTINEL_INPUT_BUCKET,
+            input_bucket=self.sentinel_input_bucket,
             state_machine=self.sentinel_step_function.sentinel_state_machine.ref,
         )
 
         # Cross construct permissions
-        self.laads_cron.function.add_to_role_policy(self.laads_task.policy_statement)
-        self.laads_cron.function.add_to_role_policy(self.batch.policy_statement)
-        self.laads_cron.function.add_to_role_policy(self.laads_bucket.policy_statement)
+        self.laads_bucket_read_policy = aws_iam.PolicyStatement(
+            resources=[self.laads_bucket.bucket_arn,
+                       f"{self.laads_bucket.bucket_arn}/*",],
+            actions=["s3:Get*", "s3:List*",],
+        )
+        self.laads_cron.function.add_to_role_policy(self.laads_bucket_read_policy)
+        self.laads_available.function.add_to_role_policy(self.laads_bucket_read_policy)
 
+        self.batch_jobqueue_policy = aws_iam.PolicyStatement(
+            resources=[self.batch.jobqueue.ref],
+            actions=["batch:SubmitJob", "batch:DescribeJobs", "batch:TerminateJob"],
+        )
+        self.laads_cron.function.add_to_role_policy(
+            self.batch_jobqueue_policy
+        )
+        self.sentinel_step_function.steps_role.add_to_policy(
+            self.batch_jobqueue_policy
+        )
+        self.sentinel_step_function.steps_role.add_to_policy(
+            self.check_granule.invoke_policy_statement
+        )
+        self.sentinel_step_function.steps_role.add_to_policy(
+            self.laads_available.invoke_policy_statement
+        )
+        self.sentinel_step_function.steps_role.add_to_policy(
+            self.lambda_logger.invoke_policy_statement
+        )
         self.lambda_logger.function.add_to_role_policy(self.rds.policy_statement)
         self.rds_bootstrap.function.add_to_role_policy(self.rds.policy_statement)
 
-        self.laads_available.function.add_to_role_policy(
-            self.laads_bucket.policy_statement
-        )
         self.check_granule.function.add_to_role_policy(
-            self.sentinel_input_bucket.policy_statement
+            aws_iam.PolicyStatement(
+                resources=[
+                    self.sentinel_input_bucket.bucket_arn,
+                    f"{self.sentinel_input_bucket.bucket_arn}/*",
+                ],
+                actions=["s3:Get*", "s3:List*",],
+            )
         )
-        self.sentinel_step_function.steps_role.add_to_policy(
-            self.check_granule.policy_statement
-        )
-        self.sentinel_step_function.steps_role.add_to_policy(
-            self.laads_available.policy_statement
-        )
-        self.sentinel_step_function.steps_role.add_to_policy(
-            self.sentinel_task.policy_statement
-        )
-        self.sentinel_step_function.steps_role.add_to_policy(
-            self.lambda_logger.policy_statement
+
+        self.sentinel_task.role.add_to_policy(
+            aws_iam.PolicyStatement(
+                resources=[
+                    self.sentinel_input_bucket.bucket_arn,
+                    f"{self.sentinel_input_bucket.bucket_arn}/*",
+                ],
+                actions=["s3:Get*", "s3:Put*", "s3:List*", "s3:AbortMultipartUpload",],
+            )
+
         )
 
         # Add policies for Lambda to listen for bucket events and trigger step
@@ -192,15 +217,6 @@ class HlsStack(core.Stack):
         )
         self.sentinel_step_function.steps_role.add_managed_policy(cw_events_full)
 
-        self.sentinel_task.role.add_to_policy(
-            aws_iam.PolicyStatement(
-                resources=[
-                    self.step_function_trigger.bucket.bucket_arn,
-                    f"{self.step_function_trigger.bucket.bucket_arn}/*",
-                ],
-                actions=["s3:Get*", "s3:Put*", "s3:List*", "s3:AbortMultipartUpload",],
-            )
-        )
         # Stack exports
         core.CfnOutput(
             self,
