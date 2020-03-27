@@ -75,12 +75,5 @@ class DockerBatchJob(core.Construct):
             type="Container",
         )
 
-        self.role.add_to_policy(
-            aws_iam.PolicyStatement(
-                resources=[bucket.bucket_arn, f"{bucket.bucket_arn}/*",],
-                actions=["s3:Get*", "s3:Put*", "s3:List*", "s3:AbortMultipartUpload",],
-            )
-        )
-
         self.image_uri = image_uri
         self.job = job

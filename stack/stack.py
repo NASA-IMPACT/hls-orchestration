@@ -171,6 +171,7 @@ class HlsStack(core.Stack):
             resources=[self.batch.jobqueue.ref],
             actions=["batch:SubmitJob", "batch:DescribeJobs", "batch:TerminateJob"],
         )
+
         self.laads_cron.function.add_to_role_policy(
             self.batch_jobqueue_policy
         )
@@ -199,13 +200,19 @@ class HlsStack(core.Stack):
             )
         )
 
+        self.laads_task.role.add_to_policy(
+            aws_iam.PolicyStatement(
+                resources=[self.laads_bucket.bucket_arn, f"{self.laads_bucket.bucket_arn}/*",],
+                actions=["s3:Get*", "s3:Put*", "s3:List*", "s3:AbortMultipartUpload",],
+            )
+        )
         self.sentinel_task.role.add_to_policy(
             aws_iam.PolicyStatement(
                 resources=[
                     self.sentinel_input_bucket.bucket_arn,
                     f"{self.sentinel_input_bucket.bucket_arn}/*",
                 ],
-                actions=["s3:Get*", "s3:Put*", "s3:List*", "s3:AbortMultipartUpload",],
+                actions=["s3:Get*", "s3:List*",],
             )
 
         )
