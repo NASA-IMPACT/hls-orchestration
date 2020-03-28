@@ -14,6 +14,7 @@ class SentinelStepFunction(core.Construct):
         check_granule: str,
         laads_available_function: str,
         outputbucket: str,
+        outputbucket_role_arn: str,
         inputbucket: str,
         sentinel_job_definition: str,
         jobqueue: str,
@@ -83,6 +84,10 @@ class SentinelStepFunction(core.Construct):
                                 {"Name": "OUTPUT_BUCKET", "Value": outputbucket},
                                 {"Name": "INPUT_BUCKET", "Value": inputbucket},
                                 {"Name": "LASRC_AUX_DIR", "Value": "/var/lasrc_aux"},
+                                {
+                                    "Name": "GCC_ROLE_ARN",
+                                    "Value": outputbucket_role_arn,
+                                },
                             ],
                         },
                     },
