@@ -50,7 +50,7 @@ class HlsStack(core.Stack):
         )
         # Must be created as part of the stack due to trigger requirements
         self.sentinel_input_bucket = aws_s3.Bucket(
-            self, "SenineleInputBucket", bucket_name=SENTINEL_INPUT_BUCKET
+            self, "SentinelInputBucket", bucket_name=SENTINEL_INPUT_BUCKET
         )
 
         self.efs = Efs(self, "Efs", network=self.network)
