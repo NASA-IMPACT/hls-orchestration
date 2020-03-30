@@ -44,8 +44,10 @@ class HlsStack(core.Stack):
 
         self.laads_bucket = S3(self, "LaadsBucket", bucket_name=LAADS_BUCKET)
 
-        self.sentinel_bucket = S3(self, "SentinelBucket", bucket_name=SENTINEL_BUCKET)
-
+        # self.sentinel_bucket = S3(self, "SentinelBucket", bucket_name=SENTINEL_BUCKET)
+        self.sentinel_bucket = aws_s3.Bucket.from_bucket_name(
+            self, f"bucket", SENTINEL_BUCKET
+        )
         # Must be created as part of the stack due to trigger requirements
         self.sentinel_input_bucket = aws_s3.Bucket(
             self, "SenineleInputBucket", bucket_name=SENTINEL_INPUT_BUCKET
@@ -103,7 +105,7 @@ class HlsStack(core.Stack):
             self,
             "SentinelTask",
             dockeruri=SENTINEL_ECR_URI,
-            bucket=self.sentinel_bucket.bucket,
+            bucket=self.sentinel_bucket,
             mountpath="/var/lasrc_aux",
             timeout=3600,
             memory=10000,
@@ -224,6 +226,11 @@ class HlsStack(core.Stack):
                     f"{self.sentinel_input_bucket.bucket_arn}/*",
                 ],
                 actions=["s3:Get*", "s3:List*",],
+            )
+        )
+        self.batch.ecs_instance_role.add_to_policy(
+            aws_iam.PolicyStatement(
+                resources=[HLS_SENTINEL_BUCKET_ROLE_ARN], actions=["sts:AssumeRole"],
             )
         )
 

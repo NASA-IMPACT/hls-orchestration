@@ -61,7 +61,7 @@ class Batch(core.Construct):
 
         efs_policy_document = aws_iam.PolicyDocument(statements=[efs_policy_statement])
 
-        ecs_instance_role = aws_iam.Role(
+        self.ecs_instance_role = aws_iam.Role(
             self,
             f"EcsInstanceRole",
             assumed_by=aws_iam.ServicePrincipal("ec2.amazonaws.com"),
@@ -74,7 +74,7 @@ class Batch(core.Construct):
         )
 
         ecs_instance_profile = aws_iam.CfnInstanceProfile(
-            self, f"EcsInstanceProfile", roles=[ecs_instance_role.role_name],
+            self, f"EcsInstanceProfile", roles=[self.ecs_instance_role.role_name],
         )
 
         userdata_file = open(os.path.join(dirname, "userdata.txt"), "rb").read()
