@@ -10,7 +10,7 @@ $ make install
 ```
 
 ### Environment
-Environment variables are set in env.sh. A sample env.sh is at env.sh.sample, you must copy this file 
+Environment variables are set in env.sh. A sample env.sh is at env.sh.sample, you must copy this file
 to env.sh before running make synth, make diff, or make deploy
 The following variables can be overridden from the calling shell's environment
 ```
@@ -36,6 +36,13 @@ Deploys current created stack.
 ```
 $ make deploy
 ```
+
+### Setup Logging Database
+After `deploy` is run and the stack is created run
+```
+$ make setupdb
+```
+To bootstrap the logging database.
 
 ### Cleanup
 Cleans out all files and prereqs created in the installation process.
