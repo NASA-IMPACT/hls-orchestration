@@ -16,6 +16,7 @@ The following variables can be overridden from the calling shell's environment
 ```
 $ export HLS_STACKNAME=<Name of your stack>
 $ export HLS_LAADS_TOKEN=<Token used for accessing the Laads Data>
+$ export HLS_SENTINEL_BUCKET_ROLE_ARN=<GCC Role for accessing output bucket>
 ```
 
 ### Synth
