@@ -56,4 +56,7 @@ fresh: clean dev synth
 test: dev
 	python -m pytest lambda_functions --cov lambda_functions --cov-report term-missing --ignore venv
 
+setupdb: check-env
+	source env.sh
+	./scripts/setupdb.sh
 
