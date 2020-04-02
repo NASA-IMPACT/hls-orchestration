@@ -50,7 +50,7 @@ class HlsStack(core.Stack):
         )
         # Must be created as part of the stack due to trigger requirements
         self.sentinel_input_bucket = aws_s3.Bucket(
-            self, "SentinelInputBucket", bucket_name=SENTINEL_INPUT_BUCKET
+            self, "SenineleInputBucket", bucket_name=SENTINEL_INPUT_BUCKET
         )
 
         self.efs = Efs(self, "Efs", network=self.network)
@@ -259,4 +259,22 @@ class HlsStack(core.Stack):
             "setupdbexport",
             export_name=f"{STACKNAME}-setupdb",
             value=self.rds_bootstrap.function.function_arn,
+        )
+        core.CfnOutput(
+            self,
+            "sentineloutputexport",
+            export_name=f"{STACKNAME}-sentineloutput",
+            value=self.sentinel_bucket.bucket_name,
+        )
+        core.CfnOutput(
+            self,
+            "sentinelinputexport",
+            export_name=f"{STACKNAME}-sentinelinput",
+            value=self.sentinel_input_bucket.bucket_name,
+        )
+        core.CfnOutput(
+            self,
+            "sentineljobdefinition",
+            export_name=f"{STACKNAME}-sentineljobdefinition",
+            value=self.sentinel_task.job.ref,
         )
