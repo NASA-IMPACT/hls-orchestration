@@ -1,4 +1,8 @@
 #!/bin/bash
+DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+env_settings="$(dirname $DIR)/env.sh"
+source "$env_settings"
+
 jobqueue=$HLSSTACK_JOBQUEUEEXPORT
 jobdefinition=$HLSSTACK_SENTINELJOBDEFINITION
 outputbucket=$HLS_SENTINEL_BUCKET
@@ -13,30 +17,30 @@ jobname=$RANDOM
 # Create Batch job definition override
 overrides=$(cat <<EOF
 {
-		"command": ["$command"],
-		"memory": 10000,
-		"environment": [
-			{
-				"name": "GRANULE_LIST",
-				"value": "$granulelist"
-			},
-			{
-				"name": "OUTPUT_BUCKET",
-				"value": "$outputbucket"
-			},
-			{
-				"name": "INPUT_BUCKET",
-				"value": "$inputbucket"
-			},
-			{
-				"name": "LASRC_AUX_DIR",
-				"value": "/var/lasrc_aux"
-			},
+    "command": ["$command"],
+    "memory": 10000,
+    "environment": [
+      {
+        "name": "GRANULE_LIST",
+        "value": "$granulelist"
+      },
+      {
+        "name": "OUTPUT_BUCKET",
+        "value": "$outputbucket"
+      },
+      {
+        "name": "INPUT_BUCKET",
+        "value": "$inputbucket"
+      },
+      {
+        "name": "LASRC_AUX_DIR",
+        "value": "/var/lasrc_aux"
+      },
       {
         "name": "DEBUG_BUCKET",
         "value": "hls-debug-output"
       }
-		]
+    ]
 }
 EOF
 )
