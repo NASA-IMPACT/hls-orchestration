@@ -1,7 +1,7 @@
 #!/bin/bash
 jobqueue=$HLSSTACK_JOBQUEUEEXPORT
 jobdefinition=$HLSSTACK_SENTINELJOBDEFINITION
-outputbucket=$HLSSTACK_SENTINELOUTPUTEXPORT
+outputbucket=$HLS_SENTINEL_BUCKET
 inputbucket=$HLSSTACK_SENTINELINPUTEXPORT
 command=sentinel.sh
 granulelist=$1
@@ -33,8 +33,8 @@ overrides=$(cat <<EOF
 				"value": "/var/lasrc_aux"
 			},
       {
-        "name": "DEBUG_BUCKET",
-        "value": "hls-debug-output"
+        "name": "GCC_ROLE_ARN",
+        "value": "arn:aws:iam::018923174646:role/hls-sentinel-bucket-access"
       }
 		]
 }
