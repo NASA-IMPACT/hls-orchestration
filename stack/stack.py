@@ -260,3 +260,21 @@ class HlsStack(core.Stack):
             export_name=f"{STACKNAME}-setupdb",
             value=self.rds_bootstrap.function.function_arn,
         )
+        core.CfnOutput(
+            self,
+            "sentineloutputexport",
+            export_name=f"{STACKNAME}-sentineloutput",
+            value=self.sentinel_bucket.bucket_name,
+        )
+        core.CfnOutput(
+            self,
+            "sentinelinputexport",
+            export_name=f"{STACKNAME}-sentinelinput",
+            value=self.sentinel_input_bucket.bucket_name,
+        )
+        core.CfnOutput(
+            self,
+            "sentineljobdefinition",
+            export_name=f"{STACKNAME}-sentineljobdefinition",
+            value=self.sentinel_task.job.ref,
+        )
