@@ -26,7 +26,16 @@ SENTINEL_BUCKET = os.getenv("HLS_SENTINEL_BUCKET", f"{STACKNAME}-sentinel-output
 SENTINEL_INPUT_BUCKET = os.getenv(
     "HLS_SENTINEL_INPUT_BUCKET", f"{STACKNAME}-sentinel-input"
 )
-MAXV_CPUS = os.getenv("HLS_MAXV_CPUS", 200)
+try:
+    MAXV_CPUS = int(os.getenv("HLS_MAXV_CPUS"))
+except ValueError:
+    MAXV_CPUS = 200
+
+if os.getenv("HLS_REPLACE_EXISTING") == "true":
+    REPLACE_EXISTING = True
+else:
+    REPLACE_EXISTING = False
+
 HLS_SENTINEL_BUCKET_ROLE_ARN = os.getenv("HLS_SENTINEL_BUCKET_ROLE_ARN", None)
 
 if LAADS_TOKEN is None:
@@ -156,6 +165,7 @@ class HlsStack(core.Stack):
             jobqueue=self.batch.jobqueue.ref,
             lambda_logger=self.lambda_logger.function.function_arn,
             outputbucket_role_arn=HLS_SENTINEL_BUCKET_ROLE_ARN,
+            replace_existing=REPLACE_EXISTING,
         )
 
         self.step_function_trigger = StepFunctionTrigger(
