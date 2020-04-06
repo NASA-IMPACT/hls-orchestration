@@ -19,6 +19,7 @@ class SentinelStepFunction(core.Construct):
         sentinel_job_definition: str,
         jobqueue: str,
         lambda_logger: str,
+        replace_existing: str,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -88,6 +89,7 @@ class SentinelStepFunction(core.Construct):
                                     "Name": "GCC_ROLE_ARN",
                                     "Value": outputbucket_role_arn,
                                 },
+                                {"Name": "REPLACE_EXISTING", "Value": replace_existing},
                             ],
                         },
                     },
