@@ -37,6 +37,7 @@ else:
     REPLACE_EXISTING = False
 
 HLS_SENTINEL_BUCKET_ROLE_ARN = os.getenv("HLS_SENTINEL_BUCKET_ROLE_ARN", None)
+HLS_REPLACE_EXISTING = os.getenv("HLS_REPLACE_EXISTING", None)
 
 if LAADS_TOKEN is None:
     raise Exception("HLS_LAADS_TOKEN Env Var must be set")
@@ -59,7 +60,7 @@ class HlsStack(core.Stack):
         )
         # Must be created as part of the stack due to trigger requirements
         self.sentinel_input_bucket = aws_s3.Bucket(
-            self, "SentinelInputBucket", bucket_name=SENTINEL_INPUT_BUCKET
+            self, "SenineleInputBucket", bucket_name=SENTINEL_INPUT_BUCKET
         )
 
         self.efs = Efs(self, "Efs", network=self.network)

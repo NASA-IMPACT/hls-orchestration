@@ -4,7 +4,7 @@ REQUIRED_BINS := yarn virtualenv pip
 $(foreach bin,$(REQUIRED_BINS),\
     $(if $(shell command -v $(bin) 2> /dev/null),$(info Found `$(bin)`),$(error Please install `$(bin)`)))
 
-.PHONY: check-envfile check-env-% check-env cdk venv dev clean synth diff deploy fresh freshdev
+.PHONY: check-env-% check-env cdk venv dev clean synth diff deploy fresh freshdev
 
 check-envfile:
 	test -f env.sh || { echo "Please copy and edit env.sh.sample to env.sh"; exit 1; }
@@ -40,16 +40,13 @@ clean:
 	rm -fr *.egg-info
 
 synth: check-env
-	source env.sh
-	yarn cdk synth
+	source env.sh && yarn cdk synth
 
 diff: check-env
-	source env.sh
-	yarn cdk diff
+	source env.sh && yarn cdk diff
 
 deploy: check-env
-	source env.sh
-	yarn cdk deploy
+	source env.sh && yarn cdk deploy
 
 fresh: clean dev synth
 
@@ -57,6 +54,4 @@ test: dev
 	python -m pytest lambda_functions --cov lambda_functions --cov-report term-missing --ignore venv
 
 setupdb: check-env
-	source env.sh
-	./scripts/setupdb.sh
-
+	source env.sh && ./scripts/setupdb.sh
