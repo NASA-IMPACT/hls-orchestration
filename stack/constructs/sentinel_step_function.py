@@ -18,12 +18,16 @@ class SentinelStepFunction(core.Construct):
         inputbucket: str,
         sentinel_job_definition: str,
         jobqueue: str,
-        lambda_logger: str,
-        replace_existing: str,
+        lambda_logger: str
+        replace_existing: bool,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
 
+        if replace_existing:
+            replace = 'replace'
+        else:
+            replace = None
         sentinel_state_definition = {
             "Comment": "Sentinel Step Function",
             "StartAt": "CheckGranule",
@@ -89,7 +93,7 @@ class SentinelStepFunction(core.Construct):
                                     "Name": "GCC_ROLE_ARN",
                                     "Value": outputbucket_role_arn,
                                 },
-                                {"Name": "REPLACE_EXISTING", "Value": replace_existing},
+                                {"Name": "REPLACE_EXISTING", "Value": replace},
                             ],
                         },
                     },
