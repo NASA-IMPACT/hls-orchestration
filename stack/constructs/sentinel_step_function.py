@@ -18,14 +18,14 @@ class SentinelStepFunction(core.Construct):
         inputbucket: str,
         sentinel_job_definition: str,
         jobqueue: str,
-        lambda_logger: str
+        lambda_logger: str,
         replace_existing: bool,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
 
         if replace_existing:
-            replace = 'replace'
+            replace = "replace"
         else:
             replace = None
         sentinel_state_definition = {
