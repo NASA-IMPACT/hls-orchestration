@@ -4,11 +4,10 @@ env_settings="$(dirname $DIR)/env.sh"
 source "$env_settings"
 
 jobqueue=$HLSSTACK_JOBQUEUEEXPORT
-jobdefinition=$HLSSTACK_SENTINELJOBDEFINITION
-outputbucket=$HLS_SENTINEL_OUTPUT_BUCKET
-inputbucket=$HLSSTACK_SENTINELINPUTEXPORT
-command=sentinel.sh
-granulelist=$1
+jobdefinition=$HLSSTACK_LANDSATJOBDEFINITION
+outputbucket=$HLS_LANDSAT_INTERMEDIATE_OUTPUT_BUCKET
+command=landsat.sh
+granule=$1
 
 # If multiple granules are in the granulelist, create a jobname without the granule unique id.
 IFS=',' # commma is set as delimiter
@@ -21,16 +20,12 @@ overrides=$(cat <<EOF
     "memory": 10000,
     "environment": [
       {
-        "name": "GRANULE_LIST",
-        "value": "$granulelist"
+        "name": "GRANULE",
+        "value": "$granule"
       },
       {
         "name": "OUTPUT_BUCKET",
         "value": "$outputbucket"
-      },
-      {
-        "name": "INPUT_BUCKET",
-        "value": "$inputbucket"
       },
       {
         "name": "LASRC_AUX_DIR",

@@ -37,9 +37,13 @@ class DockerBatchJob(core.Construct):
 
         volume = aws_batch.CfnJobDefinition.VolumesProperty(name=f"volume", host=host,)
 
-        scratch_host = aws_batch.CfnJobDefinition.VolumesHostProperty(source_path="/scratch")
+        scratch_host = aws_batch.CfnJobDefinition.VolumesHostProperty(
+            source_path="/scratch"
+        )
 
-        scratch_volume = aws_batch.CfnJobDefinition.VolumesProperty(name=f"scratch_volume", host=scratch_host)
+        scratch_volume = aws_batch.CfnJobDefinition.VolumesProperty(
+            name=f"scratch_volume", host=scratch_host
+        )
 
         if dockerdir is not None:
             image = aws_ecr_assets.DockerImageAsset(
@@ -59,7 +63,8 @@ class DockerBatchJob(core.Construct):
             source_volume=volume.name, container_path=mountpath, read_only=False,
         )
         scratch_mount_point = aws_batch.CfnJobDefinition.MountPointsProperty(
-            source_volume=scratch_volume.name, container_path="/var/scratch",
+            source_volume=scratch_volume.name,
+            container_path="/var/scratch",
             read_only=False,
         )
         container_properties = aws_batch.CfnJobDefinition.ContainerPropertiesProperty(
