@@ -60,7 +60,7 @@ class HlsStack(core.Stack):
         )
         # Must be created as part of the stack due to trigger requirements
         self.sentinel_input_bucket = aws_s3.Bucket(
-            self, "SenineleInputBucket", bucket_name=SENTINEL_INPUT_BUCKET
+            self, "SentinelInputBucket", bucket_name=SENTINEL_INPUT_BUCKET
         )
 
         self.efs = Efs(self, "Efs", network=self.network)
@@ -97,7 +97,7 @@ class HlsStack(core.Stack):
             network=self.network,
             efs=self.efs.filesystem,
             maxv_cpus=MAXV_CPUS,
-            instance_types=["m4.xlarge"],
+            instance_types=["r5d.large"],
         )
 
         self.laads_task = DockerBatchJob(
@@ -108,7 +108,7 @@ class HlsStack(core.Stack):
             mountpath="/var/lasrc_aux",
             timeout=259200,
             memory=10000,
-            vcpus=4,
+            vcpus=2,
         )
 
         self.sentinel_task = DockerBatchJob(
@@ -117,9 +117,9 @@ class HlsStack(core.Stack):
             dockeruri=SENTINEL_ECR_URI,
             bucket=self.sentinel_bucket,
             mountpath="/var/lasrc_aux",
-            timeout=3600,
-            memory=10000,
-            vcpus=4,
+            timeout=5400,
+            memory=14000,
+            vcpus=2,
         )
 
         self.pr2mgrs_lambda = Lambda(

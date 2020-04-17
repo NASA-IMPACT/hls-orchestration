@@ -17,7 +17,7 @@ jobname=$RANDOM
 # Create Batch job definition override
 overrides=$(cat <<EOF
 {
-    "command": ["$command"],
+    "command": ["df /var/scratch && $command"],
     "memory": 10000,
     "environment": [
       {
