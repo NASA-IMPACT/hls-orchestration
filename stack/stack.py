@@ -22,10 +22,24 @@ SENTINEL_ECR_URI = os.getenv(
     "HLS_SENTINEL_ECR_URI",
     "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-sentinel:latest",
 )
-SENTINEL_BUCKET = os.getenv("HLS_SENTINEL_BUCKET", f"{STACKNAME}-sentinel-output")
+LANDSAT_ECR_URI = os.getenv(
+    "HLS_LANDSAT_ECR_URI",
+    "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat:latest",
+)
+SENTINEL_OUTPUT_BUCKET = os.getenv(
+    "HLS_SENTINEL_OUTPUT_BUCKET", f"{STACKNAME}-sentinel-output"
+)
 SENTINEL_INPUT_BUCKET = os.getenv(
     "HLS_SENTINEL_INPUT_BUCKET", f"{STACKNAME}-sentinel-input"
 )
+LANDSAT_OUTPUT_BUCKET = os.getenv(
+    "HLS_LANDSAT_OUTPUT_BUCKET", f"{STACKNAME}-landlandsat-output"
+)
+LANDSAT_INTERMEDIATE_OUTPUT_BUCKET = os.getenv(
+    "HLS_LANDSAT_INTERMEDIATE_OUTPUT_BUCKET",
+    f"{STACKNAME}-landlandsat-intermediate-output",
+)
+
 try:
     MAXV_CPUS = int(os.getenv("HLS_MAXV_CPUS"))
 except ValueError:
@@ -36,14 +50,16 @@ if os.getenv("HLS_REPLACE_EXISTING") == "true":
 else:
     REPLACE_EXISTING = False
 
-HLS_SENTINEL_BUCKET_ROLE_ARN = os.getenv("HLS_SENTINEL_BUCKET_ROLE_ARN", None)
+HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN = os.getenv(
+    "HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN", None
+)
 HLS_REPLACE_EXISTING = os.getenv("HLS_REPLACE_EXISTING", None)
 
 if LAADS_TOKEN is None:
     raise Exception("HLS_LAADS_TOKEN Env Var must be set")
 
-if HLS_SENTINEL_BUCKET_ROLE_ARN is None:
-    raise Exception("HLS_SENTINEL_BUCKET_ROLE_ARN Env Var must be set")
+if HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN is None:
+    raise Exception("HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN Env Var must be set")
 
 
 class HlsStack(core.Stack):
@@ -54,13 +70,23 @@ class HlsStack(core.Stack):
 
         self.laads_bucket = S3(self, "LaadsBucket", bucket_name=LAADS_BUCKET)
 
-        # self.sentinel_bucket = S3(self, "SentinelBucket", bucket_name=SENTINEL_BUCKET)
-        self.sentinel_bucket = aws_s3.Bucket.from_bucket_name(
-            self, f"bucket", SENTINEL_BUCKET
+        self.sentinel_output_bucket = aws_s3.Bucket.from_bucket_name(
+            self, f"sentinel_output_bucket", SENTINEL_OUTPUT_BUCKET
         )
+
+        self.landsat_output_bucket = aws_s3.Bucket.from_bucket_name(
+            self, f"landsat_output_bucket", LANDSAT_OUTPUT_BUCKET
+        )
+
         # Must be created as part of the stack due to trigger requirements
         self.sentinel_input_bucket = aws_s3.Bucket(
             self, "SentinelInputBucket", bucket_name=SENTINEL_INPUT_BUCKET
+        )
+
+        self.landsat_intermediate_output_bucket = aws_s3.Bucket(
+            self,
+            "LandsatIntermediateBucket",
+            bucket_name=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
         )
 
         self.efs = Efs(self, "Efs", network=self.network)
@@ -115,7 +141,18 @@ class HlsStack(core.Stack):
             self,
             "SentinelTask",
             dockeruri=SENTINEL_ECR_URI,
-            bucket=self.sentinel_bucket,
+            bucket=self.sentinel_output_bucket,
+            mountpath="/var/lasrc_aux",
+            timeout=5400,
+            memory=14000,
+            vcpus=2,
+        )
+
+        self.landsat_task = DockerBatchJob(
+            self,
+            "LandsatTask",
+            dockeruri=LANDSAT_ECR_URI,
+            bucket=self.landsat_output_bucket,
             mountpath="/var/lasrc_aux",
             timeout=5400,
             memory=14000,
@@ -160,12 +197,12 @@ class HlsStack(core.Stack):
             "SentinelStateMachine",
             check_granule=self.check_granule.function.function_arn,
             laads_available_function=self.laads_available.function.function_arn,
-            outputbucket=SENTINEL_BUCKET,
+            outputbucket=SENTINEL_OUTPUT_BUCKET,
             inputbucket=SENTINEL_INPUT_BUCKET,
             sentinel_job_definition=self.sentinel_task.job.ref,
             jobqueue=self.batch.jobqueue.ref,
             lambda_logger=self.lambda_logger.function.function_arn,
-            outputbucket_role_arn=HLS_SENTINEL_BUCKET_ROLE_ARN,
+            outputbucket_role_arn=HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN,
             replace_existing=REPLACE_EXISTING,
         )
 
@@ -239,9 +276,19 @@ class HlsStack(core.Stack):
                 actions=["s3:Get*", "s3:List*",],
             )
         )
+        self.landsat_task.role.add_to_policy(
+            aws_iam.PolicyStatement(
+                resources=[
+                    self.landsat_intermediate_output_bucket.bucket_arn,
+                    f"{self.landsat_intermediate_output_bucket.bucket_arn}/*",
+                ],
+                actions=["s3:Get*", "s3:Put*", "s3:List*", "s3:AbortMultipartUpload",],
+            )
+        )
         self.batch.ecs_instance_role.add_to_policy(
             aws_iam.PolicyStatement(
-                resources=[HLS_SENTINEL_BUCKET_ROLE_ARN], actions=["sts:AssumeRole"],
+                resources=[HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN],
+                actions=["sts:AssumeRole"],
             )
         )
 
@@ -275,7 +322,7 @@ class HlsStack(core.Stack):
             self,
             "sentineloutputexport",
             export_name=f"{STACKNAME}-sentineloutput",
-            value=self.sentinel_bucket.bucket_name,
+            value=self.sentinel_output_bucket.bucket_name,
         )
         core.CfnOutput(
             self,
@@ -288,4 +335,10 @@ class HlsStack(core.Stack):
             "sentineljobdefinition",
             export_name=f"{STACKNAME}-sentineljobdefinition",
             value=self.sentinel_task.job.ref,
+        )
+        core.CfnOutput(
+            self,
+            "landsatjobdefinition",
+            export_name=f"{STACKNAME}-landsatjobdefinition",
+            value=self.landsat_task.job.ref,
         )
