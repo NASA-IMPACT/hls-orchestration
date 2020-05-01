@@ -83,7 +83,6 @@ class SentinelStepFunction(core.Construct):
                         "JobDefinition": sentinel_job_definition,
                         "ContainerOverrides": {
                             "Command": ["export && sentinel.sh"],
-                            "Memory": 10000,
                             "Environment": [
                                 {"Name": "GRANULE_LIST", "Value.$": "$.granule"},
                                 {"Name": "OUTPUT_BUCKET", "Value": outputbucket},
