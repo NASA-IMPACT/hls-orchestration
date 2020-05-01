@@ -18,7 +18,6 @@ jobname=$RANDOM
 overrides=$(cat <<EOF
 {
     "command": ["df /var/scratch && $command"],
-    "memory": 10000,
     "environment": [
       {
         "name": "GRANULE_LIST",
