@@ -34,6 +34,10 @@ overrides=$(cat <<EOF
       {
         "name": "DEBUG_BUCKET",
         "value": "hls-debug-output"
+      },
+      {
+        "name": "INPUT_BUCKET",
+        "value": "hls-landsat-input"
       }
     ]
 }
