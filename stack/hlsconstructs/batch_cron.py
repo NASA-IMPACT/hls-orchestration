@@ -1,8 +1,8 @@
 from aws_cdk import core, aws_events, aws_lambda, aws_events_targets
 from typing import Dict
-from constructs.batch import Batch
-from constructs.lambdafunc import Lambda
-from constructs.docker_batchjob import DockerBatchJob
+from hlsconstructs.batch import Batch
+from hlsconstructs.lambdafunc import Lambda
+from hlsconstructs.docker_batchjob import DockerBatchJob
 from utils import aws_env, align
 
 

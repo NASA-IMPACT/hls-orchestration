@@ -1,7 +1,7 @@
 from aws_cdk import core, aws_lambda
 from utils import aws_env, align
 from typing import Dict
-from constructs.lambdafunc import Lambda
+from hlsconstructs.lambdafunc import Lambda
 
 
 class Dummy(Lambda):

@@ -1,17 +1,17 @@
 import os
 import json
 from aws_cdk import core, aws_stepfunctions, aws_iam, aws_s3
-from constructs.network import Network
-from constructs.s3 import S3
-from constructs.efs import Efs
-from constructs.rds import Rds
-from constructs.docker_batchjob import DockerBatchJob
-from constructs.batch import Batch
-from constructs.lambdafunc import Lambda
-from constructs.batch_cron import BatchCron
-from constructs.dummy_lambda import Dummy
-from constructs.sentinel_step_function import SentinelStepFunction
-from constructs.step_function_trigger import StepFunctionTrigger
+from hlsconstructs.network import Network
+from hlsconstructs.s3 import S3
+from hlsconstructs.efs import Efs
+from hlsconstructs.rds import Rds
+from hlsconstructs.docker_batchjob import DockerBatchJob
+from hlsconstructs.batch import Batch
+from hlsconstructs.lambdafunc import Lambda
+from hlsconstructs.batch_cron import BatchCron
+from hlsconstructs.dummy_lambda import Dummy
+from hlsconstructs.sentinel_step_function import SentinelStepFunction
+from hlsconstructs.step_function_trigger import StepFunctionTrigger
 
 STACKNAME = os.getenv("HLS_STACKNAME", "hls")
 LAADS_BUCKET = os.getenv("HLS_LAADS_BUCKET", f"{STACKNAME}-bucket")

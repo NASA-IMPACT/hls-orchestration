@@ -7,7 +7,7 @@ from aws_cdk import (
     aws_events_targets,
     aws_lambda_event_sources,
 )
-from constructs.lambdafunc import Lambda
+from hlsconstructs.lambdafunc import Lambda
 
 
 class StepFunctionTrigger(core.Construct):
