@@ -22,8 +22,7 @@ venv:
 	test -d venv || virtualenv venv --system-site-packages
 
 install: cdk venv
-	source venv/bin/activate
-	pip install . --no-binary :.:
+	source venv/bin/activate && pip install . --no-binary :.:
 
 dev: cdk venv
 	source venv/bin/activate
