@@ -6,7 +6,7 @@ from aws_cdk import (
     aws_iam,
     core,
 )
-from constructs.network import Network
+from hlsconstructs.network import Network
 import os
 
 dirname = os.path.dirname(os.path.realpath(__file__))

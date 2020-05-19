@@ -1,6 +1,6 @@
 import os
 from aws_cdk import aws_rds, aws_ec2, core, aws_iam, aws_secretsmanager
-from constructs.network import Network
+from hlsconstructs.network import Network
 
 
 class Rds(core.Construct):

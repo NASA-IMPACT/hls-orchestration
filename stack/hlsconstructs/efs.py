@@ -1,5 +1,5 @@
 from aws_cdk import aws_efs, aws_ec2, core, aws_iam
-from constructs.network import Network
+from hlsconstructs.network import Network
 
 
 class Efs(core.Construct):

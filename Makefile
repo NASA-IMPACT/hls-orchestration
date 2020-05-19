@@ -22,12 +22,10 @@ venv:
 	test -d venv || virtualenv venv --system-site-packages
 
 install: cdk venv
-	source venv/bin/activate
-	pip install . --no-binary :.:
+	source venv/bin/activate && pip install . --no-binary :.:
 
 dev: cdk venv
-	source venv/bin/activate
-	pip install -e .[test] --no-binary :.:
+	source venv/bin/activate && pip install -e .[test] --no-binary :.:
 
 clean:
 	rm -fr venv
@@ -40,18 +38,18 @@ clean:
 	rm -fr *.egg-info
 
 synth: check-env
-	source env.sh && yarn cdk synth
+	source venv/bin/activate && source env.sh && yarn cdk synth
 
 diff: check-env
-	source env.sh && yarn cdk diff
+	source venv/bin/activate && source env.sh && yarn cdk diff
 
 deploy: check-env
-	source env.sh && yarn cdk deploy
+	source venv/bin/activate && source env.sh && yarn cdk deploy
 
 fresh: clean dev synth
 
 test: dev
-	python -m pytest lambda_functions --cov lambda_functions --cov-report term-missing --ignore venv
+	source venv/bin/activate && python -m pytest lambda_functions --cov lambda_functions --cov-report term-missing --ignore venv
 
 setupdb: check-env
 	source env.sh && ./scripts/setupdb.sh
