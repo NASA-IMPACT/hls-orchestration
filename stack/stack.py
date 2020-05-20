@@ -124,7 +124,7 @@ class HlsStack(core.Stack):
             network=self.network,
             efs=self.efs.filesystem,
             maxv_cpus=MAXV_CPUS,
-            instance_types=["r5d.large"],
+            instance_types=["r5d.2xlarge"],
             ssh_keyname=SSH_KEYNAME,
         )
 
@@ -146,7 +146,7 @@ class HlsStack(core.Stack):
             bucket=self.sentinel_output_bucket,
             mountpath="/var/lasrc_aux",
             timeout=5400,
-            memory=14000,
+            memory=12000,
             vcpus=2,
         )
 
@@ -157,7 +157,7 @@ class HlsStack(core.Stack):
             bucket=self.landsat_output_bucket,
             mountpath="/var/lasrc_aux",
             timeout=5400,
-            memory=14000,
+            memory=12000,
             vcpus=2,
         )
 
