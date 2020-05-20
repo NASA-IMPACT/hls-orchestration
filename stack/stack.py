@@ -182,7 +182,7 @@ class HlsStack(core.Stack):
 
         self.laads_cron = BatchCron(
             self,
-            "LaadsAvailableCron",
+            "LaadsCron",
             cron_str=LAADS_CRON,
             batch=self.batch,
             job=self.laads_task,
