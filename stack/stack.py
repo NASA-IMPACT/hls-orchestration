@@ -39,6 +39,7 @@ LANDSAT_INTERMEDIATE_OUTPUT_BUCKET = os.getenv(
     "HLS_LANDSAT_INTERMEDIATE_OUTPUT_BUCKET",
     f"{STACKNAME}-landlandsat-intermediate-output",
 )
+SSH_KEYNAME = os.getenv("HLS_SSH_KEYNAME")
 
 try:
     MAXV_CPUS = int(os.getenv("HLS_MAXV_CPUS"))
@@ -124,6 +125,7 @@ class HlsStack(core.Stack):
             efs=self.efs.filesystem,
             maxv_cpus=MAXV_CPUS,
             instance_types=["r5d.large"],
+            ssh_keyname=SSH_KEYNAME,
         )
 
         self.laads_task = DockerBatchJob(
