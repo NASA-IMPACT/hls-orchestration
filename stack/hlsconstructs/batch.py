@@ -20,6 +20,7 @@ class Batch(core.Construct):
         network: Network,
         instance_types: list,
         maxv_cpus: int,
+        ssh_keyname: str,
         efs: aws_efs.CfnFileSystem = None,
         **kwargs,
     ) -> None:
@@ -84,7 +85,8 @@ class Batch(core.Construct):
         user_data_str = "\n".join(user_data.render().split("\n")[1:])
 
         launch_template_data = aws_ec2.CfnLaunchTemplate.LaunchTemplateDataProperty(
-            user_data=core.Fn.base64(user_data_str)
+            user_data=core.Fn.base64(user_data_str),
+            key_name=ssh_keyname,
         )
 
         launch_template = aws_ec2.CfnLaunchTemplate(
