@@ -4,6 +4,7 @@ from aws_cdk import (
     aws_ecs,
     aws_efs,
     aws_iam,
+    aws_ssm,
     core,
 )
 from hlsconstructs.network import Network
@@ -20,6 +21,7 @@ class Batch(core.Construct):
         network: Network,
         instance_types: list,
         maxv_cpus: int,
+        ssh_keyname: str,
         efs: aws_efs.CfnFileSystem = None,
         **kwargs,
     ) -> None:
@@ -47,7 +49,7 @@ class Batch(core.Construct):
             managed_policies=[
                 aws_iam.ManagedPolicy.from_aws_managed_policy_name(
                     "service-role/AWSBatchServiceRole"
-                )
+                ),
             ],
         )
 
@@ -68,7 +70,10 @@ class Batch(core.Construct):
             managed_policies=[
                 aws_iam.ManagedPolicy.from_aws_managed_policy_name(
                     "service-role/AmazonEC2ContainerServiceforEC2Role"
-                )
+                ),
+                aws_iam.ManagedPolicy.from_aws_managed_policy_name(
+                    "CloudWatchAgentServerPolicy"
+                ),
             ],
             inline_policies=[efs_policy_document],
         )
@@ -77,14 +82,26 @@ class Batch(core.Construct):
             self, f"EcsInstanceProfile", roles=[self.ecs_instance_role.role_name],
         )
 
+        cloudwatch_ssm_param = "BatchCloudwatchAgentConfig"
         userdata_file = open(os.path.join(dirname, "userdata.txt"), "rb").read()
         user_data = aws_ec2.UserData.for_linux()
-        user_data_string = str(userdata_file, "utf-8").format(efs.ref)
+        user_data_string = str(userdata_file, "utf-8").format(
+            efs.ref, cloudwatch_ssm_param
+        )
         user_data.add_commands(user_data_string)
         user_data_str = "\n".join(user_data.render().split("\n")[1:])
-
+        cloudwatch_config_string = open(
+            os.path.join(dirname, "cloudwatchconfig.json"), "r"
+        ).read()
+        cloudwatch_config_param = aws_ssm.StringParameter(
+            self,
+            "CloudWatchAgentConfigParam",
+            description="Configruation of Cloudwatch Agent for Amazon Linux 2",
+            parameter_name=cloudwatch_ssm_param,
+            string_value=cloudwatch_config_string,
+        )
         launch_template_data = aws_ec2.CfnLaunchTemplate.LaunchTemplateDataProperty(
-            user_data=core.Fn.base64(user_data_str)
+            user_data=core.Fn.base64(user_data_str), key_name=ssh_keyname,
         )
 
         launch_template = aws_ec2.CfnLaunchTemplate(
@@ -94,6 +111,8 @@ class Batch(core.Construct):
         launch_template_props = aws_batch.CfnComputeEnvironment.LaunchTemplateSpecificationProperty(
             launch_template_id=launch_template.ref
         )
+        # Grant ssm:GetParameters to ECS Instnace role.
+        cloudwatch_config_param.grant_read(self.ecs_instance_role)
 
         image_id = aws_ecs.EcsOptimizedImage.amazon_linux2().get_image(self).image_id
 

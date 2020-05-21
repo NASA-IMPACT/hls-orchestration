@@ -22,6 +22,7 @@ aws_cdk_reqs = [
     "aws-rds",
     "aws-secretsmanager",
     "aws-lambda-event-sources",
+    "aws-ssm",
 ]
 
 inst_reqs = ["boto3"]
