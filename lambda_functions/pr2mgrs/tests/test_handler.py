@@ -50,5 +50,10 @@ def test_handler():
     ]
     assert handler({"MGRS": "29XNK"}, {}) == expected
 
+    expected = [
+        "003001",
+        "003002",
+    ]
+    assert handler({"MGRS": "29XNK", "PATH": "003"}, {}) == expected
     with pytest.raises(Exception):
         handler({}, {})
