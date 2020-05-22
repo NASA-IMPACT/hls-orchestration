@@ -27,8 +27,11 @@ def handler(event: Dict, context: Dict):
         listL8 = list(filter(lambda x: x[1] == str(event.get("MGRS")), lookupTable))
         pathrows = [l8[0] for l8 in listL8]
         if event.get("PATH"):
-            pathrows = [pathrow for pathrow in pathrows if
-                        pathrow[0:3] == str(event.get("PATH"))]
+            pathrows = [
+                pathrow
+                for pathrow in pathrows
+                if pathrow[0:3] == str(event.get("PATH"))
+            ]
         # Do we want to raise an error when no grid is found ?
         return pathrows
 
