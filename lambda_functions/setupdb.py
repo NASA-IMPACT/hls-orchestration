@@ -26,7 +26,22 @@ CREATE TABLE IF NOT EXISTS eventlog (
     ts timestamptz default now() not null,
     event jsonb
 );
-CREATE OR REPLACE FUNCTION
+CREATE TABLE IF NOT EXISTS landsat_mgrs_log (
+    id bigserial primary key,
+    ts timestamptz default now() not null,
+    path varchar(3) not null,
+    mgrs varchar(5) not null,
+    acquisition date not null,
+    jobstatus boolean
+);
+CREATE TABLE IF NOT EXISTS landsat_ac_log (
+    id bigserial primary key,
+    ts timestamptz default now() not null,
+    path varchar(3) not null,
+    row varchar(3) not null,
+    acquisition date not null,
+    jobid text not null
+);
 granule(IN event jsonb, OUT granule text)
 AS $$
 SELECT a->>'Value'
