@@ -1,6 +1,6 @@
 import os
 import json
-from aws_cdk import core, aws_stepfunctions, aws_iam, aws_s3
+from aws_cdk import core, aws_stepfunctions, aws_iam, aws_s3, aws_sns
 from hlsconstructs.network import Network
 from hlsconstructs.s3 import S3
 from hlsconstructs.efs import Efs
@@ -32,15 +32,13 @@ SENTINEL_OUTPUT_BUCKET = os.getenv(
 SENTINEL_INPUT_BUCKET = os.getenv(
     "HLS_SENTINEL_INPUT_BUCKET", f"{STACKNAME}-sentinel-input"
 )
-LANDSAT_OUTPUT_BUCKET = os.getenv(
-    "HLS_LANDSAT_OUTPUT_BUCKET", f"{STACKNAME}-landlandsat-output"
-)
+LANDSAT_OUTPUT_BUCKET = os.getenv("HLS_LANDSAT_OUTPUT_BUCKET",)
 LANDSAT_INTERMEDIATE_OUTPUT_BUCKET = os.getenv(
     "HLS_LANDSAT_INTERMEDIATE_OUTPUT_BUCKET",
     f"{STACKNAME}-landlandsat-intermediate-output",
 )
+LANDSAT_SNS_TOPIC = os.getenv("HLS_LANDSAT_SNS_TOPIC",)
 SSH_KEYNAME = os.getenv("HLS_SSH_KEYNAME")
-
 try:
     MAXV_CPUS = int(os.getenv("HLS_MAXV_CPUS"))
 except ValueError:
@@ -72,11 +70,11 @@ class HlsStack(core.Stack):
         self.laads_bucket = S3(self, "LaadsBucket", bucket_name=LAADS_BUCKET)
 
         self.sentinel_output_bucket = aws_s3.Bucket.from_bucket_name(
-            self, f"sentinel_output_bucket", SENTINEL_OUTPUT_BUCKET
+            self, "sentinel_output_bucket", SENTINEL_OUTPUT_BUCKET
         )
 
         self.landsat_output_bucket = aws_s3.Bucket.from_bucket_name(
-            self, f"landsat_output_bucket", LANDSAT_OUTPUT_BUCKET
+            self, "landsat_output_bucket", LANDSAT_OUTPUT_BUCKET
         )
 
         # Must be created as part of the stack due to trigger requirements
@@ -88,6 +86,10 @@ class HlsStack(core.Stack):
             self,
             "LandsatIntermediateBucket",
             bucket_name=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
+        )
+
+        self.landsat_sns_topic = aws_sns.Topic.from_topic_arn(
+            self, "LandsatSNSTopc", topic_arn=LANDSAT_SNS_TOPIC
         )
 
         self.efs = Efs(self, "Efs", network=self.network)
@@ -180,6 +182,18 @@ class HlsStack(core.Stack):
             env={"SENTINEL_INPUT_BUCKET": SENTINEL_INPUT_BUCKET},
         )
 
+        self.landsat_mgrs_logger = Lambda(
+            self,
+            "LandsatMGRSLogger",
+            code_dir="landsat_mgrs_logger/hls_landsat_mgrs_logger",
+            env={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
+            },
+            timeout=30,
+        )
+
         self.laads_cron = BatchCron(
             self,
             "LaadsCron",
@@ -211,10 +225,17 @@ class HlsStack(core.Stack):
         self.step_function_trigger = StepFunctionTrigger(
             self,
             "SentinelStepFunctionTrigger",
-            input_bucket=self.sentinel_input_bucket,
             state_machine=self.sentinel_step_function.sentinel_state_machine.ref,
+            code_dir="execute_step_function/hls_execute_step_function",
+            input_bucket=self.sentinel_input_bucket,
         )
-
+        self.landsat_step_function_trigger = StepFunctionTrigger(
+            self,
+            "LandsatStepFunctionTrigger",
+            state_machine=self.sentinel_step_function.sentinel_state_machine.ref,
+            code_dir="execute_landsat_step_function/hls_execute_landsat_step_function",
+            input_sns=self.landsat_sns_topic,
+        )
         # Cross construct permissions
         self.laads_bucket_read_policy = aws_iam.PolicyStatement(
             resources=[
