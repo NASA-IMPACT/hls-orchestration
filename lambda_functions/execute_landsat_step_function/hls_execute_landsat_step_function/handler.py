@@ -102,6 +102,7 @@ def handler(event: Dict, context: Dict):
 
     scene_id = key.split("/")[-2]
     scene_meta = landsat_parse_scene_id(scene_id)
+    print(scene_meta)
     # Skip unless real-time (RT) collection
     if scene_meta["collectionCategory"] == "RT":
         try:
