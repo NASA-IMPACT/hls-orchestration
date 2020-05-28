@@ -32,8 +32,39 @@ class LandsatStepFunction(core.Construct):
 
         state_definition = {
             "Comment": "Landsat Step Function",
-            "StartAt": "LandsatMGRSLog",
+            "StartAt": "CheckLaads",
             "States": {
+                "CheckLaads": {
+                    "Type": "Task",
+                    "Resource": laads_available_function,
+                    "Parameters": {
+                        "granule.$": "$.scene",
+                        "scene_meta.$": "$"
+                    },
+                    "ResultPath": "$.taskresult",
+                    "Next": "LaadsAvailable",
+                    "Retry": [
+                        {
+                            "ErrorEquals": ["States.ALL"],
+                            "IntervalSeconds": 1,
+                            "MaxAttempts": 3,
+                            "BackoffRate": 2,
+                        }
+                    ],
+                    "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "LogError",}],
+                },
+                "LaadsAvailable": {
+                    "Type": "Choice",
+                    "Choices": [
+                        {
+                            "Variable": "$.taskresult.available",
+                            "BooleanEquals": True,
+                            "Next": "LandsatMGRSLog",
+                        }
+                    ],
+                    "Default": "Wait",
+                },
+                "Wait": {"Type": "Wait", "Seconds": 3600, "Next": "CheckLaads"},
                 "LandsatMGRSLog": {
                     "Type": "Task",
                     "Resource": landsat_mgrs_logger,
@@ -48,7 +79,22 @@ class LandsatStepFunction(core.Construct):
                         }
                     ],
                 },
-                "Done": {"Type": "Succeed"}
+                "LogError": {
+                    "Type": "Task",
+                    "Resource": lambda_logger,
+                    "ResultPath": "$",
+                    "Next": "Error",
+                    "Retry": [
+                        {
+                            "ErrorEquals": ["States.ALL"],
+                            "IntervalSeconds": 1,
+                            "MaxAttempts": 3,
+                            "BackoffRate": 2,
+                        }
+                    ],
+                },
+                "Done": {"Type": "Succeed"},
+                "Error": {"Type": "Fail"},
             },
         }
 
