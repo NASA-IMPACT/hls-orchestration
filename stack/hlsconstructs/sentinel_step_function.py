@@ -11,7 +11,7 @@ class SentinelStepFunction(core.Construct):
         self,
         scope: core.Construct,
         id: str,
-        check_granule: str,
+        check_twin_granule: str,
         laads_available_function: str,
         outputbucket: str,
         outputbucket_role_arn: str,
@@ -34,7 +34,7 @@ class SentinelStepFunction(core.Construct):
             "States": {
                 "CheckGranule": {
                     "Type": "Task",
-                    "Resource": check_granule,
+                    "Resource": check_twin_granule,
                     "ResultPath": "$",
                     "Next": "CheckLaads",
                     "Retry": [

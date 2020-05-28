@@ -11,6 +11,7 @@ from hlsconstructs.lambdafunc import Lambda
 from hlsconstructs.batch_cron import BatchCron
 from hlsconstructs.dummy_lambda import Dummy
 from hlsconstructs.sentinel_step_function import SentinelStepFunction
+from hlsconstructs.landsat_step_function import LandsatStepFunction
 from hlsconstructs.step_function_trigger import StepFunctionTrigger
 
 STACKNAME = os.getenv("HLS_STACKNAME", "hls")
@@ -175,7 +176,7 @@ class HlsStack(core.Stack):
             handler="handler.handler",
         )
 
-        self.check_granule = Lambda(
+        self.check_twin_granule = Lambda(
             self,
             "CheckGranule",
             code_file="twin_granule.py",
@@ -192,6 +193,7 @@ class HlsStack(core.Stack):
                 "HLS_DB_ARN": self.rds.arn,
             },
             timeout=30,
+            handler="handler.handler",
         )
 
         self.laads_cron = BatchCron(
@@ -211,7 +213,7 @@ class HlsStack(core.Stack):
         self.sentinel_step_function = SentinelStepFunction(
             self,
             "SentinelStateMachine",
-            check_granule=self.check_granule.function.function_arn,
+            check_twin_granule=self.check_twin_granule.function.function_arn,
             laads_available_function=self.laads_available.function.function_arn,
             outputbucket=SENTINEL_OUTPUT_BUCKET,
             inputbucket=SENTINEL_INPUT_BUCKET,
@@ -219,6 +221,19 @@ class HlsStack(core.Stack):
             jobqueue=self.batch.jobqueue.ref,
             lambda_logger=self.lambda_logger.function.function_arn,
             outputbucket_role_arn=HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN,
+            replace_existing=REPLACE_EXISTING,
+        )
+
+        self.landsat_step_function = LandsatStepFunction(
+            self,
+            "LandsatStateMachine",
+            laads_available_function=self.laads_available.function.function_arn,
+            outputbucket=LANDSAT_OUTPUT_BUCKET,
+            intermediate_output_bucket=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
+            ac_job_definition=self.landsat_task.job.ref,
+            jobqueue=self.batch.jobqueue.ref,
+            lambda_logger=self.lambda_logger.function.function_arn,
+            landsat_mgrs_logger=self.landsat_mgrs_logger.function.function_arn,
             replace_existing=REPLACE_EXISTING,
         )
 
@@ -232,10 +247,11 @@ class HlsStack(core.Stack):
         self.landsat_step_function_trigger = StepFunctionTrigger(
             self,
             "LandsatStepFunctionTrigger",
-            state_machine=self.sentinel_step_function.sentinel_state_machine.ref,
+            state_machine=self.landsat_step_function.state_machine.ref,
             code_dir="execute_landsat_step_function/hls_execute_landsat_step_function",
             input_sns=self.landsat_sns_topic,
         )
+
         # Cross construct permissions
         self.laads_bucket_read_policy = aws_iam.PolicyStatement(
             resources=[
@@ -260,7 +276,7 @@ class HlsStack(core.Stack):
 
         self.sentinel_step_function.steps_role.add_to_policy(self.batch_jobqueue_policy)
         self.sentinel_step_function.steps_role.add_to_policy(
-            self.check_granule.invoke_policy_statement
+            self.check_twin_granule.invoke_policy_statement
         )
         self.sentinel_step_function.steps_role.add_to_policy(
             self.laads_available.invoke_policy_statement
@@ -268,10 +284,22 @@ class HlsStack(core.Stack):
         self.sentinel_step_function.steps_role.add_to_policy(
             self.lambda_logger.invoke_policy_statement
         )
+
+        self.landsat_step_function.steps_role.add_to_policy(self.batch_jobqueue_policy)
+        self.landsat_step_function.steps_role.add_to_policy(
+            self.laads_available.invoke_policy_statement
+        )
+        self.landsat_step_function.steps_role.add_to_policy(
+            self.lambda_logger.invoke_policy_statement
+        )
+        self.landsat_step_function.steps_role.add_to_policy(
+            self.landsat_mgrs_logger.invoke_policy_statement
+        )
+
         self.lambda_logger.function.add_to_role_policy(self.rds.policy_statement)
         self.rds_bootstrap.function.add_to_role_policy(self.rds.policy_statement)
 
-        self.check_granule.function.add_to_role_policy(
+        self.check_twin_granule.function.add_to_role_policy(
             aws_iam.PolicyStatement(
                 resources=[
                     self.sentinel_input_bucket.bucket_arn,

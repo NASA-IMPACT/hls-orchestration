@@ -11,17 +11,15 @@ class LandsatStepFunction(core.Construct):
         self,
         scope: core.Construct,
         id: str,
-        check_granule: str,
         laads_available_function: str,
         outputbucket: str,
-        outputbucket_role_arn: str,
+        # outputbucket_role_arn: str,
         intermediate_output_bucket: str,
         ac_job_definition: str,
-        tiling_job_definition: str,
+        # tiling_job_definition: str,
         jobqueue: str,
         lambda_logger: str,
         landsat_mgrs_logger: str,
-        landsat_sns_topic: str,
         replace_existing: bool,
         **kwargs,
     ) -> None:
@@ -34,7 +32,7 @@ class LandsatStepFunction(core.Construct):
 
         state_definition = {
             "Comment": "Landsat Step Function",
-            "StartAt": "CheckGranule",
+            "StartAt": "LandsatMGRSLog",
             "States": {
                 "LandsatMGRSLog": {
                     "Type": "Task",
@@ -50,8 +48,7 @@ class LandsatStepFunction(core.Construct):
                         }
                     ],
                 },
-                "Done": {"Type": "Succeed"},
-                "Error": {"Type": "Fail"},
+                "Done": {"Type": "Succeed"}
             },
         }
 
