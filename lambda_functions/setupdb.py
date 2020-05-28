@@ -32,7 +32,8 @@ CREATE TABLE IF NOT EXISTS landsat_mgrs_log (
     path varchar(3) not null,
     mgrs varchar(5) not null,
     acquisition date not null,
-    jobstatus boolean
+    jobstatus boolean,
+    unique(path, mgrs, acquisition)
 );
 CREATE TABLE IF NOT EXISTS landsat_ac_log (
     id bigserial primary key,
@@ -42,6 +43,7 @@ CREATE TABLE IF NOT EXISTS landsat_ac_log (
     acquisition date not null,
     jobid text not null
 );
+CREATE OR REPLACE FUNCTION
 granule(IN event jsonb, OUT granule text)
 AS $$
 SELECT a->>'Value'

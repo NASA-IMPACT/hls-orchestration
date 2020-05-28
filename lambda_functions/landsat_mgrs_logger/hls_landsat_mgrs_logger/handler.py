@@ -21,12 +21,16 @@ def execute_statement(sql, sql_parameters=[]):
 
 
 def handler(event, context):
-    # if event.get("Cause"):
-    # event = json.loads(event["Cause"])
-    # q = "INSERT INTO eventlog (event) VALUES (:event::jsonb);"
-    # execute_statement(
-    # q,
-    # sql_parameters=[{"name": "event", "value": {"stringValue": json.dumps(event)}}],
-    # )
-
+    acquisition_date = (
+        f'{event["processingYear"]}-{event["processingMonth"]}-{event["processingDay"]}'
+    )
+    q = "INSERT INTO landsat_mgrs_log (path, row, acquisition) ON CONFLICT DO NOTHING;"
+    execute_statement(
+        q,
+        sql_parameters=[
+            {"name": "path", "value": {"stringValue": event["path"]}},
+            {"name": "row", "value": {"stringValue": event["row"]}},
+            {"name": "acquisition", "value": {"stringValue": acquisition_date}},
+        ],
+    )
     return event

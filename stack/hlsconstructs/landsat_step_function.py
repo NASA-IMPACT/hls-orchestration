@@ -20,6 +20,7 @@ class LandsatStepFunction(core.Construct):
         jobqueue: str,
         lambda_logger: str,
         landsat_mgrs_logger: str,
+        pr2mgrs: str,
         replace_existing: bool,
         **kwargs,
     ) -> None:
@@ -59,12 +60,26 @@ class LandsatStepFunction(core.Construct):
                         {
                             "Variable": "$.taskresult.available",
                             "BooleanEquals": True,
-                            "Next": "LandsatMGRSLog",
+                            "Next": "GetMGRSValues",
                         }
                     ],
                     "Default": "Wait",
                 },
                 "Wait": {"Type": "Wait", "Seconds": 3600, "Next": "CheckLaads"},
+                "GetMGRSValues": {
+                    "Type": "Task",
+                    "Resource": pr2mgrs,
+                    "ResultPath": "$.taskresult",
+                    "Next": "LandsatMGRSLog",
+                    "Retry": [
+                        {
+                            "ErrorEquals": ["States.ALL"],
+                            "IntervalSeconds": 1,
+                            "MaxAttempts": 3,
+                            "BackoffRate": 2,
+                        }
+                    ],
+                },
                 "LandsatMGRSLog": {
                     "Type": "Task",
                     "Resource": landsat_mgrs_logger,
