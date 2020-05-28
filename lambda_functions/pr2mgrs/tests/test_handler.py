@@ -19,7 +19,7 @@ def test_handler():
         "31XEK",
         "31XEL",
     ]
-    assert handler({"Path": "001", "Row": "001"}, {}) == expected
+    assert handler({"path": "001", "row": "001"}, {}) == expected
 
     expected = [
         "001001",
@@ -54,6 +54,6 @@ def test_handler():
         "003001",
         "003002",
     ]
-    assert handler({"MGRS": "29XNK", "Path": "003"}, {}) == expected
+    assert handler({"MGRS": "29XNK", "path": "003"}, {}) == expected
     with pytest.raises(Exception):
         handler({}, {})
