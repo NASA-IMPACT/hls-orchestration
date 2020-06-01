@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS landsat_mgrs_log (
     mgrs varchar(5) not null,
     acquisition date not null,
     jobstatus boolean,
-    unique(path, mgrs, acquisition)
+    constraint no_dupe_mgrs unique(path, mgrs, acquisition)
 );
 CREATE TABLE IF NOT EXISTS landsat_ac_log (
     id bigserial primary key,

@@ -4,21 +4,24 @@ from lambda_functions.pr2mgrs.hls_pr2mgrs.handler import handler
 
 def test_handler():
     """Test handler."""
-    expected = [
-        "29XNK",
-        "29XNL",
-        "30XVQ",
-        "30XVR",
-        "30XWP",
-        "30XWQ",
-        "30XWR",
-        "31XDJ",
-        "31XDK",
-        "31XDL",
-        "31XEJ",
-        "31XEK",
-        "31XEL",
-    ]
+    expected = {
+        "mgrs": [
+            "29XNK",
+            "29XNL",
+            "30XVQ",
+            "30XVR",
+            "30XWP",
+            "30XWQ",
+            "30XWR",
+            "31XDJ",
+            "31XDK",
+            "31XDL",
+            "31XEJ",
+            "31XEK",
+            "31XEL",
+        ],
+        "count": 13,
+    }
     assert handler({"path": "001", "row": "001"}, {}) == expected
 
     expected = [

@@ -24,13 +24,14 @@ def handler(event, context):
     acquisition_date = (
         f'{event["processingYear"]}-{event["processingMonth"]}-{event["processingDay"]}'
     )
-    q = "INSERT INTO landsat_mgrs_log (path, row, acquisition) ON CONFLICT DO NOTHING;"
-    execute_statement(
-        q,
-        sql_parameters=[
-            {"name": "path", "value": {"stringValue": event["path"]}},
-            {"name": "row", "value": {"stringValue": event["row"]}},
-            {"name": "acquisition", "value": {"stringValue": acquisition_date}},
-        ],
-    )
+    q = "INSERT INTO landsat_mgrs_log (path, mgrs, acquisition) VALUES (:path::varchar(3), :mgrs::varchar(5), :acquisition::date) ON CONFLICT DO NOTHING;"
+    for mgrs_grid in event["mgrsvalues"]["mgrs"]:
+        execute_statement(
+            q,
+            sql_parameters=[
+                {"name": "path", "value": {"stringValue": event["path"]}},
+                {"name": "mgrs", "value": {"stringValue": mgrs_grid}},
+                {"name": "acquisition", "value": {"stringValue": acquisition_date}},
+            ],
+        )
     return event

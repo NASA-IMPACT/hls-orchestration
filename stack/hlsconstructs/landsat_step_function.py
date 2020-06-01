@@ -69,8 +69,8 @@ class LandsatStepFunction(core.Construct):
                 "GetMGRSValues": {
                     "Type": "Task",
                     "Resource": pr2mgrs,
-                    "ResultPath": "$.taskresult",
-                    "Next": "LandsatMGRSLog",
+                    "ResultPath": "$.mgrsvalues",
+                    "Next": "MGRSExists",
                     "Retry": [
                         {
                             "ErrorEquals": ["States.ALL"],
@@ -80,10 +80,21 @@ class LandsatStepFunction(core.Construct):
                         }
                     ],
                 },
+                "MGRSExists": {
+                    "Type": "Choice",
+                    "Choices": [
+                        {
+                            "Variable": "$.mgrsvalues.count",
+                            "NumericGreaterThan": 0,
+                            "Next": "LandsatMGRSLog",
+                        }
+                    ],
+                    "Default": "Done",
+                },
                 "LandsatMGRSLog": {
                     "Type": "Task",
                     "Resource": landsat_mgrs_logger,
-                    "ResultPath": "$",
+                    "ResultPath": None,
                     "Next": "Done",
                     "Retry": [
                         {

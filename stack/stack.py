@@ -302,6 +302,7 @@ class HlsStack(core.Stack):
 
         self.lambda_logger.function.add_to_role_policy(self.rds.policy_statement)
         self.rds_bootstrap.function.add_to_role_policy(self.rds.policy_statement)
+        self.landsat_mgrs_logger.function.add_to_role_policy(self.rds.policy_statement)
 
         self.check_twin_granule.function.add_to_role_policy(
             aws_iam.PolicyStatement(
