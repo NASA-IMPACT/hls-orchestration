@@ -41,7 +41,8 @@ CREATE TABLE IF NOT EXISTS landsat_ac_log (
     path varchar(3) not null,
     row varchar(3) not null,
     acquisition date not null,
-    jobid text not null
+    jobid text not null,
+    constraint no_dupe_pathrowdate unique(path, row, acquisition)
 );
 CREATE OR REPLACE FUNCTION
 granule(IN event jsonb, OUT granule text)

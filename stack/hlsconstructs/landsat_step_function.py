@@ -20,6 +20,7 @@ class LandsatStepFunction(core.Construct):
         jobqueue: str,
         lambda_logger: str,
         landsat_mgrs_logger: str,
+        landsat_ac_logger: str,
         pr2mgrs: str,
         replace_existing: bool,
         **kwargs,
@@ -94,6 +95,20 @@ class LandsatStepFunction(core.Construct):
                 "LandsatMGRSLog": {
                     "Type": "Task",
                     "Resource": landsat_mgrs_logger,
+                    "ResultPath": None,
+                    "Next": "LandsatAcLog",
+                    "Retry": [
+                        {
+                            "ErrorEquals": ["States.ALL"],
+                            "IntervalSeconds": 1,
+                            "MaxAttempts": 3,
+                            "BackoffRate": 2,
+                        }
+                    ],
+                },
+                "LandsatAcLog": {
+                    "Type": "Task",
+                    "Resource": landsat_ac_logger,
                     "ResultPath": None,
                     "Next": "ProcessMGRSGrid",
                     "Retry": [
