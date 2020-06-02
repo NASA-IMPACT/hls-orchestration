@@ -95,7 +95,7 @@ class LandsatStepFunction(core.Construct):
                     "Type": "Task",
                     "Resource": landsat_mgrs_logger,
                     "ResultPath": None,
-                    "Next": "Done",
+                    "Next": "ProcessMGRSGrid",
                     "Retry": [
                         {
                             "ErrorEquals": ["States.ALL"],
@@ -104,6 +104,27 @@ class LandsatStepFunction(core.Construct):
                             "BackoffRate": 2,
                         }
                     ],
+                },
+                "ProcessMGRSGrid": {
+                    "Type": "Map",
+                    "ItemsPath": "$.mgrsvalues.mgrs",
+                    "ResultPath": "$.pathrows",
+                    "Parameters": {
+                        "MGRS.$": "$$.Map.Item.Value",
+                        "path.$": "$.path"
+                    },
+                    "MaxConcurrency": 0,
+                    "Iterator": {
+                        "StartAt": "GetPathRowValues",
+                        "States": {
+                            "GetPathRowValues": {
+                                "Type": "Task",
+                                "Resource": pr2mgrs,
+                                "End": True
+                            }
+                        }
+                    },
+                    "End": True
                 },
                 "LogError": {
                     "Type": "Task",
