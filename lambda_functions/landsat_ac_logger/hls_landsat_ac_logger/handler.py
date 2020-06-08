@@ -32,9 +32,11 @@ def handler(event, context):
     )
     try:
         jobid = event["jobinfo"]["JobId"]
+        jobinfo = json.dumps(event["jobinfo"])
     except KeyError:
         cause = json.loads(event["jobinfo"]["Cause"])
         jobid = cause["JobId"]
+        jobinfo = json.dumps(cause)
     execute_statement(
         q,
         sql_parameters=[
@@ -42,7 +44,7 @@ def handler(event, context):
             {"name": "row", "value": {"stringValue": event["row"]}},
             {"name": "acquisition", "value": {"stringValue": acquisition_date}},
             {"name": "jobid", "value": {"stringValue": jobid},},
-            {"name": "jobinfo", "value": {"stringValue": json.dumps(event["jobinfo"])}},
+            {"name": "jobinfo", "value": {"stringValue": jobinfo}},
         ],
     )
     return event
