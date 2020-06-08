@@ -22,7 +22,7 @@ def execute_statement(sql, sql_parameters=[]):
 
 def handler(event, context):
     acquisition_date = (
-        f'{event["processingYear"]}-{event["processingMonth"]}-{event["processingDay"]}'
+        f'{event["acquisitionYear"]}-{event["acquisitionMonth"]}-{event["acquisitionDay"]}'
     )
     q = (
         "INSERT INTO landsat_ac_log (path, row, acquisition, jobid, jobinfo) VALUES"

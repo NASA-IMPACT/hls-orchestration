@@ -9,7 +9,7 @@ from lambda_functions.landsat_ac_logger.hls_landsat_ac_logger.handler import (
 @patch(
     "lambda_functions.landsat_ac_logger.hls_landsat_ac_logger.handler.boto3.client"
 )
-def test_handler(client):
+def test_handler_keyError(client):
     """Test handler."""
     event = (
         {
@@ -69,6 +69,170 @@ def test_handler(client):
     path = {"name": "path", "value": {"stringValue": "127"}}
     row = {"name": "row", "value": {"stringValue": "010"}}
     acquisition = {"name": "acquisition", "value": {"stringValue": "2020-05-27"}}
+    assert path in kwargs["parameters"]
+    assert row in kwargs["parameters"]
+    assert acquisition in kwargs["parameters"]
+
+
+@patch(
+    "lambda_functions.landsat_ac_logger.hls_landsat_ac_logger.handler.boto3.client"
+)
+def test_handler(client):
+    """Test handler."""
+    event = (
+        {
+            "sensor": "C",
+            "satellite": "08",
+            "processingCorrectionLevel": "L1TP",
+            "path": "116",
+            "row": "078",
+            "acquisitionYear": "2020",
+            "acquisitionMonth": "05",
+            "acquisitionDay": "30",
+            "processingYear": "2020",
+            "processingMonth": "06",
+            "processingDay": "08",
+            "collectionNumber": "01",
+            "collectionCategory": "T1",
+            "scene": "LC08_L1TP_116078_20200530_20200608_01_T1",
+            "date": "2020-05-30",
+            "scheme": "s3",
+            "bucket": "landsat-pds",
+            "prefix": "c1/L8/116/078/LC08_L1TP_116078_20200530_20200608_01_T1",
+            "taskresult": {
+                "granule": "LC08_L1TP_116078_20200530_20200608_01_T1",
+                "year": "2020",
+                "doy": "2020151",
+                "bucket": "hls-development-laads-bucket",
+                "key": "lasrc_aux/LADS/2020/L8ANC2020151.hdf_fused",
+                "available": True
+            },
+            "mgrsvalues": {
+                "mgrs": [
+                    "49JDL",
+                    "49JDM",
+                    "49JEL",
+                    "49JEM",
+                    "49JEN",
+                    "49JFL",
+                    "49JFM",
+                    "49JFN"
+                ],
+                "count": 8
+            },
+            "jobinfo": {
+                "Attempts": [
+                    {
+                        "Container": {
+                            "ContainerInstanceArn": "arn:aws:ecs:us-west-2:018923174646:container-instance/12299235-2d73-4d5a-834a-b430bfc322f0",
+                            "ExitCode": 0,
+                            "LogStreamName": "LandsatTaskBatchJob1274-131d33be785ce5d/default/9ff13470-d69d-43ad-91c1-3c152b7d9b71",
+                            "NetworkInterfaces": [],
+                            "TaskArn": "arn:aws:ecs:us-west-2:018923174646:task/9ff13470-d69d-43ad-91c1-3c152b7d9b71"
+                        },
+                        "StartedAt": 1591642847276,
+                        "StatusReason": "Essential container in task exited",
+                        "StoppedAt": 1591643191409
+                    }
+                ],
+                "Container": {
+                    "Command": [
+                        "export && landsat.sh"
+                    ],
+                    "ContainerInstanceArn": "arn:aws:ecs:us-west-2:018923174646:container-instance/12299235-2d73-4d5a-834a-b430bfc322f0",
+                    "Environment": [
+                        {
+                            "Name": "PREFIX",
+                            "Value": "c1/L8/116/078/LC08_L1TP_116078_20200530_20200608_01_T1"
+                        },
+                        {
+                            "Name": "GRANULE",
+                            "Value": "LC08_L1TP_116078_20200530_20200608_01_T1"
+                        },
+                        {
+                            "Name": "OUTPUT_BUCKET",
+                            "Value": "hls-development-landsat-intermediate-output"
+                        },
+                        {
+                            "Name": "LASRC_AUX_DIR",
+                            "Value": "/var/lasrc_aux"
+                        },
+                        {
+                            "Name": "MANAGED_BY_AWS",
+                            "Value": "STARTED_BY_STEP_FUNCTIONS"
+                        },
+                        {
+                            "Name": "INPUT_BUCKET",
+                            "Value": "landsat-pds"
+                        },
+                        {
+                            "Name": "REPLACE_EXISTING",
+                            "Value": "replace"
+                        }
+                    ],
+                    "ExitCode": 0,
+                    "Image": "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat:latest",
+                    "JobRoleArn": "arn:aws:iam::018923174646:role/hls-development-LandsatTaskTaskRoleFD2391A2-440VUZKTYZ2O",
+                    "LogStreamName": "LandsatTaskBatchJob1274-131d33be785ce5d/default/9ff13470-d69d-43ad-91c1-3c152b7d9b71",
+                    "Memory": 12000,
+                    "MountPoints": [
+                        {
+                            "ContainerPath": "/var/lasrc_aux",
+                            "ReadOnly": False,
+                            "SourceVolume": "volume"
+                        },
+                        {
+                            "ContainerPath": "/var/scratch",
+                            "ReadOnly": False,
+                            "SourceVolume": "scratch_volume"
+                        }
+                    ],
+                    "NetworkInterfaces": [],
+                    "ResourceRequirements": [],
+                    "TaskArn": "arn:aws:ecs:us-west-2:018923174646:task/9ff13470-d69d-43ad-91c1-3c152b7d9b71",
+                    "Ulimits": [],
+                    "Vcpus": 2,
+                    "Volumes": [
+                        {
+                            "Host": {
+                                "SourcePath": "/mnt/efs"
+                            },
+                            "Name": "volume"
+                        },
+                        {
+                            "Host": {
+                                "SourcePath": "/scratch"
+                            },
+                            "Name": "scratch_volume"
+                        }
+                    ]
+                },
+                "CreatedAt": 1591642241533,
+                "DependsOn": [],
+                "JobDefinition": "arn:aws:batch:us-west-2:018923174646:job-definition/LandsatTaskBatchJob1274-131d33be785ce5d:2",
+                "JobId": "4943679f-2c59-49d3-b048-c1945196851e",
+                "JobName": "LandsatAcJob",
+                "JobQueue": "arn:aws:batch:us-west-2:018923174646:job-queue/BatchJobQueueFD3B0361-88c4344c33bfb4a",
+                "Parameters": {},
+                "RetryStrategy": {
+                    "Attempts": 1
+                },
+                "StartedAt": 1591642847276,
+                "Status": "SUCCEEDED",
+                "StatusReason": "Essential container in task exited",
+                "StoppedAt": 1591643191409,
+                "Timeout": {
+                    "AttemptDurationSeconds": 5400
+                }
+            }
+        }
+    )
+    client.return_value.execute_statement.return_value = {}
+    handler(event, {})
+    args, kwargs = client.return_value.execute_statement.call_args
+    path = {"name": "path", "value": {"stringValue": "116"}}
+    row = {"name": "row", "value": {"stringValue": "078"}}
+    acquisition = {"name": "acquisition", "value": {"stringValue": "2020-05-30"}}
     assert path in kwargs["parameters"]
     assert row in kwargs["parameters"]
     assert acquisition in kwargs["parameters"]
