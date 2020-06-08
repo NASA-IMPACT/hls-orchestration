@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS landsat_ac_log (
     row varchar(3) not null,
     acquisition date not null,
     jobid text not null,
+    jobinfo jsonb,
     constraint no_dupe_pathrowdate unique(path, row, acquisition)
 );
 CREATE OR REPLACE FUNCTION
