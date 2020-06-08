@@ -21,9 +21,6 @@ def execute_statement(sql, sql_parameters=[]):
 
 
 def handler(event, context):
-    acquisition_date = (
-        f'{event["acquisitionYear"]}-{event["acquisitionMonth"]}-{event["acquisitionDay"]}'
-    )
     q = (
         "INSERT INTO landsat_ac_log (path, row, acquisition, jobid, jobinfo) VALUES"
         + "(:path::varchar(3), :row::varchar(3), :acquisition::date, :jobid::text, :jobinfo::jsonb)"
@@ -42,7 +39,7 @@ def handler(event, context):
         sql_parameters=[
             {"name": "path", "value": {"stringValue": event["path"]}},
             {"name": "row", "value": {"stringValue": event["row"]}},
-            {"name": "acquisition", "value": {"stringValue": acquisition_date}},
+            {"name": "acquisition", "value": {"stringValue": event["date"]}},
             {"name": "jobid", "value": {"stringValue": jobid},},
             {"name": "jobinfo", "value": {"stringValue": jobinfo}},
         ],
