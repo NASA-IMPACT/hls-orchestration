@@ -27,10 +27,10 @@ class LandsatStepFunction(core.Construct):
     ) -> None:
         super().__init__(scope, id, **kwargs)
 
-        # if replace_existing:
-        # replace = "replace"
-        # else:
-        # replace = None
+        if replace_existing:
+            replace = "replace"
+        else:
+            replace = None
 
         state_definition = {
             "Comment": "Landsat Step Function",
@@ -39,10 +39,7 @@ class LandsatStepFunction(core.Construct):
                 "CheckLaads": {
                     "Type": "Task",
                     "Resource": laads_available_function,
-                    "Parameters": {
-                        "granule.$": "$.scene",
-                        "scene_meta.$": "$"
-                    },
+                    "Parameters": {"granule.$": "$.scene", "scene_meta.$": "$"},
                     "ResultPath": "$.taskresult",
                     "Next": "LaadsAvailable",
                     "Retry": [
@@ -87,16 +84,16 @@ class LandsatStepFunction(core.Construct):
                         {
                             "Variable": "$.mgrsvalues.count",
                             "NumericGreaterThan": 0,
-                            "Next": "LandsatMGRSLog",
+                            "Next": "LogLandsatMGRS",
                         }
                     ],
                     "Default": "Done",
                 },
-                "LandsatMGRSLog": {
+                "LogLandsatMGRS": {
                     "Type": "Task",
                     "Resource": landsat_mgrs_logger,
                     "ResultPath": None,
-                    "Next": "LandsatAcLog",
+                    "Next": "RunLandsatAc",
                     "Retry": [
                         {
                             "ErrorEquals": ["States.ALL"],
@@ -106,10 +103,37 @@ class LandsatStepFunction(core.Construct):
                         }
                     ],
                 },
-                "LandsatAcLog": {
+                "RunLandsatAc": {
+                    "Type": "Task",
+                    "Resource": "arn:aws:states:::batch:submitJob.sync",
+                    "ResultPath": "$.jobinfo",
+                    "Parameters": {
+                        "JobName": "LandsatAcJob",
+                        "JobQueue": jobqueue,
+                        "JobDefinition": ac_job_definition,
+                        "ContainerOverrides": {
+                            "Command": ["export && landsat.sh"],
+                            "Environment": [
+                                {"Name": "INPUT_BUCKET", "Value.$": "$.bucket"},
+                                {"Name": "PREFIX", "Value.$": "$.prefix"},
+                                {"Name": "GRANULE", "Value.$": "$.scene"},
+                                {
+                                    "Name": "OUTPUT_BUCKET",
+                                    "Value": intermediate_output_bucket,
+                                },
+                                {"Name": "LASRC_AUX_DIR", "Value": "/var/lasrc_aux"},
+                                {"Name": "REPLACE_EXISTING", "Value": replace},
+                            ],
+                        },
+                    },
+                    "Catch": [{"ErrorEquals": ["States.ALL"],
+                               "Next": "LogLandsatAcError",
+                               "ResultPath": "$.jobinfo"}],
+                    "Next": "LogLandsatAc",
+                },
+                "LogLandsatAc": {
                     "Type": "Task",
                     "Resource": landsat_ac_logger,
-                    "ResultPath": None,
                     "Next": "ProcessMGRSGrid",
                     "Retry": [
                         {
@@ -124,10 +148,7 @@ class LandsatStepFunction(core.Construct):
                     "Type": "Map",
                     "ItemsPath": "$.mgrsvalues.mgrs",
                     "ResultPath": "$.pathrows",
-                    "Parameters": {
-                        "MGRS.$": "$$.Map.Item.Value",
-                        "path.$": "$.path"
-                    },
+                    "Parameters": {"MGRS.$": "$$.Map.Item.Value", "path.$": "$.path"},
                     "MaxConcurrency": 0,
                     "Iterator": {
                         "StartAt": "GetPathRowValues",
@@ -135,11 +156,25 @@ class LandsatStepFunction(core.Construct):
                             "GetPathRowValues": {
                                 "Type": "Task",
                                 "Resource": pr2mgrs,
-                                "End": True
+                                "End": True,
                             }
-                        }
+                        },
                     },
-                    "End": True
+                    "End": True,
+                },
+                "LogLandsatAcError": {
+                    "Type": "Task",
+                    "Resource": landsat_ac_logger,
+                    "ResultPath": None,
+                    "Next": "Error",
+                    "Retry": [
+                        {
+                            "ErrorEquals": ["States.ALL"],
+                            "IntervalSeconds": 1,
+                            "MaxAttempts": 3,
+                            "BackoffRate": 2,
+                        }
+                    ],
                 },
                 "LogError": {
                     "Type": "Task",

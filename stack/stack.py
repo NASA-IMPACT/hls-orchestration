@@ -359,6 +359,12 @@ class HlsStack(core.Stack):
                 actions=["s3:Get*", "s3:Put*", "s3:List*", "s3:AbortMultipartUpload",],
             )
         )
+        self.landsat_task.role.add_to_policy(
+            aws_iam.PolicyStatement(
+                resources=["arn:aws:s3:::landsat-pds", "arn:aws:s3:::landsat-pds/*",],
+                actions=["s3:Get*", "s3:List*",],
+            )
+        )
         self.batch.ecs_instance_role.add_to_policy(
             aws_iam.PolicyStatement(
                 resources=[HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN],
