@@ -209,6 +209,19 @@ class HlsStack(core.Stack):
             handler="handler.handler",
         )
 
+        self.landsat_pathrow_status = Lambda(
+            self,
+            "LandsatPathrowStatus",
+            code_dir="landsat_pathrow_status/hls_landsat_pathrow_status",
+            env={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
+            },
+            timeout=30,
+            handler="handler.handler",
+        )
+
         self.laads_cron = BatchCron(
             self,
             "LaadsCron",
@@ -248,6 +261,7 @@ class HlsStack(core.Stack):
             lambda_logger=self.lambda_logger.function.function_arn,
             landsat_mgrs_logger=self.landsat_mgrs_logger.function.function_arn,
             landsat_ac_logger=self.landsat_ac_logger.function.function_arn,
+            landsat_pathrow_status=self.landsat_pathrow_status.function.function_arn,
             pr2mgrs=self.pr2mgrs_lambda.function.function_arn,
             replace_existing=REPLACE_EXISTING,
         )
@@ -316,11 +330,15 @@ class HlsStack(core.Stack):
         self.landsat_step_function.steps_role.add_to_policy(
             self.landsat_ac_logger.invoke_policy_statement
         )
+        self.landsat_step_function.steps_role.add_to_policy(
+            self.landsat_pathrow_status.invoke_policy_statement
+        )
 
         self.lambda_logger.function.add_to_role_policy(self.rds.policy_statement)
         self.rds_bootstrap.function.add_to_role_policy(self.rds.policy_statement)
         self.landsat_mgrs_logger.function.add_to_role_policy(self.rds.policy_statement)
         self.landsat_ac_logger.function.add_to_role_policy(self.rds.policy_statement)
+        self.landsat_pathrow_status.function.add_to_role_policy(self.rds.policy_statement)
 
         self.check_twin_granule.function.add_to_role_policy(
             aws_iam.PolicyStatement(

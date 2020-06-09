@@ -21,6 +21,7 @@ class LandsatStepFunction(core.Construct):
         lambda_logger: str,
         landsat_mgrs_logger: str,
         landsat_ac_logger: str,
+        landsat_pathrow_status: str,
         pr2mgrs: str,
         replace_existing: bool,
         **kwargs,
@@ -148,7 +149,11 @@ class LandsatStepFunction(core.Construct):
                     "Type": "Map",
                     "ItemsPath": "$.mgrsvalues.mgrs",
                     "ResultPath": "$.pathrows",
-                    "Parameters": {"MGRS.$": "$$.Map.Item.Value", "path.$": "$.path"},
+                    "Parameters": {
+                        "MGRS.$": "$$.Map.Item.Value",
+                        "path.$": "$.path",
+                        "date.$": "$.date",
+                    },
                     "MaxConcurrency": 0,
                     "Iterator": {
                         "StartAt": "GetPathRowValues",
@@ -156,7 +161,28 @@ class LandsatStepFunction(core.Construct):
                             "GetPathRowValues": {
                                 "Type": "Task",
                                 "Resource": pr2mgrs,
-                                "End": True,
+                                "ResultPath": "$.pathrow",
+                                "Next": "CheckPathRowStatus",
+                            },
+                            "CheckPathRowStatus": {
+                                "Type": "Task",
+                                "Resource": landsat_pathrow_status,
+                                "ResultPath": "$.ready_for_tiling",
+                                "Next": "ReadyForTiling",
+                            },
+                            "ReadyForTiling": {
+                                "Type": "Choice",
+                                "Choices": [
+                                    {
+                                        "Variable": "$.ready_for_tiling",
+                                        "BooleanEquals": True,
+                                        "Next": "SuccessState",
+                                    }
+                                ],
+                                "Default": "SuccessState",
+                            },
+                            "SuccessState": {
+                                "Type": "Succeed"
                             }
                         },
                     },
