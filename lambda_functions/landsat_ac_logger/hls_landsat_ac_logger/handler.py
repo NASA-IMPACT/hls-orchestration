@@ -6,10 +6,10 @@ import json
 db_credentials_secrets_store_arn = os.getenv("HLS_SECRETS")
 database_name = os.getenv("HLS_DB_NAME")
 db_cluster_arn = os.getenv("HLS_DB_ARN")
+rds_client = boto3.client("rds-data")
 
 
 def execute_statement(sql, sql_parameters=[]):
-    rds_client = boto3.client("rds-data")
     response = rds_client.execute_statement(
         secretArn=db_credentials_secrets_store_arn,
         database=database_name,
