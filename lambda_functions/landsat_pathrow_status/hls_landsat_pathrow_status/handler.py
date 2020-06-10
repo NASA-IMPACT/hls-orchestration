@@ -22,7 +22,7 @@ def execute_statement(sql, sql_parameters=[]):
 
 
 def handler(event, context):
-    rowlist = reduce((lambda agg, row: agg + "'" + row[-3:] + "'" + ","), event["pathrow"], "")
+    rowlist = reduce((lambda agg, row: agg + "'" + row[-3:] + "'" + ","), event["pathrows"], "")
     rowlist = rowlist.rstrip(",")
     rowlistquery = " AND row IN (" + rowlist + ")"
     print(rowlistquery)
@@ -37,7 +37,7 @@ def handler(event, context):
             {"name": "acquisition", "value": {"stringValue": event["date"]}},
         ],
     )
-    if len(response["records"]) == len(event["pathrow"]):
+    if len(response["records"]) == len(event["pathrows"]):
         ready_for_tiling = True
     else:
         ready_for_tiling = False

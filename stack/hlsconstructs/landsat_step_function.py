@@ -148,7 +148,6 @@ class LandsatStepFunction(core.Construct):
                 "ProcessMGRSGrid": {
                     "Type": "Map",
                     "ItemsPath": "$.mgrsvalues.mgrs",
-                    "ResultPath": "$.pathrows",
                     "Parameters": {
                         "MGRS.$": "$$.Map.Item.Value",
                         "path.$": "$.path",
@@ -161,7 +160,7 @@ class LandsatStepFunction(core.Construct):
                             "GetPathRowValues": {
                                 "Type": "Task",
                                 "Resource": pr2mgrs,
-                                "ResultPath": "$.pathrow",
+                                "ResultPath": "$.pathrows",
                                 "Next": "CheckPathRowStatus",
                             },
                             "CheckPathRowStatus": {
@@ -233,7 +232,6 @@ class LandsatStepFunction(core.Construct):
             definition_string=json.dumps(state_definition),
             role_arn=self.steps_role.role_arn,
         )
-
         region = core.Aws.REGION
         acountid = core.Aws.ACCOUNT_ID
         self.steps_role.add_to_policy(
