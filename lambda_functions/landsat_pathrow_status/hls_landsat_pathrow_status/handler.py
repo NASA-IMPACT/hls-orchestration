@@ -9,8 +9,10 @@ database_name = os.getenv("HLS_DB_NAME")
 db_cluster_arn = os.getenv("HLS_DB_ARN")
 
 
+rds_client = boto3.client("rds-data")
+
+
 def execute_statement(sql, sql_parameters=[]):
-    rds_client = boto3.client("rds-data")
     response = rds_client.execute_statement(
         secretArn=db_credentials_secrets_store_arn,
         database=database_name,
@@ -22,13 +24,16 @@ def execute_statement(sql, sql_parameters=[]):
 
 
 def handler(event, context):
-    rowlist = reduce((lambda agg, row: agg + "'" + row[-3:] + "'" + ","), event["pathrows"], "")
+    rowlist = reduce(
+        (lambda agg, row: agg + "'" + row[-3:] + "'" + ","), event["pathrows"], ""
+    )
     rowlist = rowlist.rstrip(",")
     rowlistquery = " AND row IN (" + rowlist + ")"
     print(rowlistquery)
     q = (
         "SELECT * FROM landsat_ac_log WHERE"
-        + " path = :path AND acquisition = :acquisition::date" + rowlistquery
+        + " path = :path AND acquisition = :acquisition::date"
+        + rowlistquery
     )
     response = execute_statement(
         q,
