@@ -127,9 +127,13 @@ class LandsatStepFunction(core.Construct):
                             ],
                         },
                     },
-                    "Catch": [{"ErrorEquals": ["States.ALL"],
-                               "Next": "LogLandsatAcError",
-                               "ResultPath": "$.jobinfo"}],
+                    "Catch": [
+                        {
+                            "ErrorEquals": ["States.ALL"],
+                            "Next": "LogLandsatAcError",
+                            "ResultPath": "$.jobinfo",
+                        }
+                    ],
                     "Next": "LogLandsatAc",
                 },
                 "LogLandsatAc": {
@@ -180,9 +184,7 @@ class LandsatStepFunction(core.Construct):
                                 ],
                                 "Default": "SuccessState",
                             },
-                            "SuccessState": {
-                                "Type": "Succeed"
-                            }
+                            "SuccessState": {"Type": "Succeed"},
                         },
                     },
                     "End": True,
