@@ -4,22 +4,25 @@ from lambda_functions.pr2mgrs.hls_pr2mgrs.handler import handler
 
 def test_handler():
     """Test handler."""
-    expected = [
-        "29XNK",
-        "29XNL",
-        "30XVQ",
-        "30XVR",
-        "30XWP",
-        "30XWQ",
-        "30XWR",
-        "31XDJ",
-        "31XDK",
-        "31XDL",
-        "31XEJ",
-        "31XEK",
-        "31XEL",
-    ]
-    assert handler({"PATHROW": "001001"}, {}) == expected
+    expected = {
+        "mgrs": [
+            "29XNK",
+            "29XNL",
+            "30XVQ",
+            "30XVR",
+            "30XWP",
+            "30XWQ",
+            "30XWR",
+            "31XDJ",
+            "31XDK",
+            "31XDL",
+            "31XEJ",
+            "31XEK",
+            "31XEL",
+        ],
+        "count": 13,
+    }
+    assert handler({"path": "001", "row": "001"}, {}) == expected
 
     expected = [
         "001001",
@@ -50,5 +53,10 @@ def test_handler():
     ]
     assert handler({"MGRS": "29XNK"}, {}) == expected
 
+    expected = [
+        "003001",
+        "003002",
+    ]
+    assert handler({"MGRS": "29XNK", "path": "003"}, {}) == expected
     with pytest.raises(Exception):
         handler({}, {})

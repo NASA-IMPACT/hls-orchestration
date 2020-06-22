@@ -23,6 +23,7 @@ aws_cdk_reqs = [
     "aws-secretsmanager",
     "aws-lambda-event-sources",
     "aws-ssm",
+    "aws-sns",
 ]
 
 inst_reqs = ["boto3"]
@@ -35,8 +36,7 @@ setup(
     name="hls-orchestration",
     version="0.0.1",
     python_requires=">=3.7",
-    author="Vincent Sarago",
-    author_email="vincent@developmentseed.org",
+    author="Development Seed",
     packages=find_packages(),
     package_data={
         ".": [

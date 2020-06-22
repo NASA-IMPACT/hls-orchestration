@@ -8,6 +8,8 @@ jobdefinition=$HLSSTACK_LANDSATJOBDEFINITION
 outputbucket=$HLS_LANDSAT_INTERMEDIATE_OUTPUT_BUCKET
 command=landsat.sh
 granule=$1
+prefix=$2
+inputbucket=$3
 
 # If multiple granules are in the granulelist, create a jobname without the granule unique id.
 IFS=',' # commma is set as delimiter
@@ -28,6 +30,10 @@ overrides=$(cat <<EOF
         "value": "$outputbucket"
       },
       {
+        "name": "PREFIX",
+        "value": "$prefix"
+      },
+      {
         "name": "LASRC_AUX_DIR",
         "value": "/var/lasrc_aux"
       },
@@ -37,7 +43,7 @@ overrides=$(cat <<EOF
       },
       {
         "name": "INPUT_BUCKET",
-        "value": "hls-landsat-input"
+        "value": "$inputbucket"
       }
     ]
 }

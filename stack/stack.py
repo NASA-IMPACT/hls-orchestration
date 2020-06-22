@@ -1,6 +1,6 @@
 import os
 import json
-from aws_cdk import core, aws_stepfunctions, aws_iam, aws_s3
+from aws_cdk import core, aws_stepfunctions, aws_iam, aws_s3, aws_sns
 from hlsconstructs.network import Network
 from hlsconstructs.s3 import S3
 from hlsconstructs.efs import Efs
@@ -11,6 +11,7 @@ from hlsconstructs.lambdafunc import Lambda
 from hlsconstructs.batch_cron import BatchCron
 from hlsconstructs.dummy_lambda import Dummy
 from hlsconstructs.sentinel_step_function import SentinelStepFunction
+from hlsconstructs.landsat_step_function import LandsatStepFunction
 from hlsconstructs.step_function_trigger import StepFunctionTrigger
 
 STACKNAME = os.getenv("HLS_STACKNAME", "hls")
@@ -32,15 +33,17 @@ SENTINEL_OUTPUT_BUCKET = os.getenv(
 SENTINEL_INPUT_BUCKET = os.getenv(
     "HLS_SENTINEL_INPUT_BUCKET", f"{STACKNAME}-sentinel-input"
 )
-LANDSAT_OUTPUT_BUCKET = os.getenv(
-    "HLS_LANDSAT_OUTPUT_BUCKET", f"{STACKNAME}-landlandsat-output"
-)
+LANDSAT_OUTPUT_BUCKET = os.getenv("HLS_LANDSAT_OUTPUT_BUCKET",)
 LANDSAT_INTERMEDIATE_OUTPUT_BUCKET = os.getenv(
     "HLS_LANDSAT_INTERMEDIATE_OUTPUT_BUCKET",
     f"{STACKNAME}-landlandsat-intermediate-output",
 )
+LANDSAT_SNS_TOPIC = os.getenv("HLS_LANDSAT_SNS_TOPIC",)
+GIBS_INTERMEDIATE_OUTPUT_BUCKET = os.getenv(
+    "HLS_GIBS_INTERMEDIATE_OUTPUT_BUCKET",
+    f"{STACKNAME}-gibs-intermediate-output"
+)
 SSH_KEYNAME = os.getenv("HLS_SSH_KEYNAME")
-
 try:
     MAXV_CPUS = int(os.getenv("HLS_MAXV_CPUS"))
 except ValueError:
@@ -72,11 +75,11 @@ class HlsStack(core.Stack):
         self.laads_bucket = S3(self, "LaadsBucket", bucket_name=LAADS_BUCKET)
 
         self.sentinel_output_bucket = aws_s3.Bucket.from_bucket_name(
-            self, f"sentinel_output_bucket", SENTINEL_OUTPUT_BUCKET
+            self, "sentinel_output_bucket", SENTINEL_OUTPUT_BUCKET
         )
 
         self.landsat_output_bucket = aws_s3.Bucket.from_bucket_name(
-            self, f"landsat_output_bucket", LANDSAT_OUTPUT_BUCKET
+            self, "landsat_output_bucket", LANDSAT_OUTPUT_BUCKET
         )
 
         # Must be created as part of the stack due to trigger requirements
@@ -88,6 +91,16 @@ class HlsStack(core.Stack):
             self,
             "LandsatIntermediateBucket",
             bucket_name=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
+        )
+
+        self.gibs_intermediate_output_bucket = aws_s3.Bucket(
+            self,
+            "GibsIntermediateBucket",
+            bucket_name=GIBS_INTERMEDIATE_OUTPUT_BUCKET,
+        )
+
+        self.landsat_sns_topic = aws_sns.Topic.from_topic_arn(
+            self, "LandsatSNSTopc", topic_arn=LANDSAT_SNS_TOPIC
         )
 
         self.efs = Efs(self, "Efs", network=self.network)
@@ -173,11 +186,50 @@ class HlsStack(core.Stack):
             handler="handler.handler",
         )
 
-        self.check_granule = Lambda(
+        self.check_twin_granule = Lambda(
             self,
             "CheckGranule",
             code_file="twin_granule.py",
             env={"SENTINEL_INPUT_BUCKET": SENTINEL_INPUT_BUCKET},
+        )
+
+        self.landsat_mgrs_logger = Lambda(
+            self,
+            "LandsatMGRSLogger",
+            code_dir="landsat_mgrs_logger/hls_landsat_mgrs_logger",
+            env={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
+            },
+            timeout=30,
+            handler="handler.handler",
+        )
+
+        self.landsat_ac_logger = Lambda(
+            self,
+            "LandsatAcLogger",
+            code_dir="landsat_ac_logger/hls_landsat_ac_logger",
+            env={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
+            },
+            timeout=30,
+            handler="handler.handler",
+        )
+
+        self.landsat_pathrow_status = Lambda(
+            self,
+            "LandsatPathrowStatus",
+            code_dir="landsat_pathrow_status/hls_landsat_pathrow_status",
+            env={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
+            },
+            timeout=30,
+            handler="handler.handler",
         )
 
         self.laads_cron = BatchCron(
@@ -197,7 +249,7 @@ class HlsStack(core.Stack):
         self.sentinel_step_function = SentinelStepFunction(
             self,
             "SentinelStateMachine",
-            check_granule=self.check_granule.function.function_arn,
+            check_twin_granule=self.check_twin_granule.function.function_arn,
             laads_available_function=self.laads_available.function.function_arn,
             outputbucket=SENTINEL_OUTPUT_BUCKET,
             inputbucket=SENTINEL_INPUT_BUCKET,
@@ -206,13 +258,38 @@ class HlsStack(core.Stack):
             lambda_logger=self.lambda_logger.function.function_arn,
             outputbucket_role_arn=HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN,
             replace_existing=REPLACE_EXISTING,
+            gibs_intermediate_output_bucket=GIBS_INTERMEDIATE_OUTPUT_BUCKET,
+        )
+
+        self.landsat_step_function = LandsatStepFunction(
+            self,
+            "LandsatStateMachine",
+            laads_available_function=self.laads_available.function.function_arn,
+            outputbucket=LANDSAT_OUTPUT_BUCKET,
+            intermediate_output_bucket=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
+            ac_job_definition=self.landsat_task.job.ref,
+            jobqueue=self.batch.jobqueue.ref,
+            lambda_logger=self.lambda_logger.function.function_arn,
+            landsat_mgrs_logger=self.landsat_mgrs_logger.function.function_arn,
+            landsat_ac_logger=self.landsat_ac_logger.function.function_arn,
+            landsat_pathrow_status=self.landsat_pathrow_status.function.function_arn,
+            pr2mgrs=self.pr2mgrs_lambda.function.function_arn,
+            replace_existing=REPLACE_EXISTING,
         )
 
         self.step_function_trigger = StepFunctionTrigger(
             self,
             "SentinelStepFunctionTrigger",
-            input_bucket=self.sentinel_input_bucket,
             state_machine=self.sentinel_step_function.sentinel_state_machine.ref,
+            code_dir="execute_step_function/hls_execute_step_function",
+            input_bucket=self.sentinel_input_bucket,
+        )
+        self.landsat_step_function_trigger = StepFunctionTrigger(
+            self,
+            "LandsatStepFunctionTrigger",
+            state_machine=self.landsat_step_function.state_machine.ref,
+            code_dir="execute_landsat_step_function/hls_execute_landsat_step_function",
+            input_sns=self.landsat_sns_topic,
         )
 
         # Cross construct permissions
@@ -239,7 +316,7 @@ class HlsStack(core.Stack):
 
         self.sentinel_step_function.steps_role.add_to_policy(self.batch_jobqueue_policy)
         self.sentinel_step_function.steps_role.add_to_policy(
-            self.check_granule.invoke_policy_statement
+            self.check_twin_granule.invoke_policy_statement
         )
         self.sentinel_step_function.steps_role.add_to_policy(
             self.laads_available.invoke_policy_statement
@@ -247,10 +324,36 @@ class HlsStack(core.Stack):
         self.sentinel_step_function.steps_role.add_to_policy(
             self.lambda_logger.invoke_policy_statement
         )
+
+        self.landsat_step_function.steps_role.add_to_policy(self.batch_jobqueue_policy)
+        self.landsat_step_function.steps_role.add_to_policy(
+            self.laads_available.invoke_policy_statement
+        )
+        self.landsat_step_function.steps_role.add_to_policy(
+            self.lambda_logger.invoke_policy_statement
+        )
+        self.landsat_step_function.steps_role.add_to_policy(
+            self.landsat_mgrs_logger.invoke_policy_statement
+        )
+        self.landsat_step_function.steps_role.add_to_policy(
+            self.pr2mgrs_lambda.invoke_policy_statement
+        )
+        self.landsat_step_function.steps_role.add_to_policy(
+            self.landsat_ac_logger.invoke_policy_statement
+        )
+        self.landsat_step_function.steps_role.add_to_policy(
+            self.landsat_pathrow_status.invoke_policy_statement
+        )
+
         self.lambda_logger.function.add_to_role_policy(self.rds.policy_statement)
         self.rds_bootstrap.function.add_to_role_policy(self.rds.policy_statement)
+        self.landsat_mgrs_logger.function.add_to_role_policy(self.rds.policy_statement)
+        self.landsat_ac_logger.function.add_to_role_policy(self.rds.policy_statement)
+        self.landsat_pathrow_status.function.add_to_role_policy(
+            self.rds.policy_statement
+        )
 
-        self.check_granule.function.add_to_role_policy(
+        self.check_twin_granule.function.add_to_role_policy(
             aws_iam.PolicyStatement(
                 resources=[
                     self.sentinel_input_bucket.bucket_arn,
@@ -278,6 +381,15 @@ class HlsStack(core.Stack):
                 actions=["s3:Get*", "s3:List*",],
             )
         )
+        self.sentinel_task.role.add_to_policy(
+            aws_iam.PolicyStatement(
+                resources=[
+                    self.gibs_intermediate_output_bucket.bucket_arn,
+                    f"{self.gibs_intermediate_output_bucket.bucket_arn}/*",
+                ],
+                actions=["s3:Get*", "s3:Put*", "s3:List*", "s3:AbortMultipartUpload",],
+            )
+        )
         self.landsat_task.role.add_to_policy(
             aws_iam.PolicyStatement(
                 resources=[
@@ -285,6 +397,12 @@ class HlsStack(core.Stack):
                     f"{self.landsat_intermediate_output_bucket.bucket_arn}/*",
                 ],
                 actions=["s3:Get*", "s3:Put*", "s3:List*", "s3:AbortMultipartUpload",],
+            )
+        )
+        self.landsat_task.role.add_to_policy(
+            aws_iam.PolicyStatement(
+                resources=["arn:aws:s3:::landsat-pds", "arn:aws:s3:::landsat-pds/*",],
+                actions=["s3:Get*", "s3:List*",],
             )
         )
         self.batch.ecs_instance_role.add_to_policy(

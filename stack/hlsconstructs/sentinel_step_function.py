@@ -11,7 +11,7 @@ class SentinelStepFunction(core.Construct):
         self,
         scope: core.Construct,
         id: str,
-        check_granule: str,
+        check_twin_granule: str,
         laads_available_function: str,
         outputbucket: str,
         outputbucket_role_arn: str,
@@ -20,6 +20,7 @@ class SentinelStepFunction(core.Construct):
         jobqueue: str,
         lambda_logger: str,
         replace_existing: bool,
+        gibs_intermediate_output_bucket: str,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -34,7 +35,7 @@ class SentinelStepFunction(core.Construct):
             "States": {
                 "CheckGranule": {
                     "Type": "Task",
-                    "Resource": check_granule,
+                    "Resource": check_twin_granule,
                     "ResultPath": "$",
                     "Next": "CheckLaads",
                     "Retry": [
@@ -93,6 +94,10 @@ class SentinelStepFunction(core.Construct):
                                     "Value": outputbucket_role_arn,
                                 },
                                 {"Name": "REPLACE_EXISTING", "Value": replace},
+                                {
+                                    "Name": "GIBS_INTERMEDIATE_BUCKET",
+                                    "Value": gibs_intermediate_output_bucket,
+                                },
                             ],
                         },
                     },

@@ -18,15 +18,25 @@ with open(lookup_file, "r") as f:
 
 def handler(event: Dict, context: Dict):
     """AWS Lambda handler."""
-    if event.get("PATHROW"):
-        listS2 = list(filter(lambda x: x[0] == str(event.get("PATHROW")), lookupTable))
+    if event.get("row"):
+        pathrow = f"{event['path']}{event['row']}"
+        listS2 = list(filter(lambda x: x[0] == pathrow, lookupTable))
         # Do we want to raise an error when no grid is found ?
-        return [s2[1] for s2 in listS2]
+        mgrs = [s2[1] for s2 in listS2]
+        mgrs_values = {"mgrs": mgrs, "count": len(mgrs)}
+        return mgrs_values
 
     elif event.get("MGRS"):
         listL8 = list(filter(lambda x: x[1] == str(event.get("MGRS")), lookupTable))
+        pathrows = [l8[0] for l8 in listL8]
+        if event.get("path"):
+            pathrows = [
+                pathrow
+                for pathrow in pathrows
+                if pathrow[0:3] == str(event.get("path"))
+            ]
         # Do we want to raise an error when no grid is found ?
-        return [l8[0] for l8 in listL8]
+        return pathrows
 
     else:
         raise Exception("Missing PATHROW or MGRS")
