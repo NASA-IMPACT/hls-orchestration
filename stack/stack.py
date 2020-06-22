@@ -39,6 +39,10 @@ LANDSAT_INTERMEDIATE_OUTPUT_BUCKET = os.getenv(
     f"{STACKNAME}-landlandsat-intermediate-output",
 )
 LANDSAT_SNS_TOPIC = os.getenv("HLS_LANDSAT_SNS_TOPIC",)
+GIBS_INTERMEDIATE_OUTPUT_BUCKET = os.getenv(
+    "HLS_GIBS_INTERMEDIATE_OUTPUT_BUCKET",
+    f"{STACKNAME}-gibs-intermediate-output"
+)
 SSH_KEYNAME = os.getenv("HLS_SSH_KEYNAME")
 try:
     MAXV_CPUS = int(os.getenv("HLS_MAXV_CPUS"))
@@ -87,6 +91,12 @@ class HlsStack(core.Stack):
             self,
             "LandsatIntermediateBucket",
             bucket_name=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
+        )
+
+        self.gibs_intermediate_output_bucket = aws_s3.Bucket(
+            self,
+            "GibsIntermediateBucket",
+            bucket_name=GIBS_INTERMEDIATE_OUTPUT_BUCKET,
         )
 
         self.landsat_sns_topic = aws_sns.Topic.from_topic_arn(
@@ -248,6 +258,7 @@ class HlsStack(core.Stack):
             lambda_logger=self.lambda_logger.function.function_arn,
             outputbucket_role_arn=HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN,
             replace_existing=REPLACE_EXISTING,
+            gibs_intermediate_output_bucket=GIBS_INTERMEDIATE_OUTPUT_BUCKET,
         )
 
         self.landsat_step_function = LandsatStepFunction(
@@ -368,6 +379,15 @@ class HlsStack(core.Stack):
                     f"{self.sentinel_input_bucket.bucket_arn}/*",
                 ],
                 actions=["s3:Get*", "s3:List*",],
+            )
+        )
+        self.sentinel_task.role.add_to_policy(
+            aws_iam.PolicyStatement(
+                resources=[
+                    self.gibs_intermediate_output_bucket.bucket_arn,
+                    f"{self.gibs_intermediate_output_bucket.bucket_arn}/*",
+                ],
+                actions=["s3:Get*", "s3:Put*", "s3:List*", "s3:AbortMultipartUpload",],
             )
         )
         self.landsat_task.role.add_to_policy(

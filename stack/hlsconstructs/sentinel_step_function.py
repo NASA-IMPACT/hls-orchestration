@@ -20,6 +20,7 @@ class SentinelStepFunction(core.Construct):
         jobqueue: str,
         lambda_logger: str,
         replace_existing: bool,
+        gibs_intermediate_output_bucket: str,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -93,6 +94,10 @@ class SentinelStepFunction(core.Construct):
                                     "Value": outputbucket_role_arn,
                                 },
                                 {"Name": "REPLACE_EXISTING", "Value": replace},
+                                {
+                                    "Name": "GIBS_INTERMEDIATE_BUCKET",
+                                    "Value": gibs_intermediate_output_bucket,
+                                },
                             ],
                         },
                     },
