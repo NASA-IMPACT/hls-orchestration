@@ -8,6 +8,7 @@ jobdefinition=$HLSSTACK_SENTINELJOBDEFINITION
 outputbucket=$HLS_SENTINEL_OUTPUT_BUCKET
 inputbucket=$HLSSTACK_SENTINELINPUTEXPORT
 gibsbucket=$HLS_GIBS_INTERMEDIATE_OUTPUT_BUCKET
+gibsoutputbucket=$HLS_GIBS_OUTPUT_BUCKET
 command=sentinel.sh
 granulelist=$1
 
@@ -43,6 +44,10 @@ overrides=$(cat <<EOF
       {
         "name": "GIBS_INTERMEDIATE_BUCKET",
         "value": "$gibsbucket"
+      },
+      {
+        "name": "GIBS_OUTPUT_BUCKET",
+        "value": "$gibsoutputbucket"
       }
     ]
 }
