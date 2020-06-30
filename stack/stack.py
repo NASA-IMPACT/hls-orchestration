@@ -40,9 +40,9 @@ LANDSAT_INTERMEDIATE_OUTPUT_BUCKET = os.getenv(
 )
 LANDSAT_SNS_TOPIC = os.getenv("HLS_LANDSAT_SNS_TOPIC",)
 GIBS_INTERMEDIATE_OUTPUT_BUCKET = os.getenv(
-    "HLS_GIBS_INTERMEDIATE_OUTPUT_BUCKET",
-    f"{STACKNAME}-gibs-intermediate-output"
+    "HLS_GIBS_INTERMEDIATE_OUTPUT_BUCKET", f"{STACKNAME}-gibs-intermediate-output"
 )
+GIBS_OUTPUT_BUCKET = os.getenv("HLS_GIBS_OUTPUT_BUCKET")
 SSH_KEYNAME = os.getenv("HLS_SSH_KEYNAME")
 try:
     MAXV_CPUS = int(os.getenv("HLS_MAXV_CPUS"))
@@ -94,9 +94,7 @@ class HlsStack(core.Stack):
         )
 
         self.gibs_intermediate_output_bucket = aws_s3.Bucket(
-            self,
-            "GibsIntermediateBucket",
-            bucket_name=GIBS_INTERMEDIATE_OUTPUT_BUCKET,
+            self, "GibsIntermediateBucket", bucket_name=GIBS_INTERMEDIATE_OUTPUT_BUCKET,
         )
 
         self.landsat_sns_topic = aws_sns.Topic.from_topic_arn(
@@ -259,6 +257,7 @@ class HlsStack(core.Stack):
             outputbucket_role_arn=HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN,
             replace_existing=REPLACE_EXISTING,
             gibs_intermediate_output_bucket=GIBS_INTERMEDIATE_OUTPUT_BUCKET,
+            gibs_outputbucket=GIBS_OUTPUT_BUCKET,
         )
 
         self.landsat_step_function = LandsatStepFunction(

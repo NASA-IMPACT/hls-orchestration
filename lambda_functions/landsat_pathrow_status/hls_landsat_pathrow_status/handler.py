@@ -24,12 +24,10 @@ def execute_statement(sql, sql_parameters=[]):
 
 
 def handler(event, context):
-    rowlist = reduce(
-        (lambda agg, row: agg + "'" + row[-3:] + "'" + ","), event["pathrows"], ""
-    )
+    pathrows = event["mgrs_metadata"]["pathrows"]
+    rowlist = reduce((lambda agg, row: agg + "'" + row[-3:] + "'" + ","), pathrows, "")
     rowlist = rowlist.rstrip(",")
     rowlistquery = " AND row IN (" + rowlist + ")"
-    print(rowlistquery)
     q = (
         "SELECT * FROM landsat_ac_log WHERE"
         + " path = :path AND acquisition = :acquisition::date"
@@ -42,7 +40,7 @@ def handler(event, context):
             {"name": "acquisition", "value": {"stringValue": event["date"]}},
         ],
     )
-    if len(response["records"]) == len(event["pathrows"]):
+    if len(response["records"]) == len(pathrows):
         ready_for_tiling = True
     else:
         ready_for_tiling = False

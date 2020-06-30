@@ -164,7 +164,7 @@ class LandsatStepFunction(core.Construct):
                             "GetPathRowValues": {
                                 "Type": "Task",
                                 "Resource": pr2mgrs,
-                                "ResultPath": "$.pathrows",
+                                "ResultPath": "$.mgrs_metadata",
                                 "Next": "CheckPathRowStatus",
                             },
                             "CheckPathRowStatus": {
