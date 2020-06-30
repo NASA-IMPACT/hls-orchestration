@@ -21,6 +21,7 @@ class SentinelStepFunction(core.Construct):
         lambda_logger: str,
         replace_existing: bool,
         gibs_intermediate_output_bucket: str,
+        gibs_outputbucket: str,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -97,6 +98,10 @@ class SentinelStepFunction(core.Construct):
                                 {
                                     "Name": "GIBS_INTERMEDIATE_BUCKET",
                                     "Value": gibs_intermediate_output_bucket,
+                                },
+                                {
+                                    "Name": "GIBS_OUTPUT_BUCKET",
+                                    "Value": gibs_outputbucket,
                                 },
                             ],
                         },
