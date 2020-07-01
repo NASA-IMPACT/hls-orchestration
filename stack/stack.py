@@ -27,6 +27,10 @@ LANDSAT_ECR_URI = os.getenv(
     "HLS_LANDSAT_ECR_URI",
     "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat:latest",
 )
+LANDSAT_TILE_ECR_URI = os.getenv(
+    "HLS_LANDSAT_TILE_ECR_URI",
+    "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat-tile:latest",
+)
 SENTINEL_OUTPUT_BUCKET = os.getenv(
     "HLS_SENTINEL_OUTPUT_BUCKET", f"{STACKNAME}-sentinel-output"
 )
@@ -167,6 +171,16 @@ class HlsStack(core.Stack):
             dockeruri=LANDSAT_ECR_URI,
             bucket=self.landsat_output_bucket,
             mountpath="/var/lasrc_aux",
+            timeout=5400,
+            memory=12000,
+            vcpus=2,
+        )
+
+        self.landsat_tile_task = DockerBatchJob(
+            self,
+            "LandsatTileTask",
+            dockeruri=LANDSAT_TILE_ECR_URI,
+            bucket=self.landsat_output_bucket,
             timeout=5400,
             memory=12000,
             vcpus=2,
