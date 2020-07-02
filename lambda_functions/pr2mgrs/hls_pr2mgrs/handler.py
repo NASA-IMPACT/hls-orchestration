@@ -41,10 +41,12 @@ def handler(event: Dict, context: Dict):
                 if pathrow[0:3] == str(event.get("path"))
             ]
         # Do we want to raise an error when no grid is found ?
+        pathrows_string = ",".join(pathrows)
         mgrs_metadata = {
             "pathrows": pathrows,
             "mgrs_ulx": mgrs_ulx,
             "mgrs_uly": mgrs_uly,
+            "pathrows_string": pathrows_string,
         }
         return mgrs_metadata
 

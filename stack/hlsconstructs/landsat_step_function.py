@@ -16,7 +16,7 @@ class LandsatStepFunction(core.Construct):
         # outputbucket_role_arn: str,
         intermediate_output_bucket: str,
         ac_job_definition: str,
-        # tiling_job_definition: str,
+        tile_job_definition: str,
         jobqueue: str,
         lambda_logger: str,
         landsat_mgrs_logger: str,
@@ -179,10 +179,29 @@ class LandsatStepFunction(core.Construct):
                                     {
                                         "Variable": "$.ready_for_tiling",
                                         "BooleanEquals": True,
-                                        "Next": "SuccessState",
+                                        "Next": "RunLandsatTile",
                                     }
                                 ],
                                 "Default": "SuccessState",
+                            },
+                            "RunLandsatTile": {
+                                "Type": "Task",
+                                "Resource": "arn:aws:states:::batch:submitJob.sync",
+                                "ResultPath": "$.tilejobinfo",
+                                "Parameters": {
+                                    "JobName": "LandsatTileJob",
+                                    "JobQueue": jobqueue,
+                                    "JobDefinition": tile_job_definition,
+                                    "ContainerOverrides": {
+                                        "Command": ["export && landsat-tile.sh"],
+                                        "Environment": [
+                                            {"Name": "PATHROW_LIST", "Value.$": "$.mgrs_metadata.pathrows_string"},
+                                            {"Name": "DATE", "Value.$": "$.date"},
+                                            {"Name": "REPLACE_EXISTING", "Value": replace},
+                                        ],
+                                    },
+                                },
+                                "Next": "SuccessState",
                             },
                             "SuccessState": {"Type": "Succeed"},
                         },

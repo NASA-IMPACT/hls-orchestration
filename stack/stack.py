@@ -278,6 +278,7 @@ class HlsStack(core.Stack):
             outputbucket=LANDSAT_OUTPUT_BUCKET,
             intermediate_output_bucket=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
             ac_job_definition=self.landsat_task.job.ref,
+            tile_job_definition=self.landsat_tile_task.job.ref,
             jobqueue=self.batch.jobqueue.ref,
             lambda_logger=self.lambda_logger.function.function_arn,
             landsat_mgrs_logger=self.landsat_mgrs_logger.function.function_arn,
