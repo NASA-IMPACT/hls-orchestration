@@ -18,7 +18,6 @@ class DockerBatchJob(core.Construct):
         id: str,
         dockerdir: str = None,
         dockeruri: str = None,
-        bucket: aws_s3.Bucket = None,
         timeout: int = 3600,
         memory: int = 10000,
         vcpus: int = 4,

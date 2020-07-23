@@ -177,7 +177,6 @@ class HlsStack(core.Stack):
             self,
             "LandsatTileTask",
             dockeruri=LANDSAT_TILE_ECR_URI,
-            bucket=self.landsat_output_bucket,
             timeout=5400,
             memory=12000,
             vcpus=2,
