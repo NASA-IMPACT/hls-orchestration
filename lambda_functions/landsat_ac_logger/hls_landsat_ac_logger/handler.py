@@ -27,13 +27,13 @@ def handler(event, context):
         + " ON CONFLICT ON CONSTRAINT no_dupe_pathrowdate"
         + " DO UPDATE SET jobid = excluded.jobid, jobinfo = excluded.jobinfo;"
     )
-    try:
-        jobid = event["jobinfo"]["JobId"]
-        jobinfo = json.dumps(event["jobinfo"])
-    except KeyError:
+    if "Cause" in event["jobinfo"].keys():
         cause = json.loads(event["jobinfo"]["Cause"])
         jobid = cause["JobId"]
         jobinfo = json.dumps(cause)
+    else:
+        jobid = event["jobinfo"]["JobId"]
+        jobinfo = json.dumps(event["jobinfo"])
     execute_statement(
         q,
         sql_parameters=[
