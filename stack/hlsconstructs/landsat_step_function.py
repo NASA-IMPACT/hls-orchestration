@@ -28,6 +28,9 @@ class LandsatStepFunction(core.Construct):
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
+        lambda_interval = 10
+        lambda_max_attempts = 3
+        lambda_backoff_rate = 2
 
         if replace_existing:
             replace = "replace"
@@ -47,9 +50,9 @@ class LandsatStepFunction(core.Construct):
                     "Retry": [
                         {
                             "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": 1,
-                            "MaxAttempts": 3,
-                            "BackoffRate": 2,
+                            "IntervalSeconds": lambda_interval,
+                            "MaxAttempts": lambda_max_attempts,
+                            "BackoffRate": lambda_backoff_rate,
                         }
                     ],
                     "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "LogError",}],
@@ -74,8 +77,8 @@ class LandsatStepFunction(core.Construct):
                     "Retry": [
                         {
                             "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": 1,
-                            "MaxAttempts": 3,
+                            "IntervalSeconds": lambda_interval,
+                            "MaxAttempts": lambda_max_attempts,
                             "BackoffRate": 2,
                         }
                     ],
@@ -99,9 +102,9 @@ class LandsatStepFunction(core.Construct):
                     "Retry": [
                         {
                             "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": 1,
-                            "MaxAttempts": 3,
-                            "BackoffRate": 2,
+                            "IntervalSeconds": lambda_interval,
+                            "MaxAttempts": lambda_max_attempts,
+                            "BackoffRate": lambda_backoff_rate,
                         }
                     ],
                 },
@@ -144,8 +147,8 @@ class LandsatStepFunction(core.Construct):
                     "Retry": [
                         {
                             "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": 1,
-                            "MaxAttempts": 3,
+                            "IntervalSeconds": lambda_interval,
+                            "MaxAttempts": lambda_max_attempts,
                             "BackoffRate": 2,
                         }
                     ],
@@ -218,9 +221,9 @@ class LandsatStepFunction(core.Construct):
                                 "Retry": [
                                     {
                                         "ErrorEquals": ["States.ALL"],
-                                        "IntervalSeconds": 1,
-                                        "MaxAttempts": 3,
-                                        "BackoffRate": 2,
+                                        "IntervalSeconds": lambda_interval,
+                                        "MaxAttempts": lambda_max_attempts,
+                                        "BackoffRate": lambda_backoff_rate,
                                     }
                                 ],
                             },
@@ -237,9 +240,9 @@ class LandsatStepFunction(core.Construct):
                     "Retry": [
                         {
                             "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": 1,
-                            "MaxAttempts": 3,
-                            "BackoffRate": 2,
+                            "IntervalSeconds": lambda_interval,
+                            "MaxAttempts": lambda_max_attempts,
+                            "BackoffRate": lambda_backoff_rate,
                         }
                     ],
                 },
@@ -251,9 +254,9 @@ class LandsatStepFunction(core.Construct):
                     "Retry": [
                         {
                             "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": 1,
-                            "MaxAttempts": 3,
-                            "BackoffRate": 2,
+                            "IntervalSeconds": lambda_interval,
+                            "MaxAttempts": lambda_max_attempts,
+                            "BackoffRate": lambda_backoff_rate,
                         }
                     ],
                 },
