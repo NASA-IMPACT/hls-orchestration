@@ -23,6 +23,7 @@ class LandsatStepFunction(core.Construct):
         landsat_ac_logger: str,
         landsat_pathrow_status: str,
         pr2mgrs: str,
+        mgrs_logger: str,
         replace_existing: bool,
         **kwargs,
     ) -> None:
@@ -201,7 +202,27 @@ class LandsatStepFunction(core.Construct):
                                         ],
                                     },
                                 },
+                                "Catch": [
+                                    {
+                                        "ErrorEquals": ["States.ALL"],
+                                        "Next": "LogMGRS",
+                                        "ResultPath": "$.tilejobinfo",
+                                    }
+                                ],
+                                "Next": "LogMGRS",
+                            },
+                            "LogMGRS": {
+                                "Type": "Task",
+                                "Resource": mgrs_logger,
                                 "Next": "SuccessState",
+                                "Retry": [
+                                    {
+                                        "ErrorEquals": ["States.ALL"],
+                                        "IntervalSeconds": 1,
+                                        "MaxAttempts": 3,
+                                        "BackoffRate": 2,
+                                    }
+                                ],
                             },
                             "SuccessState": {"Type": "Succeed"},
                         },

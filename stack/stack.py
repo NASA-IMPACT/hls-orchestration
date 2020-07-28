@@ -159,7 +159,7 @@ class HlsStack(core.Stack):
             dockeruri=SENTINEL_ECR_URI,
             mountpath="/var/lasrc_aux",
             timeout=5400,
-            memory=16000,
+            memory=15000,
             vcpus=2,
         )
 
@@ -205,6 +205,19 @@ class HlsStack(core.Stack):
             self,
             "LandsatMGRSLogger",
             code_dir="landsat_mgrs_logger/hls_landsat_mgrs_logger",
+            env={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
+            },
+            timeout=30,
+            handler="handler.handler",
+        )
+
+        self.mgrs_logger = Lambda(
+            self,
+            "MGRSLogger",
+            code_dir="mgrs_logger/hls_mgrs_logger",
             env={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
                 "HLS_DB_NAME": self.rds.database.database_name,
@@ -284,6 +297,7 @@ class HlsStack(core.Stack):
             landsat_ac_logger=self.landsat_ac_logger.function.function_arn,
             landsat_pathrow_status=self.landsat_pathrow_status.function.function_arn,
             pr2mgrs=self.pr2mgrs_lambda.function.function_arn,
+            mgrs_logger=self.mgrs_logger.function.function_arn,
             replace_existing=REPLACE_EXISTING,
         )
 
@@ -354,11 +368,15 @@ class HlsStack(core.Stack):
         self.landsat_step_function.steps_role.add_to_policy(
             self.landsat_pathrow_status.invoke_policy_statement
         )
+        self.landsat_step_function.steps_role.add_to_policy(
+            self.mgrs_logger.invoke_policy_statement
+        )
 
         self.lambda_logger.function.add_to_role_policy(self.rds.policy_statement)
         self.rds_bootstrap.function.add_to_role_policy(self.rds.policy_statement)
         self.landsat_mgrs_logger.function.add_to_role_policy(self.rds.policy_statement)
         self.landsat_ac_logger.function.add_to_role_policy(self.rds.policy_statement)
+        self.mgrs_logger.function.add_to_role_policy(self.rds.policy_statement)
         self.landsat_pathrow_status.function.add_to_role_policy(
             self.rds.policy_statement
         )

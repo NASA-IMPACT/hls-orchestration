@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS landsat_mgrs_log (
     path varchar(3) not null,
     mgrs varchar(5) not null,
     acquisition date not null,
-    jobstatus boolean,
+    jobinfo jsonb,
     constraint no_dupe_mgrs unique(path, mgrs, acquisition)
 );
 CREATE TABLE IF NOT EXISTS landsat_ac_log (
