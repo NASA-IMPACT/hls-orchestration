@@ -433,6 +433,15 @@ class HlsStack(core.Stack):
                 actions=["s3:Get*", "s3:List*",],
             )
         )
+        self.landsat_tile_task.role.add_to_policy(
+            aws_iam.PolicyStatement(
+                resources=[
+                    self.landsat_intermediate_output_bucket.bucket_arn,
+                    f"{self.landsat_intermediate_output_bucket.bucket_arn}/*",
+                ],
+                actions=["s3:Get*", "s3:List*",],
+            )
+        )
         self.batch.ecs_instance_role.add_to_policy(
             aws_iam.PolicyStatement(
                 resources=[HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN],
@@ -486,7 +495,19 @@ class HlsStack(core.Stack):
         )
         core.CfnOutput(
             self,
+            "landsatintermediateoutput",
+            export_name=f"{STACKNAME}-landsatintermediateoutput",
+            value=self.landsat_intermediate_output_bucket.bucket_name,
+        )
+        core.CfnOutput(
+            self,
             "landsatjobdefinition",
             export_name=f"{STACKNAME}-landsatjobdefinition",
             value=self.landsat_task.job.ref,
+        )
+        core.CfnOutput(
+            self,
+            "landsattilejobdefinition",
+            export_name=f"{STACKNAME}-landsattilejobdefinition",
+            value=self.landsat_tile_task.job.ref,
         )
