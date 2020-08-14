@@ -109,167 +109,168 @@ class LandsatStepFunction(core.Construct):
                     ],
                 },
                 "GetMGRSValues": {
-                "RunLandsatAc": {
-                    "Type": "Task",
-                    "Resource": "arn:aws:states:::batch:submitJob.sync",
-                    "ResultPath": "$.jobinfo",
-                    "Parameters": {
-                        "JobName": "LandsatAcJob",
-                        "JobQueue": jobqueue,
-                        "JobDefinition": ac_job_definition,
-                        "ContainerOverrides": {
-                            "Command": ["export && landsat.sh"],
-                            "Environment": [
-                                {"Name": "INPUT_BUCKET", "Value.$": "$.bucket"},
-                                {"Name": "PREFIX", "Value.$": "$.prefix"},
-                                {"Name": "GRANULE", "Value.$": "$.scene"},
-                                {
-                                    "Name": "OUTPUT_BUCKET",
-                                    "Value": intermediate_output_bucket,
-                                },
-                                {"Name": "LASRC_AUX_DIR", "Value": "/var/lasrc_aux"},
-                                {"Name": "REPLACE_EXISTING", "Value": replace},
-                            ],
-                        },
-                    },
-                    "Catch": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "Next": "LogLandsatAcError",
-                            "ResultPath": "$.jobinfo",
-                        }
-                    ],
-                    "Next": "LogLandsatAc",
-                },
-                "LogLandsatAc": {
-                    "Type": "Task",
-                    "Resource": landsat_ac_logger,
-                    "Next": "ProcessMGRSGrid",
-                    "Retry": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": lambda_interval,
-                            "MaxAttempts": lambda_max_attempts,
-                            "BackoffRate": 2,
-                        }
-                    ],
-                },
-                "ProcessMGRSGrid": {
-                    "Type": "Map",
-                    "ItemsPath": "$.mgrsvalues.mgrs",
-                    "Parameters": {
-                        "MGRS.$": "$$.Map.Item.Value",
-                        "path.$": "$.path",
-                        "date.$": "$.date",
-                    },
-                    "MaxConcurrency": 0,
-                    "Iterator": {
-                        "StartAt": "GetPathRowValues",
-                        "States": {
-                            "GetPathRowValues": {
-                                "Type": "Task",
-                                "Resource": pr2mgrs,
-                                "ResultPath": "$.mgrs_metadata",
-                                "Next": "CheckPathRowStatus",
-                            },
-                            "CheckPathRowStatus": {
-                                "Type": "Task",
-                                "Resource": landsat_pathrow_status,
-                                "ResultPath": "$.ready_for_tiling",
-                                "Next": "ReadyForTiling",
-                            },
-                            "ReadyForTiling": {
-                                "Type": "Choice",
-                                "Choices": [
+                    "RunLandsatAc": {
+                        "Type": "Task",
+                        "Resource": "arn:aws:states:::batch:submitJob.sync",
+                        "ResultPath": "$.jobinfo",
+                        "Parameters": {
+                            "JobName": "LandsatAcJob",
+                            "JobQueue": jobqueue,
+                            "JobDefinition": ac_job_definition,
+                            "ContainerOverrides": {
+                                "Command": ["export && landsat.sh"],
+                                "Environment": [
+                                    {"Name": "INPUT_BUCKET", "Value.$": "$.bucket"},
+                                    {"Name": "PREFIX", "Value.$": "$.prefix"},
+                                    {"Name": "GRANULE", "Value.$": "$.scene"},
                                     {
-                                        "Variable": "$.ready_for_tiling",
-                                        "BooleanEquals": True,
-                                        "Next": "RunLandsatTile",
-                                    }
-                                ],
-                                "Default": "SuccessState",
-                            },
-                            "RunLandsatTile": {
-                                "Type": "Task",
-                                "Resource": "arn:aws:states:::batch:submitJob.sync",
-                                "ResultPath": "$.tilejobinfo",
-                                "Parameters": {
-                                    "JobName": "LandsatTileJob",
-                                    "JobQueue": jobqueue,
-                                    "JobDefinition": tile_job_definition,
-                                    "ContainerOverrides": {
-                                        "Command": ["export && landsat-tile.sh"],
-                                        "Environment": [
-                                            {"Name": "PATHROW_LIST", "Value.$": "$.mgrs_metadata.pathrows_string"},
-                                            {"Name": "INPUT_BUCKET", "Value": intermediate_output_bucket},
-                                            {"Name": "DATE", "Value.$": "$.date"},
-                                            {"Name": "MGRS", "Value.$": "$.MGRS"},
-                                            {"Name": "LANDSAT_PATH", "Value.$": "$.path"},
-                                            {"Name": "MGRS_ULX", "Value.$": "$.mgrs_metadata.mgrs_ulx"},
-                                            {"Name": "MGRS_ULY", "Value.$": "$.mgrs_metadata.mgrs_uly"},
-                                            {"Name": "DEBUG_BUCKET", "Value": "hls-debug-output"},
-                                            {"Name": "REPLACE_EXISTING", "Value": replace},
-                                        ],
+                                        "Name": "OUTPUT_BUCKET",
+                                        "Value": intermediate_output_bucket,
                                     },
-                                },
-                                "Catch": [
-                                    {
-                                        "ErrorEquals": ["States.ALL"],
-                                        "Next": "LogMGRS",
-                                        "ResultPath": "$.tilejobinfo",
-                                    }
-                                ],
-                                "Next": "LogMGRS",
-                            },
-                            "LogMGRS": {
-                                "Type": "Task",
-                                "Resource": mgrs_logger,
-                                "Next": "SuccessState",
-                                "Retry": [
-                                    {
-                                        "ErrorEquals": ["States.ALL"],
-                                        "IntervalSeconds": lambda_interval,
-                                        "MaxAttempts": lambda_max_attempts,
-                                        "BackoffRate": lambda_backoff_rate,
-                                    }
+                                    {"Name": "LASRC_AUX_DIR", "Value": "/var/lasrc_aux"},
+                                    {"Name": "REPLACE_EXISTING", "Value": replace},
                                 ],
                             },
-                            "SuccessState": {"Type": "Succeed"},
                         },
+                        "Catch": [
+                            {
+                                "ErrorEquals": ["States.ALL"],
+                                "Next": "LogLandsatAcError",
+                                "ResultPath": "$.jobinfo",
+                            }
+                        ],
+                        "Next": "LogLandsatAc",
                     },
-                    "End": True,
+                    "LogLandsatAc": {
+                        "Type": "Task",
+                        "Resource": landsat_ac_logger,
+                        "Next": "ProcessMGRSGrid",
+                        "Retry": [
+                            {
+                                "ErrorEquals": ["States.ALL"],
+                                "IntervalSeconds": lambda_interval,
+                                "MaxAttempts": lambda_max_attempts,
+                                "BackoffRate": 2,
+                            }
+                        ],
+                    },
+                    "ProcessMGRSGrid": {
+                        "Type": "Map",
+                        "ItemsPath": "$.mgrsvalues.mgrs",
+                        "Parameters": {
+                            "MGRS.$": "$$.Map.Item.Value",
+                            "path.$": "$.path",
+                            "date.$": "$.date",
+                        },
+                        "MaxConcurrency": 0,
+                        "Iterator": {
+                            "StartAt": "GetPathRowValues",
+                            "States": {
+                                "GetPathRowValues": {
+                                    "Type": "Task",
+                                    "Resource": pr2mgrs,
+                                    "ResultPath": "$.mgrs_metadata",
+                                    "Next": "CheckPathRowStatus",
+                                },
+                                "CheckPathRowStatus": {
+                                    "Type": "Task",
+                                    "Resource": landsat_pathrow_status,
+                                    "ResultPath": "$.ready_for_tiling",
+                                    "Next": "ReadyForTiling",
+                                },
+                                "ReadyForTiling": {
+                                    "Type": "Choice",
+                                    "Choices": [
+                                        {
+                                            "Variable": "$.ready_for_tiling",
+                                            "BooleanEquals": True,
+                                            "Next": "RunLandsatTile",
+                                        }
+                                    ],
+                                    "Default": "SuccessState",
+                                },
+                                "RunLandsatTile": {
+                                    "Type": "Task",
+                                    "Resource": "arn:aws:states:::batch:submitJob.sync",
+                                    "ResultPath": "$.tilejobinfo",
+                                    "Parameters": {
+                                        "JobName": "LandsatTileJob",
+                                        "JobQueue": jobqueue,
+                                        "JobDefinition": tile_job_definition,
+                                        "ContainerOverrides": {
+                                            "Command": ["export && landsat-tile.sh"],
+                                            "Environment": [
+                                                {"Name": "PATHROW_LIST", "Value.$": "$.mgrs_metadata.pathrows_string"},
+                                                {"Name": "INPUT_BUCKET", "Value": intermediate_output_bucket},
+                                                {"Name": "DATE", "Value.$": "$.date"},
+                                                {"Name": "MGRS", "Value.$": "$.MGRS"},
+                                                {"Name": "LANDSAT_PATH", "Value.$": "$.path"},
+                                                {"Name": "MGRS_ULX", "Value.$": "$.mgrs_metadata.mgrs_ulx"},
+                                                {"Name": "MGRS_ULY", "Value.$": "$.mgrs_metadata.mgrs_uly"},
+                                                {"Name": "DEBUG_BUCKET", "Value": "hls-debug-output"},
+                                                {"Name": "REPLACE_EXISTING", "Value": replace},
+                                            ],
+                                        },
+                                    },
+                                    "Catch": [
+                                        {
+                                            "ErrorEquals": ["States.ALL"],
+                                            "Next": "LogMGRS",
+                                            "ResultPath": "$.tilejobinfo",
+                                        }
+                                    ],
+                                    "Next": "LogMGRS",
+                                },
+                                "LogMGRS": {
+                                    "Type": "Task",
+                                    "Resource": mgrs_logger,
+                                    "Next": "SuccessState",
+                                    "Retry": [
+                                        {
+                                            "ErrorEquals": ["States.ALL"],
+                                            "IntervalSeconds": lambda_interval,
+                                            "MaxAttempts": lambda_max_attempts,
+                                            "BackoffRate": lambda_backoff_rate,
+                                        }
+                                    ],
+                                },
+                                "SuccessState": {"Type": "Succeed"},
+                            },
+                        },
+                        "End": True,
+                    },
+                    "LogLandsatAcError": {
+                        "Type": "Task",
+                        "Resource": landsat_ac_logger,
+                        "ResultPath": None,
+                        "Next": "Error",
+                        "Retry": [
+                            {
+                                "ErrorEquals": ["States.ALL"],
+                                "IntervalSeconds": lambda_interval,
+                                "MaxAttempts": lambda_max_attempts,
+                                "BackoffRate": lambda_backoff_rate,
+                            }
+                        ],
+                    },
+                    "LogError": {
+                        "Type": "Task",
+                        "Resource": lambda_logger,
+                        "ResultPath": "$",
+                        "Next": "Error",
+                        "Retry": [
+                            {
+                                "ErrorEquals": ["States.ALL"],
+                                "IntervalSeconds": lambda_interval,
+                                "MaxAttempts": lambda_max_attempts,
+                                "BackoffRate": lambda_backoff_rate,
+                            }
+                        ],
+                    },
+                    "Done": {"Type": "Succeed"},
+                    "Error": {"Type": "Fail"},
                 },
-                "LogLandsatAcError": {
-                    "Type": "Task",
-                    "Resource": landsat_ac_logger,
-                    "ResultPath": None,
-                    "Next": "Error",
-                    "Retry": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": lambda_interval,
-                            "MaxAttempts": lambda_max_attempts,
-                            "BackoffRate": lambda_backoff_rate,
-                        }
-                    ],
-                },
-                "LogError": {
-                    "Type": "Task",
-                    "Resource": lambda_logger,
-                    "ResultPath": "$",
-                    "Next": "Error",
-                    "Retry": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": lambda_interval,
-                            "MaxAttempts": lambda_max_attempts,
-                            "BackoffRate": lambda_backoff_rate,
-                        }
-                    ],
-                },
-                "Done": {"Type": "Succeed"},
-                "Error": {"Type": "Fail"},
-            },
+            }
         }
 
         self.steps_role = aws_iam.Role(
