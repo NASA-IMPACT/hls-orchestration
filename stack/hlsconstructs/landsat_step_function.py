@@ -108,6 +108,7 @@ class LandsatStepFunction(core.Construct):
                         }
                     ],
                 },
+                "GetMGRSValues": {
                 "RunLandsatAc": {
                     "Type": "Task",
                     "Resource": "arn:aws:states:::batch:submitJob.sync",
@@ -200,7 +201,13 @@ class LandsatStepFunction(core.Construct):
                                         "Command": ["export && landsat-tile.sh"],
                                         "Environment": [
                                             {"Name": "PATHROW_LIST", "Value.$": "$.mgrs_metadata.pathrows_string"},
+                                            {"Name": "INPUT_BUCKET", "Value": intermediate_output_bucket},
                                             {"Name": "DATE", "Value.$": "$.date"},
+                                            {"Name": "MGRS", "Value.$": "$.MGRS"},
+                                            {"Name": "LANDSAT_PATH", "Value.$": "$.path"},
+                                            {"Name": "MGRS_ULX", "Value.$": "$.mgrs_metadata.mgrs_ulx"},
+                                            {"Name": "MGRS_ULY", "Value.$": "$.mgrs_metadata.mgrs_uly"},
+                                            {"Name": "DEBUG_BUCKET", "Value": "hls-debug-output"},
                                             {"Name": "REPLACE_EXISTING", "Value": replace},
                                         ],
                                     },
