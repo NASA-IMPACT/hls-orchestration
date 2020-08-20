@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS landsat_mgrs_log (
     path varchar(3) not null,
     mgrs varchar(5) not null,
     acquisition date not null,
-    jobstatus boolean,
+    jobinfo jsonb,
     constraint no_dupe_mgrs unique(path, mgrs, acquisition)
 );
 CREATE TABLE IF NOT EXISTS landsat_ac_log (
@@ -57,6 +57,7 @@ CREATE VIEW granule_log AS
 select id, ts,
 granule(event),
 event->>'Status' as status,
+event->>'JobId' as jobid,
 to_timestamp((event->>'CreatedAt')::float/1000) as job_created,
 to_timestamp((event->>'StartedAt')::float/1000) as job_started,
 to_timestamp((event->>'StoppedAt')::float/1000) as job_stopped,

@@ -1,15 +1,12 @@
 import os
 import boto3
 import json
-from functools import reduce
 
+rds_client = boto3.client("rds-data")
 
 db_credentials_secrets_store_arn = os.getenv("HLS_SECRETS")
 database_name = os.getenv("HLS_DB_NAME")
 db_cluster_arn = os.getenv("HLS_DB_ARN")
-
-
-rds_client = boto3.client("rds-data")
 
 
 def execute_statement(sql, sql_parameters=[]):
@@ -24,25 +21,23 @@ def execute_statement(sql, sql_parameters=[]):
 
 
 def handler(event, context):
-    pathrows = event["mgrs_metadata"]["pathrows"]
-    rowlist = reduce((lambda agg, row: agg + "'" + row[-3:] + "'" + ","), pathrows, "")
-    rowlist = rowlist.rstrip(",")
-    rowlistquery = " AND row IN (" + rowlist + ")"
     q = (
-        "SELECT * FROM landsat_ac_log WHERE"
-        + " path = :path AND acquisition = :acquisition::date"
-        + rowlistquery
+        "UPDATE landsat_mgrs_log SET jobinfo = :jobinfo::jsonb"
+        + " WHERE path = :path::varchar(3) AND"
+        + " mgrs = :mgrs::varchar(5) AND acquisition = :acquisition::date;"
     )
-    response = execute_statement(
+    if "Cause" in event["tilejobinfo"].keys():
+        cause = json.loads(event["tilejobinfo"]["Cause"])
+        jobinfo = json.dumps(cause)
+    else:
+        jobinfo = json.dumps(event["tilejobinfo"])
+    execute_statement(
         q,
         sql_parameters=[
+            {"name": "mgrs", "value": {"stringValue": event["MGRS"]}},
             {"name": "path", "value": {"stringValue": event["path"]}},
             {"name": "acquisition", "value": {"stringValue": event["date"]}},
+            {"name": "jobinfo", "value": {"stringValue": jobinfo}}
         ],
     )
-    if len(response["records"]) == len(pathrows):
-        ready_for_tiling = True
-    else:
-        ready_for_tiling = False
-
-    return ready_for_tiling
+    return event

@@ -16,17 +16,21 @@ class LandsatStepFunction(core.Construct):
         # outputbucket_role_arn: str,
         intermediate_output_bucket: str,
         ac_job_definition: str,
-        # tiling_job_definition: str,
+        tile_job_definition: str,
         jobqueue: str,
         lambda_logger: str,
         landsat_mgrs_logger: str,
         landsat_ac_logger: str,
         landsat_pathrow_status: str,
         pr2mgrs: str,
+        mgrs_logger: str,
         replace_existing: bool,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
+        lambda_interval = 10
+        lambda_max_attempts = 3
+        lambda_backoff_rate = 2
 
         if replace_existing:
             replace = "replace"
@@ -46,9 +50,9 @@ class LandsatStepFunction(core.Construct):
                     "Retry": [
                         {
                             "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": 1,
-                            "MaxAttempts": 3,
-                            "BackoffRate": 2,
+                            "IntervalSeconds": lambda_interval,
+                            "MaxAttempts": lambda_max_attempts,
+                            "BackoffRate": lambda_backoff_rate,
                         }
                     ],
                     "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "LogError",}],
@@ -73,8 +77,8 @@ class LandsatStepFunction(core.Construct):
                     "Retry": [
                         {
                             "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": 1,
-                            "MaxAttempts": 3,
+                            "IntervalSeconds": lambda_interval,
+                            "MaxAttempts": lambda_max_attempts,
                             "BackoffRate": 2,
                         }
                     ],
@@ -94,16 +98,17 @@ class LandsatStepFunction(core.Construct):
                     "Type": "Task",
                     "Resource": landsat_mgrs_logger,
                     "ResultPath": None,
-                    "Next": "RunLandsatAc",
+                    "Next": "WaitForAc",
                     "Retry": [
                         {
                             "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": 1,
-                            "MaxAttempts": 3,
-                            "BackoffRate": 2,
+                            "IntervalSeconds": lambda_interval,
+                            "MaxAttempts": lambda_max_attempts,
+                            "BackoffRate": lambda_backoff_rate,
                         }
                     ],
                 },
+                "WaitForAc": {"Type": "Wait", "Seconds": 36000, "Next": "RunLandsatAc"},
                 "RunLandsatAc": {
                     "Type": "Task",
                     "Resource": "arn:aws:states:::batch:submitJob.sync",
@@ -143,8 +148,8 @@ class LandsatStepFunction(core.Construct):
                     "Retry": [
                         {
                             "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": 1,
-                            "MaxAttempts": 3,
+                            "IntervalSeconds": lambda_interval,
+                            "MaxAttempts": lambda_max_attempts,
                             "BackoffRate": 2,
                         }
                     ],
@@ -164,7 +169,7 @@ class LandsatStepFunction(core.Construct):
                             "GetPathRowValues": {
                                 "Type": "Task",
                                 "Resource": pr2mgrs,
-                                "ResultPath": "$.pathrows",
+                                "ResultPath": "$.mgrs_metadata",
                                 "Next": "CheckPathRowStatus",
                             },
                             "CheckPathRowStatus": {
@@ -179,10 +184,55 @@ class LandsatStepFunction(core.Construct):
                                     {
                                         "Variable": "$.ready_for_tiling",
                                         "BooleanEquals": True,
-                                        "Next": "SuccessState",
+                                        "Next": "RunLandsatTile",
                                     }
                                 ],
                                 "Default": "SuccessState",
+                            },
+                            "RunLandsatTile": {
+                                "Type": "Task",
+                                "Resource": "arn:aws:states:::batch:submitJob.sync",
+                                "ResultPath": "$.tilejobinfo",
+                                "Parameters": {
+                                    "JobName": "LandsatTileJob",
+                                    "JobQueue": jobqueue,
+                                    "JobDefinition": tile_job_definition,
+                                    "ContainerOverrides": {
+                                        "Command": ["export && landsat-tile.sh"],
+                                        "Environment": [
+                                            {"Name": "PATHROW_LIST", "Value.$": "$.mgrs_metadata.pathrows_string"},
+                                            {"Name": "INPUT_BUCKET", "Value": intermediate_output_bucket},
+                                            {"Name": "DATE", "Value.$": "$.date"},
+                                            {"Name": "MGRS", "Value.$": "$.MGRS"},
+                                            {"Name": "LANDSAT_PATH", "Value.$": "$.path"},
+                                            {"Name": "MGRS_ULX", "Value.$": "$.mgrs_metadata.mgrs_ulx"},
+                                            {"Name": "MGRS_ULY", "Value.$": "$.mgrs_metadata.mgrs_uly"},
+                                            {"Name": "DEBUG_BUCKET", "Value": "hls-debug-output"},
+                                            {"Name": "REPLACE_EXISTING", "Value": replace},
+                                        ],
+                                    },
+                                },
+                                "Catch": [
+                                    {
+                                        "ErrorEquals": ["States.ALL"],
+                                        "Next": "LogMGRS",
+                                        "ResultPath": "$.tilejobinfo",
+                                    }
+                                ],
+                                "Next": "LogMGRS",
+                            },
+                            "LogMGRS": {
+                                "Type": "Task",
+                                "Resource": mgrs_logger,
+                                "Next": "SuccessState",
+                                "Retry": [
+                                    {
+                                        "ErrorEquals": ["States.ALL"],
+                                        "IntervalSeconds": lambda_interval,
+                                        "MaxAttempts": lambda_max_attempts,
+                                        "BackoffRate": lambda_backoff_rate,
+                                    }
+                                ],
                             },
                             "SuccessState": {"Type": "Succeed"},
                         },
@@ -197,9 +247,9 @@ class LandsatStepFunction(core.Construct):
                     "Retry": [
                         {
                             "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": 1,
-                            "MaxAttempts": 3,
-                            "BackoffRate": 2,
+                            "IntervalSeconds": lambda_interval,
+                            "MaxAttempts": lambda_max_attempts,
+                            "BackoffRate": lambda_backoff_rate,
                         }
                     ],
                 },
@@ -211,15 +261,15 @@ class LandsatStepFunction(core.Construct):
                     "Retry": [
                         {
                             "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": 1,
-                            "MaxAttempts": 3,
-                            "BackoffRate": 2,
+                            "IntervalSeconds": lambda_interval,
+                            "MaxAttempts": lambda_max_attempts,
+                            "BackoffRate": lambda_backoff_rate,
                         }
                     ],
                 },
                 "Done": {"Type": "Succeed"},
                 "Error": {"Type": "Fail"},
-            },
+            }
         }
 
         self.steps_role = aws_iam.Role(

@@ -27,6 +27,10 @@ LANDSAT_ECR_URI = os.getenv(
     "HLS_LANDSAT_ECR_URI",
     "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat:latest",
 )
+LANDSAT_TILE_ECR_URI = os.getenv(
+    "HLS_LANDSAT_TILE_ECR_URI",
+    "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat-tile:latest",
+)
 SENTINEL_OUTPUT_BUCKET = os.getenv(
     "HLS_SENTINEL_OUTPUT_BUCKET", f"{STACKNAME}-sentinel-output"
 )
@@ -40,9 +44,9 @@ LANDSAT_INTERMEDIATE_OUTPUT_BUCKET = os.getenv(
 )
 LANDSAT_SNS_TOPIC = os.getenv("HLS_LANDSAT_SNS_TOPIC",)
 GIBS_INTERMEDIATE_OUTPUT_BUCKET = os.getenv(
-    "HLS_GIBS_INTERMEDIATE_OUTPUT_BUCKET",
-    f"{STACKNAME}-gibs-intermediate-output"
+    "HLS_GIBS_INTERMEDIATE_OUTPUT_BUCKET", f"{STACKNAME}-gibs-intermediate-output"
 )
+GIBS_OUTPUT_BUCKET = os.getenv("HLS_GIBS_OUTPUT_BUCKET")
 SSH_KEYNAME = os.getenv("HLS_SSH_KEYNAME")
 try:
     MAXV_CPUS = int(os.getenv("HLS_MAXV_CPUS"))
@@ -94,9 +98,7 @@ class HlsStack(core.Stack):
         )
 
         self.gibs_intermediate_output_bucket = aws_s3.Bucket(
-            self,
-            "GibsIntermediateBucket",
-            bucket_name=GIBS_INTERMEDIATE_OUTPUT_BUCKET,
+            self, "GibsIntermediateBucket", bucket_name=GIBS_INTERMEDIATE_OUTPUT_BUCKET,
         )
 
         self.landsat_sns_topic = aws_sns.Topic.from_topic_arn(
@@ -145,7 +147,6 @@ class HlsStack(core.Stack):
             self,
             "LaadsTask",
             dockerdir="hls-laads",
-            bucket=self.laads_bucket.bucket,
             mountpath="/var/lasrc_aux",
             timeout=259200,
             memory=10000,
@@ -156,10 +157,9 @@ class HlsStack(core.Stack):
             self,
             "SentinelTask",
             dockeruri=SENTINEL_ECR_URI,
-            bucket=self.sentinel_output_bucket,
             mountpath="/var/lasrc_aux",
             timeout=5400,
-            memory=12000,
+            memory=15000,
             vcpus=2,
         )
 
@@ -167,10 +167,18 @@ class HlsStack(core.Stack):
             self,
             "LandsatTask",
             dockeruri=LANDSAT_ECR_URI,
-            bucket=self.landsat_output_bucket,
             mountpath="/var/lasrc_aux",
             timeout=5400,
-            memory=12000,
+            memory=15000,
+            vcpus=2,
+        )
+
+        self.landsat_tile_task = DockerBatchJob(
+            self,
+            "LandsatTileTask",
+            dockeruri=LANDSAT_TILE_ECR_URI,
+            timeout=5400,
+            memory=16000,
             vcpus=2,
         )
 
@@ -197,6 +205,19 @@ class HlsStack(core.Stack):
             self,
             "LandsatMGRSLogger",
             code_dir="landsat_mgrs_logger/hls_landsat_mgrs_logger",
+            env={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
+            },
+            timeout=30,
+            handler="handler.handler",
+        )
+
+        self.mgrs_logger = Lambda(
+            self,
+            "MGRSLogger",
+            code_dir="mgrs_logger/hls_mgrs_logger",
             env={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
                 "HLS_DB_NAME": self.rds.database.database_name,
@@ -259,6 +280,7 @@ class HlsStack(core.Stack):
             outputbucket_role_arn=HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN,
             replace_existing=REPLACE_EXISTING,
             gibs_intermediate_output_bucket=GIBS_INTERMEDIATE_OUTPUT_BUCKET,
+            gibs_outputbucket=GIBS_OUTPUT_BUCKET,
         )
 
         self.landsat_step_function = LandsatStepFunction(
@@ -268,12 +290,14 @@ class HlsStack(core.Stack):
             outputbucket=LANDSAT_OUTPUT_BUCKET,
             intermediate_output_bucket=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
             ac_job_definition=self.landsat_task.job.ref,
+            tile_job_definition=self.landsat_tile_task.job.ref,
             jobqueue=self.batch.jobqueue.ref,
             lambda_logger=self.lambda_logger.function.function_arn,
             landsat_mgrs_logger=self.landsat_mgrs_logger.function.function_arn,
             landsat_ac_logger=self.landsat_ac_logger.function.function_arn,
             landsat_pathrow_status=self.landsat_pathrow_status.function.function_arn,
             pr2mgrs=self.pr2mgrs_lambda.function.function_arn,
+            mgrs_logger=self.mgrs_logger.function.function_arn,
             replace_existing=REPLACE_EXISTING,
         )
 
@@ -344,11 +368,15 @@ class HlsStack(core.Stack):
         self.landsat_step_function.steps_role.add_to_policy(
             self.landsat_pathrow_status.invoke_policy_statement
         )
+        self.landsat_step_function.steps_role.add_to_policy(
+            self.mgrs_logger.invoke_policy_statement
+        )
 
         self.lambda_logger.function.add_to_role_policy(self.rds.policy_statement)
         self.rds_bootstrap.function.add_to_role_policy(self.rds.policy_statement)
         self.landsat_mgrs_logger.function.add_to_role_policy(self.rds.policy_statement)
         self.landsat_ac_logger.function.add_to_role_policy(self.rds.policy_statement)
+        self.mgrs_logger.function.add_to_role_policy(self.rds.policy_statement)
         self.landsat_pathrow_status.function.add_to_role_policy(
             self.rds.policy_statement
         )
@@ -405,6 +433,15 @@ class HlsStack(core.Stack):
                 actions=["s3:Get*", "s3:List*",],
             )
         )
+        self.landsat_tile_task.role.add_to_policy(
+            aws_iam.PolicyStatement(
+                resources=[
+                    self.landsat_intermediate_output_bucket.bucket_arn,
+                    f"{self.landsat_intermediate_output_bucket.bucket_arn}/*",
+                ],
+                actions=["s3:Get*", "s3:List*",],
+            )
+        )
         self.batch.ecs_instance_role.add_to_policy(
             aws_iam.PolicyStatement(
                 resources=[HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN],
@@ -458,7 +495,19 @@ class HlsStack(core.Stack):
         )
         core.CfnOutput(
             self,
+            "landsatintermediateoutput",
+            export_name=f"{STACKNAME}-landsatintermediateoutput",
+            value=self.landsat_intermediate_output_bucket.bucket_name,
+        )
+        core.CfnOutput(
+            self,
             "landsatjobdefinition",
             export_name=f"{STACKNAME}-landsatjobdefinition",
             value=self.landsat_task.job.ref,
+        )
+        core.CfnOutput(
+            self,
+            "landsattilejobdefinition",
+            export_name=f"{STACKNAME}-landsattilejobdefinition",
+            value=self.landsat_tile_task.job.ref,
         )

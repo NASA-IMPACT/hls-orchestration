@@ -4,14 +4,17 @@ env_settings="$(dirname $DIR)/env.sh"
 source "$env_settings"
 
 jobqueue=$HLSSTACK_JOBQUEUEEXPORT
-jobdefinition=$HLSSTACK_SENTINELJOBDEFINITION
-outputbucket=$HLS_SENTINEL_OUTPUT_BUCKET
-inputbucket=$HLSSTACK_SENTINELINPUTEXPORT
-gibsbucket=$HLS_GIBS_INTERMEDIATE_OUTPUT_BUCKET
-gibsoutputbucket=$HLS_GIBS_OUTPUT_BUCKET
+jobdefinition=$HLSSTACK_LANDSATTILEJOBDEFINITION
+inputbucket=$HLSSTACK_LANDSATINTERMEDIATEOUTPUT
+outputbucket=$HLS_LANDSAT_OUTPUT_BUCKET
 outputbucket_role_arn=$HLS_SENTINEL_BUCKET_ROLE_ARN
-command=sentinel.sh
-granulelist=$1
+command=landsat-tile.sh
+pathrowlist=$1
+date=$2
+mgrs=$3
+landsat_path=$4
+mgrs_ulx=$5
+mgrs_uly=$6
 
 # If multiple granules are in the granulelist, create a jobname without the granule unique id.
 IFS=',' # commma is set as delimiter
@@ -21,34 +24,42 @@ jobname=$RANDOM
 overrides=$(cat <<EOF
 {
     "command": ["df /var/scratch && $command"],
+    "memory": 15000,
     "environment": [
       {
-        "name": "GRANULE_LIST",
-        "value": "$granulelist"
+        "name": "PATHROW_LIST",
+        "value": "$pathrowlist"
       },
       {
         "name": "OUTPUT_BUCKET",
         "value": "$outputbucket"
       },
       {
+        "name": "GCC_ROLE_ARN",
+        "value": "$outputbucket_role_arn"
+      },
+      {
         "name": "INPUT_BUCKET",
         "value": "$inputbucket"
       },
       {
-        "name": "LASRC_AUX_DIR",
-        "value": "/var/lasrc_aux"
+        "name": "DATE", "value": "$date"
       },
       {
-        "name": "GIBS_INTERMEDIATE_BUCKET",
-        "value": "$gibsbucket"
+        "name": "MGRS",
+        "value": "$mgrs"
       },
       {
-        "name": "GIBS_OUTPUT_BUCKET",
-        "value": "$gibsoutputbucket"
+        "name": "LANDSAT_PATH",
+        "value": "$landsat_path"
       },
       {
-        "name": "GCC_ROLE_ARN",
-        "value": "$outputbucket_role_arn"
+        "name": "MGRS_ULX",
+        "value": "$mgrs_ulx"
+      },
+      {
+        "name": "MGRS_ULY",
+        "value": "$mgrs_uly"
       },
       {
         "name": "DEBUG_BUCKET",

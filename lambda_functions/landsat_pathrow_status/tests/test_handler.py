@@ -15,7 +15,7 @@ def test_handler_ready(client):
         "date": "2020-05-28",
         "path": "182",
         "MGRS": "36VVK",
-        "pathrows": ["182019", "182020"],
+        "mgrs_metadata": {"pathrows": ["182019", "182020"],},
     }
     return_value = {"records": [{"row": "019"}, {"row": "020"},]}
     client.execute_statement.return_value = return_value
@@ -33,7 +33,7 @@ def test_handler_not_ready(client):
         "date": "2020-05-28",
         "path": "182",
         "MGRS": "36VVK",
-        "pathrows": ["182019", "182020"],
+        "mgrs_metadata": {"pathrows": ["182019", "182020"],},
     }
     return_value = {"records": [{"row": "019"},]}
     client.execute_statement.return_value = return_value
