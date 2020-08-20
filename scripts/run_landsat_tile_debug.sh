@@ -6,6 +6,8 @@ source "$env_settings"
 jobqueue=$HLSSTACK_JOBQUEUEEXPORT
 jobdefinition=$HLSSTACK_LANDSATTILEJOBDEFINITION
 inputbucket=$HLSSTACK_LANDSATINTERMEDIATEOUTPUT
+outputbucket=$HLS_LANDSAT_OUTPUT_BUCKET
+outputbucket_role_arn=$HLS_SENTINEL_BUCKET_ROLE_ARN
 command=landsat-tile.sh
 pathrowlist=$1
 date=$2
@@ -29,12 +31,19 @@ overrides=$(cat <<EOF
         "value": "$pathrowlist"
       },
       {
+        "name": "OUTPUT_BUCKET",
+        "value": "$outputbucket"
+      },
+      {
+        "name": "GCC_ROLE_ARN",
+        "value": "$outputbucket_role_arn"
+      },
+      {
         "name": "INPUT_BUCKET",
         "value": "$inputbucket"
       },
       {
-        "name": "DATE",
-        "value": "$date"
+        "name": "DATE", "value": "$date"
       },
       {
         "name": "MGRS",

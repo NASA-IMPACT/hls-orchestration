@@ -9,6 +9,7 @@ outputbucket=$HLS_SENTINEL_OUTPUT_BUCKET
 inputbucket=$HLSSTACK_SENTINELINPUTEXPORT
 gibsbucket=$HLS_GIBS_INTERMEDIATE_OUTPUT_BUCKET
 gibsoutputbucket=$HLS_GIBS_OUTPUT_BUCKET
+outputbucket_role_arn=$HLS_SENTINEL_BUCKET_ROLE_ARN
 command=sentinel.sh
 granulelist=$1
 
@@ -38,16 +39,20 @@ overrides=$(cat <<EOF
         "value": "/var/lasrc_aux"
       },
       {
-        "name": "DEBUG_BUCKET",
-        "value": "hls-debug-output"
-      },
-      {
         "name": "GIBS_INTERMEDIATE_BUCKET",
         "value": "$gibsbucket"
       },
       {
         "name": "GIBS_OUTPUT_BUCKET",
         "value": "$gibsoutputbucket"
+      },
+      {
+        "name": "GCC_ROLE_ARN",
+        "value": "$outputbucket_role_arn"
+      },
+      {
+        "name": "DEBUG_BUCKET",
+        "value": "hls-debug-output"
       }
     ]
 }
