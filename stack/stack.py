@@ -169,7 +169,7 @@ class HlsStack(core.Stack):
             dockeruri=LANDSAT_ECR_URI,
             mountpath="/var/lasrc_aux",
             timeout=5400,
-            memory=12000,
+            memory=15000,
             vcpus=2,
         )
 
@@ -178,7 +178,7 @@ class HlsStack(core.Stack):
             "LandsatTileTask",
             dockeruri=LANDSAT_TILE_ECR_URI,
             timeout=5400,
-            memory=12000,
+            memory=16000,
             vcpus=2,
         )
 
