@@ -108,7 +108,7 @@ class LandsatStepFunction(core.Construct):
                         }
                     ],
                 },
-                "WaitForAc": {"Type": "Wait", "Seconds": 36000, "Next": "RunLandsatAc"},
+                "WaitForAc": {"Type": "Wait", "Seconds": 60, "Next": "RunLandsatAc"},
                 "RunLandsatAc": {
                     "Type": "Task",
                     "Resource": "arn:aws:states:::batch:submitJob.sync",
