@@ -30,7 +30,7 @@ def handler(event, context):
     rowlistquery = " AND row IN (" + rowlist + ")"
     q = (
         "SELECT * FROM landsat_ac_log WHERE"
-        + " path = :path AND acquisition = :acquisition::date"
+        + " path = :path AND acquisition = :acquisition::date AND jobinfo->>'Status' = 'SUCCEEDED'"
         + rowlistquery
     )
     response = execute_statement(
