@@ -29,7 +29,7 @@ LANDSAT_ECR_URI = os.getenv(
 )
 LANDSAT_TILE_ECR_URI = os.getenv(
     "HLS_LANDSAT_TILE_ECR_URI",
-    "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat-tile:latest",
+    "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat-tile:v3.0.4",
 )
 SENTINEL_OUTPUT_BUCKET = os.getenv(
     "HLS_SENTINEL_OUTPUT_BUCKET", f"{STACKNAME}-sentinel-output"
@@ -288,6 +288,7 @@ class HlsStack(core.Stack):
             "LandsatStateMachine",
             laads_available_function=self.laads_available.function.function_arn,
             outputbucket=LANDSAT_OUTPUT_BUCKET,
+            outputbucket_role_arn=HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN,
             intermediate_output_bucket=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
             ac_job_definition=self.landsat_task.job.ref,
             tile_job_definition=self.landsat_tile_task.job.ref,
