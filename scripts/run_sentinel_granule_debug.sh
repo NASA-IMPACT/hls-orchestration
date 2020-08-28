@@ -20,7 +20,7 @@ jobname=$RANDOM
 # Create Batch job definition override
 overrides=$(cat <<EOF
 {
-    "command": ["df /var/scratch && $command"],
+    "command": ["printenv && df /var/scratch && $command"],
     "environment": [
       {
         "name": "GRANULE_LIST",
