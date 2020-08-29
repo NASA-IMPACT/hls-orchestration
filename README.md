@@ -20,19 +20,19 @@ $ export HLS_SENTINEL_BUCKET_ROLE_ARN=<GCC Role for accessing output bucket>
 ### Synth
 Display generated cloud formation template that will be used to deploy.
 ```
-$ source ./environment.sh && tox -d dev -r -- synth
+$ source ./environment.sh && tox -e dev -r -- synth
 ```
 
 ### Diff
 Display a diff of the current deployment and any changes created.
 ```
-$ source ./environment.sh && tox -d dev -r -- diff
+$ source ./environment.sh && tox -e dev -r -- diff
 ```
 
 ### Deploy
 Deploys current created stack.
 ```
-$ source ./environment.sh && tox -d dev -r -- deploy
+$ source ./environment.sh && tox -e dev -r -- deploy
 ```
 
 ### Setup Logging Database
@@ -45,7 +45,7 @@ To bootstrap the logging database.
 ### Development
 For active stack development run
 ```
-$ source ./environment.sh && tox -d dev -r -- version
+$ source ./environment.sh && tox -e dev -r -- version
 ```
 This creates a local virtualenv in the directory `devenv`.  To use it for development
 ```
