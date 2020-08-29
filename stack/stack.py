@@ -20,7 +20,7 @@ SENTINEL_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-sentinel:v3
 LANDSAT_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat:latest"
 LANDSAT_TILE_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat-tile:v3.0.4"
 
-LAADS_BUCKET = f"{STACKNAME}-bucket"
+LAADS_BUCKET = f"{STACKNAME}-laads-bucket"
 LAADS_TOKEN = os.getenv("HLS_LAADS_TOKEN", None)
 LAADS_CRON = os.getenv("HLS_LAADS_CRON", "cron(0 0/12 * * ? *)")
 LAADS_BUCKET_BOOTSTRAP = LAADS_BUCKET
@@ -28,7 +28,7 @@ if LAADS_TOKEN is None:
     raise Exception("HLS_LAADS_TOKEN Env Var must be set")
 
 
-SENTINEL_INPUT_BUCKET = f"{STACKNAME}-sentinel-input"
+SENTINEL_INPUT_BUCKET = f"{STACKNAME}-sentinel-input-files"
 SENTINEL_OUTPUT_BUCKET = os.getenv("HLS_SENTINEL_OUTPUT_BUCKET")
 HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN = os.getenv(
     "HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN", None
@@ -38,7 +38,7 @@ if HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN is None:
 
 LANDSAT_SNS_TOPIC = os.getenv("HLS_LANDSAT_SNS_TOPIC",)
 LANDSAT_OUTPUT_BUCKET = os.getenv("HLS_LANDSAT_OUTPUT_BUCKET",)
-LANDSAT_INTERMEDIATE_OUTPUT_BUCKET = f"{STACKNAME}-landlandsat-intermediate-output"
+LANDSAT_INTERMEDIATE_OUTPUT_BUCKET = f"{STACKNAME}-landsat-intermediate-output"
 
 GIBS_INTERMEDIATE_OUTPUT_BUCKET = f"{STACKNAME}-gibs-intermediate-output"
 GIBS_OUTPUT_BUCKET = os.getenv("HLS_GIBS_OUTPUT_BUCKET")
