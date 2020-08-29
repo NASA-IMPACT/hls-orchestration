@@ -30,7 +30,10 @@ inst_reqs = ["boto3"]
 
 inst_reqs.append([f"aws_cdk.{x}=={aws_cdk_version}" for x in aws_cdk_reqs])
 
-extra_reqs = {"test": ["pytest", "pytest-cov", "black", "flake8",]}
+extra_reqs = {
+    "test": ["pytest", "black", "flake8",],
+    "dev": ["pytest", "black", "flake8", "nodeenv"]
+}
 
 setup(
     name="hls-orchestration",
