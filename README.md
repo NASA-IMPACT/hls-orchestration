@@ -3,10 +3,10 @@
 AWS Stack for processing HLS data.
 
 ### Requirements
-Python>=3.7
-tox
-aws-cli
-jq
+Python>=3.7 \
+tox \
+aws-cli \
+jq \
 An IAM role with sufficient permissions for creating, destroying and modifying the relevant stack resources.
 
 ### Environment Settings
