@@ -9,6 +9,8 @@ __pycache__/
 # Distribution / packaging
 .Python
 env/
+toxenv/
+devenv/
 build/
 develop-eggs/
 dist/
@@ -114,4 +116,4 @@ node_modules/
 package-lock.json
 yarn.lock
 package.json
-env.sh
+environment.sh

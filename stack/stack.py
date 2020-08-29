@@ -15,59 +15,45 @@ from hlsconstructs.landsat_step_function import LandsatStepFunction
 from hlsconstructs.step_function_trigger import StepFunctionTrigger
 
 STACKNAME = os.getenv("HLS_STACKNAME", "hls")
-LAADS_BUCKET = os.getenv("HLS_LAADS_BUCKET", f"{STACKNAME}-bucket")
+
+SENTINEL_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-sentinel:v3.0.4"
+LANDSAT_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat:latest"
+LANDSAT_TILE_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat-tile:v3.0.4"
+
+LAADS_BUCKET = f"{STACKNAME}-laads-bucket"
 LAADS_TOKEN = os.getenv("HLS_LAADS_TOKEN", None)
 LAADS_CRON = os.getenv("HLS_LAADS_CRON", "cron(0 0/12 * * ? *)")
 LAADS_BUCKET_BOOTSTRAP = LAADS_BUCKET
-SENTINEL_ECR_URI = os.getenv(
-    "HLS_SENTINEL_ECR_URI",
-    "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-sentinel:latest",
+if LAADS_TOKEN is None:
+    raise Exception("HLS_LAADS_TOKEN Env Var must be set")
+
+
+SENTINEL_INPUT_BUCKET = f"{STACKNAME}-sentinel-input-files"
+SENTINEL_OUTPUT_BUCKET = os.getenv("HLS_SENTINEL_OUTPUT_BUCKET")
+HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN = os.getenv(
+    "HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN", None
 )
-LANDSAT_ECR_URI = os.getenv(
-    "HLS_LANDSAT_ECR_URI",
-    "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat:latest",
-)
-LANDSAT_TILE_ECR_URI = os.getenv(
-    "HLS_LANDSAT_TILE_ECR_URI",
-    "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat-tile:v3.0.4",
-)
-SENTINEL_OUTPUT_BUCKET = os.getenv(
-    "HLS_SENTINEL_OUTPUT_BUCKET", f"{STACKNAME}-sentinel-output"
-)
-SENTINEL_INPUT_BUCKET = os.getenv(
-    "HLS_SENTINEL_INPUT_BUCKET", f"{STACKNAME}-sentinel-input"
-)
-LANDSAT_OUTPUT_BUCKET = os.getenv("HLS_LANDSAT_OUTPUT_BUCKET",)
-LANDSAT_INTERMEDIATE_OUTPUT_BUCKET = os.getenv(
-    "HLS_LANDSAT_INTERMEDIATE_OUTPUT_BUCKET",
-    f"{STACKNAME}-landlandsat-intermediate-output",
-)
+if HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN is None:
+    raise Exception("HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN Env Var must be set")
+
 LANDSAT_SNS_TOPIC = os.getenv("HLS_LANDSAT_SNS_TOPIC",)
-GIBS_INTERMEDIATE_OUTPUT_BUCKET = os.getenv(
-    "HLS_GIBS_INTERMEDIATE_OUTPUT_BUCKET", f"{STACKNAME}-gibs-intermediate-output"
-)
+LANDSAT_OUTPUT_BUCKET = os.getenv("HLS_LANDSAT_OUTPUT_BUCKET",)
+LANDSAT_INTERMEDIATE_OUTPUT_BUCKET = f"{STACKNAME}-landsat-intermediate-output"
+
+GIBS_INTERMEDIATE_OUTPUT_BUCKET = f"{STACKNAME}-gibs-intermediate-output"
 GIBS_OUTPUT_BUCKET = os.getenv("HLS_GIBS_OUTPUT_BUCKET")
+
 SSH_KEYNAME = os.getenv("HLS_SSH_KEYNAME")
 try:
     MAXV_CPUS = int(os.getenv("HLS_MAXV_CPUS"))
 except ValueError:
     MAXV_CPUS = 200
 
+HLS_REPLACE_EXISTING = os.getenv("HLS_REPLACE_EXISTING", None)
 if os.getenv("HLS_REPLACE_EXISTING") == "true":
     REPLACE_EXISTING = True
 else:
     REPLACE_EXISTING = False
-
-HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN = os.getenv(
-    "HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN", None
-)
-HLS_REPLACE_EXISTING = os.getenv("HLS_REPLACE_EXISTING", None)
-
-if LAADS_TOKEN is None:
-    raise Exception("HLS_LAADS_TOKEN Env Var must be set")
-
-if HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN is None:
-    raise Exception("HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN Env Var must be set")
 
 
 class HlsStack(core.Stack):

@@ -6,43 +6,17 @@ do
     command -v $b >/dev/null 2>&1 || { echo >&2 "I require $b but it's not installed.  Aborting."; exit 1; }
 done
 
-
 # Set allexport mode, all variables defined in this block will get exported
 set -a
 # Name of the stack being created
 : ${HLS_STACKNAME:=hls}
 
 
-#### LAADS configurations ###
-# Bucket name for Laads Data
-HLS_LAADS_BUCKET=${HLS_STACKNAME}-laads-bucket
-
 # Schedule to use for updating Laads data
 HLS_LAADS_CRON="cron(0 0/12 * * ? *)"
 
-# Bucket that can be used to bootstrap EFS mount with existing Laads data in S3 using s3 sync
-HLS_LAADS_BUCKET_BOOTSTRAP=${HLS_LAADS_BUCKET}
-
-
-### Sentinel Processing Configurations ###
-# ECR Url for hls-sentinel docker image
-HLS_SENTINEL_ECR_URI="018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-sentinel:latest"
-
 # Bucket used for Sentinel output
 HLS_SENTINEL_OUTPUT_BUCKET=hls-global
-
-# Bucket used for Sentinel input
-HLS_SENTINEL_INPUT_BUCKET=${HLS_STACKNAME}-sentinel-input
-
-### Landsat Processing Configurations ###
-# ECR Url for hls-landsat docker image
-HLS_LANDSAT_ECR_URI="018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat:latest"
-
-# Bucket used for intermediate Landsat output
-HLS_LANDSAT_INTERMEDIATE_OUTPUT_BUCKET=${HLS_STACKNAME}-landsat-intermediate-output
-
-# Bucket used for intermediate GIBS imagery output
-HLS_GIBS_INTERMEDIATE_OUTPUT_BUCKET=${HLS_STACKNAME}-gibs-intermediate-output
 
 # Bucket used for Landsat output
 HLS_LANDSAT_OUTPUT_BUCKET=hls-global
@@ -50,14 +24,11 @@ HLS_LANDSAT_OUTPUT_BUCKET=hls-global
 # Landsat SNS topic
 HLS_LANDSAT_SNS_TOPIC=arn:aws:sns:us-west-2:274514004127:NewSceneHTML
 
-# Bucket for intermediate debug output.
-HLS_DEBUG_OUTPUT=${HLS_STACKNAME}-debug-output
-
 # Bucket for merged GIBS tile output.
 HLS_GIBS_OUTPUT_BUCKET=hls-browse-imagery
 
 # Max vcpus for Batch compute environment
-HLS_MAXV_CPUS=200
+HLS_MAXV_CPUS=1000
 
 # Replace existing output in S3 buckets.
 HLS_REPLACE_EXISTING=true

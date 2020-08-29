@@ -6,7 +6,7 @@ with open("README.md") as f:
     readme = f.read()
 
 # Runtime requirements.
-aws_cdk_min_version = "1.22.0"
+aws_cdk_version = "1.39.0"
 aws_cdk_reqs = [
     "core",
     "aws-s3",
@@ -28,9 +28,12 @@ aws_cdk_reqs = [
 
 inst_reqs = ["boto3"]
 
-inst_reqs.append([f"aws_cdk.{x}>={aws_cdk_min_version}" for x in aws_cdk_reqs])
+inst_reqs.append([f"aws_cdk.{x}=={aws_cdk_version}" for x in aws_cdk_reqs])
 
-extra_reqs = {"test": ["pytest", "pytest-cov", "black", "flake8"]}
+extra_reqs = {
+    "test": ["pytest", "pytest-cov", "black", "flake8",],
+    "dev": ["pytest", "black", "flake8", "nodeenv"]
+}
 
 setup(
     name="hls-orchestration",
@@ -43,8 +46,6 @@ setup(
             "docker/hls-laads/*",
             "scripts/*",
             "cdk.json",
-            "lambda/p2mgrs/hls_pr2mgrs/*",
-            "lambda/laads-available/hls_laads_available/*",
             "stack/constructs/userdata.txt",
         ],
     },
