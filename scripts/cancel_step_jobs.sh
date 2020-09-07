@@ -1,5 +1,7 @@
 #!/bin/bash
-# Cancels any currently running Step Jobs
+DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+env_settings="$(dirname $DIR)/environment.sh"
+source "$env_settings"
 if [ -z $HLSSTACK_SENTINELSTATEMACHINEEXPORT ];
 then
     echo "HLSSTACK_SENTINELSTATEMACHINEEXPORT variable must be set"
