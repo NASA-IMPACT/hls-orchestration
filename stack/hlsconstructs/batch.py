@@ -100,8 +100,19 @@ class Batch(core.Construct):
             parameter_name=cloudwatch_ssm_param,
             string_value=cloudwatch_config_string,
         )
+
         launch_template_data = aws_ec2.CfnLaunchTemplate.LaunchTemplateDataProperty(
-            user_data=core.Fn.base64(user_data_str), key_name=ssh_keyname,
+            user_data=core.Fn.base64(user_data_str),
+            key_name=ssh_keyname,
+            # block_device_mappings=[{
+                # "device_name": "/dev/xvda",
+                # "no_device": "/dev/xvda",
+                # "ebs": {
+                    # "encrypted": False,
+                    # "volumeSize": 100,
+                    # "volumeType": "gp2",
+                # }
+            # }],
         )
 
         launch_template = aws_ec2.CfnLaunchTemplate(
@@ -109,13 +120,13 @@ class Batch(core.Construct):
         )
 
         launch_template_props = aws_batch.CfnComputeEnvironment.LaunchTemplateSpecificationProperty(
-            launch_template_id=launch_template.ref
+            launch_template_id=launch_template.ref,
+            version=launch_template.attr_latest_version_number
         )
         # Grant ssm:GetParameters to ECS Instnace role.
         cloudwatch_config_param.grant_read(self.ecs_instance_role)
 
         image_id = aws_ecs.EcsOptimizedImage.amazon_linux2().get_image(self).image_id
-
         compute_resources = aws_batch.CfnComputeEnvironment.ComputeResourcesProperty(
             allocation_strategy="BEST_FIT_PROGRESSIVE",
             desiredv_cpus=0,

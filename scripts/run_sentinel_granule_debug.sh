@@ -7,7 +7,7 @@ jobqueue=$HLSSTACK_JOBQUEUEEXPORT
 jobdefinition=$HLSSTACK_SENTINELJOBDEFINITION
 outputbucket=$HLS_SENTINEL_OUTPUT_BUCKET
 inputbucket=$HLSSTACK_SENTINELINPUTEXPORT
-gibsbucket=$HLS_GIBS_INTERMEDIATE_OUTPUT_BUCKET
+gibsbucket=$HLSSTACK_GIBSINTERMEDIATEOUTPUT
 gibsoutputbucket=$HLS_GIBS_OUTPUT_BUCKET
 outputbucket_role_arn=$HLS_SENTINEL_BUCKET_ROLE_ARN
 command=sentinel.sh
@@ -53,6 +53,10 @@ overrides=$(cat <<EOF
       {
         "name": "DEBUG_BUCKET",
         "value": "hls-debug-output"
+      },
+      {
+        "name": "OMP_NUM_THREADS",
+        "value": "4"
       }
     ]
 }

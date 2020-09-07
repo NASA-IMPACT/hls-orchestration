@@ -103,6 +103,10 @@ class SentinelStepFunction(core.Construct):
                                     "Name": "GIBS_OUTPUT_BUCKET",
                                     "Value": gibs_outputbucket,
                                 },
+                                {
+                                    "Name": "OMP_NUM_THREADS",
+                                    "Value": "2",
+                                },
                             ],
                         },
                     },

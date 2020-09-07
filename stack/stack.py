@@ -16,9 +16,10 @@ from hlsconstructs.step_function_trigger import StepFunctionTrigger
 
 STACKNAME = os.getenv("HLS_STACKNAME", "hls")
 
-SENTINEL_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-sentinel:v3.0.4"
+# SENTINEL_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-sentinel:v3.0.4"
+SENTINEL_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-sentinel:latest"
 LANDSAT_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat:latest"
-LANDSAT_TILE_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat-tile:v3.0.4"
+LANDSAT_TILE_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat-tile:v1.4"
 
 LAADS_BUCKET = f"{STACKNAME}-laads-bucket"
 LAADS_TOKEN = os.getenv("HLS_LAADS_TOKEN", None)
@@ -45,7 +46,8 @@ GIBS_OUTPUT_BUCKET = os.getenv("HLS_GIBS_OUTPUT_BUCKET")
 
 SSH_KEYNAME = os.getenv("HLS_SSH_KEYNAME")
 try:
-    MAXV_CPUS = int(os.getenv("HLS_MAXV_CPUS"))
+    # MAXV_CPUS = int(os.getenv("HLS_MAXV_CPUS"))
+    MAXV_CPUS = 2400
 except ValueError:
     MAXV_CPUS = 200
 
@@ -144,7 +146,7 @@ class HlsStack(core.Stack):
             "SentinelTask",
             dockeruri=SENTINEL_ECR_URI,
             mountpath="/var/lasrc_aux",
-            timeout=5400,
+            timeout=10800,
             memory=15000,
             vcpus=2,
         )
@@ -497,4 +499,10 @@ class HlsStack(core.Stack):
             "landsattilejobdefinition",
             export_name=f"{STACKNAME}-landsattilejobdefinition",
             value=self.landsat_tile_task.job.ref,
+        )
+        core.CfnOutput(
+            self,
+            "gibsintermediateoutput",
+            export_name=f"{STACKNAME}-gibsintermediateoutput",
+            value=self.gibs_intermediate_output_bucket.bucket_name,
         )
