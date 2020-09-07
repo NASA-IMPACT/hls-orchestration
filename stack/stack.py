@@ -1,6 +1,6 @@
 import os
 import json
-from aws_cdk import core, aws_stepfunctions, aws_iam, aws_s3, aws_sns
+from aws_cdk import core, aws_stepfunctions, aws_iam, aws_s3, aws_sns, aws_cloudwatch, aws_cloudwatch_actions
 from hlsconstructs.network import Network
 from hlsconstructs.s3 import S3
 from hlsconstructs.efs import Efs
@@ -444,6 +444,31 @@ class HlsStack(core.Stack):
             self, "cweventsfull", "arn:aws:iam::aws:policy/CloudWatchEventsFullAccess"
         )
         self.sentinel_step_function.steps_role.add_managed_policy(cw_events_full)
+
+        # Alarms
+        self.sentinel_step_function_metric = aws_cloudwatch.Metric(
+            namespace="AWS/States",
+            metric_name="SentinelStepFunctionFailures",
+            period=core.Duration.minutes(20),
+            statistic="avg",
+            dimensions={
+                "StateMachineArn": self.sentinel_step_function.sentinel_state_machine.ref
+            }
+        )
+        self.sentinel_step_function_alarm = aws_cloudwatch.Alarm(
+            self,
+            "SentinelStepFunctionAlarm",
+            metric=self.sentinel_step_function_metric,
+            threshold=0.2,
+            evaluation_periods=1,
+        )
+        self.sentinel_step_function_sns = aws_sns.Topic(
+            self,
+            "SentinelStepFunctionFailuresSNS"
+        )
+        self.sentinel_step_function_alarm.add_alarm_action(
+            aws_cloudwatch_actions.SnsAction(self.sentinel_step_function_sns)
+        )
 
         # Stack exports
         core.CfnOutput(
