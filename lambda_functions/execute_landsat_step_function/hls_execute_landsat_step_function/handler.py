@@ -104,7 +104,7 @@ def handler(event: Dict, context: Dict):
     scene_meta = landsat_parse_scene_id(scene_id)
     print(scene_meta)
     # Skip unless real-time (RT) collection
-    if scene_meta["collectionCategory"] == "T1":
+    if scene_meta["collectionCategory"] == "RT":
         try:
             input = json.dumps(scene_meta)
             step_functions.start_execution(
