@@ -24,6 +24,8 @@ aws_cdk_reqs = [
     "aws-lambda-event-sources",
     "aws-ssm",
     "aws-sns",
+    "aws-cloudwatch",
+    "aws-cloudwatch-actions",
 ]
 
 inst_reqs = ["boto3"]
