@@ -1,6 +1,6 @@
 import os
 import json
-from aws_cdk import core, aws_stepfunctions, aws_iam, aws_s3, aws_sns, aws_cloudwatch, aws_cloudwatch_actions
+from aws_cdk import core, aws_stepfunctions, aws_iam, aws_s3, aws_sns
 from hlsconstructs.network import Network
 from hlsconstructs.s3 import S3
 from hlsconstructs.efs import Efs
@@ -13,6 +13,7 @@ from hlsconstructs.dummy_lambda import Dummy
 from hlsconstructs.sentinel_step_function import SentinelStepFunction
 from hlsconstructs.landsat_step_function import LandsatStepFunction
 from hlsconstructs.step_function_trigger import StepFunctionTrigger
+from hlsconstructs.stepfunction_alarm import StepFunctionAlarm
 
 STACKNAME = os.getenv("HLS_STACKNAME", "hls")
 
@@ -47,7 +48,7 @@ GIBS_OUTPUT_BUCKET = os.getenv("HLS_GIBS_OUTPUT_BUCKET")
 SSH_KEYNAME = os.getenv("HLS_SSH_KEYNAME")
 try:
     # MAXV_CPUS = int(os.getenv("HLS_MAXV_CPUS"))
-    MAXV_CPUS = 2400
+    MAXV_CPUS = 1200
 except ValueError:
     MAXV_CPUS = 200
 
@@ -146,7 +147,7 @@ class HlsStack(core.Stack):
             "SentinelTask",
             dockeruri=SENTINEL_ECR_URI,
             mountpath="/var/lasrc_aux",
-            timeout=10800,
+            timeout=7200,
             memory=15000,
             vcpus=2,
         )
@@ -241,6 +242,14 @@ class HlsStack(core.Stack):
             handler="handler.handler",
         )
 
+        self.check_landsat_tiling_exit_code = Lambda(
+            self,
+            "CheckLandsatTilingExitCode",
+            code_dir="check_landsat_tiling_exit_code/hls_check_landsat_tiling_exit_code",
+            timeout=30,
+            handler="handler.handler"
+        )
+
         self.laads_cron = BatchCron(
             self,
             "LaadsCron",
@@ -287,6 +296,7 @@ class HlsStack(core.Stack):
             landsat_pathrow_status=self.landsat_pathrow_status.function.function_arn,
             pr2mgrs=self.pr2mgrs_lambda.function.function_arn,
             mgrs_logger=self.mgrs_logger.function.function_arn,
+            check_landsat_tiling_exit_code=self.check_landsat_tiling_exit_code.function.function_arn,
             replace_existing=REPLACE_EXISTING,
         )
 
@@ -359,6 +369,9 @@ class HlsStack(core.Stack):
         )
         self.landsat_step_function.steps_role.add_to_policy(
             self.mgrs_logger.invoke_policy_statement
+        )
+        self.landsat_step_function.steps_role.add_to_policy(
+            self.check_landsat_tiling_exit_code.invoke_policy_statement
         )
 
         self.lambda_logger.function.add_to_role_policy(self.rds.policy_statement)
@@ -446,28 +459,18 @@ class HlsStack(core.Stack):
         self.sentinel_step_function.steps_role.add_managed_policy(cw_events_full)
 
         # Alarms
-        self.sentinel_step_function_metric = aws_cloudwatch.Metric(
-            namespace="AWS/States",
-            metric_name="SentinelStepFunctionFailures",
-            period=core.Duration.minutes(20),
-            statistic="avg",
-            dimensions={
-                "StateMachineArn": self.sentinel_step_function.sentinel_state_machine.ref
-            }
-        )
-        self.sentinel_step_function_alarm = aws_cloudwatch.Alarm(
+        self.sentinel_step_function_alarm = StepFunctionAlarm(
             self,
             "SentinelStepFunctionAlarm",
-            metric=self.sentinel_step_function_metric,
-            threshold=0.2,
-            evaluation_periods=1,
+            state_machine=self.sentinel_step_function.sentinel_state_machine.ref,
+            root_name="Sentinel",
         )
-        self.sentinel_step_function_sns = aws_sns.Topic(
+
+        self.landsat_step_function_alarm = StepFunctionAlarm(
             self,
-            "SentinelStepFunctionFailuresSNS"
-        )
-        self.sentinel_step_function_alarm.add_alarm_action(
-            aws_cloudwatch_actions.SnsAction(self.sentinel_step_function_sns)
+            "LandsatStepFunctionAlarm",
+            state_machine=self.landsat_step_function.state_machine.ref,
+            root_name="Landsat",
         )
 
         # Stack exports

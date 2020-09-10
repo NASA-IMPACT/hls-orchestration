@@ -24,6 +24,7 @@ class LandsatStepFunction(core.Construct):
         landsat_pathrow_status: str,
         pr2mgrs: str,
         mgrs_logger: str,
+        check_landsat_tiling_exit_code: str,
         replace_existing: bool,
         **kwargs,
     ) -> None:
@@ -229,6 +230,7 @@ class LandsatStepFunction(core.Construct):
                                 "Type": "Task",
                                 "Resource": mgrs_logger,
                                 "Next": "SuccessState",
+                                "OutputPath":"$.tilejobinfo.Attempts[0].Container.ExitCode",
                                 "Retry": [
                                     {
                                         "ErrorEquals": ["States.ALL"],
@@ -241,7 +243,28 @@ class LandsatStepFunction(core.Construct):
                             "SuccessState": {"Type": "Succeed"},
                         },
                     },
-                    "End": True,
+                    "Next": "CheckExitCodes",
+                },
+                "CheckExitCodes": {
+                    "Type": "Task",
+                    "Resource": check_landsat_tiling_exit_code,
+                    "Next": "HadTilingFailure",
+                },
+                "HadTilingFailure": {
+                    "Type": "Choice",
+                    "Choices": [
+                        {
+                            "Variable": "$",
+                            "BooleanEquals": True,
+                            "Next": "Done",
+                        },
+                        {
+                            "Variable": "$",
+                            "BooleanEquals": False,
+                            "Next": "Error",
+                        }
+                    ],
+                    "Default": "Done",
                 },
                 "LogLandsatAcError": {
                     "Type": "Task",
