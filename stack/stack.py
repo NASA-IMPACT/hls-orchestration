@@ -47,7 +47,7 @@ GIBS_OUTPUT_BUCKET = os.getenv("HLS_GIBS_OUTPUT_BUCKET")
 SSH_KEYNAME = os.getenv("HLS_SSH_KEYNAME")
 try:
     # MAXV_CPUS = int(os.getenv("HLS_MAXV_CPUS"))
-    MAXV_CPUS = 2400
+    MAXV_CPUS = 1200
 except ValueError:
     MAXV_CPUS = 200
 
@@ -146,7 +146,7 @@ class HlsStack(core.Stack):
             "SentinelTask",
             dockeruri=SENTINEL_ECR_URI,
             mountpath="/var/lasrc_aux",
-            timeout=10800,
+            timeout=7200,
             memory=15000,
             vcpus=2,
         )
@@ -241,6 +241,14 @@ class HlsStack(core.Stack):
             handler="handler.handler",
         )
 
+        self.check_landsat_tiling_exit_code = Lambda(
+            self,
+            "CheckLandsatTilingExitCode",
+            code_dir="check_landsat_tiling_exit_code/hls_check_landsat_tiling_exit_code",
+            timeout=30,
+            handler="handler.handler"
+        )
+
         self.laads_cron = BatchCron(
             self,
             "LaadsCron",
@@ -287,6 +295,7 @@ class HlsStack(core.Stack):
             landsat_pathrow_status=self.landsat_pathrow_status.function.function_arn,
             pr2mgrs=self.pr2mgrs_lambda.function.function_arn,
             mgrs_logger=self.mgrs_logger.function.function_arn,
+            check_landsat_tiling_exit_code=self.check_landsat_tiling_exit_code.function.function_arn,
             replace_existing=REPLACE_EXISTING,
         )
 
@@ -359,6 +368,9 @@ class HlsStack(core.Stack):
         )
         self.landsat_step_function.steps_role.add_to_policy(
             self.mgrs_logger.invoke_policy_statement
+        )
+        self.landsat_step_function.steps_role.add_to_policy(
+            self.check_landsat_tiling_exit_code.invoke_policy_statement
         )
 
         self.lambda_logger.function.add_to_role_policy(self.rds.policy_statement)
