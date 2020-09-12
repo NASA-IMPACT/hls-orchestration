@@ -14,7 +14,7 @@ class StepFunctionAlarm(core.Construct):
 
         self.step_function_metric = aws_cloudwatch.Metric(
             namespace="AWS/States",
-            metric_name=f"{root_name}StepFunctionFailures",
+            metric_name="ExecutionsFailed",
             period=core.Duration.minutes(20),
             statistic="avg",
             dimensions={
