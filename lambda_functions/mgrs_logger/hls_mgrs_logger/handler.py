@@ -43,4 +43,10 @@ def handler(event, context):
             {"name": "jobinfo", "value": {"stringValue": jobinfostring}}
         ],
     )
-    return jobinfo["Attempts"][0]["Container"]["ExitCode"]
+    try:
+        exitcode = jobinfo["Attempts"][0]["Container"]["ExitCode"]
+    except KeyError:
+        exitcode = "nocode"
+
+    print(f"Exit Code is {exitcode}")
+    return exitcode
