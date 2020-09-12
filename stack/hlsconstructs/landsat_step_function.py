@@ -230,7 +230,6 @@ class LandsatStepFunction(core.Construct):
                                 "Type": "Task",
                                 "Resource": mgrs_logger,
                                 "Next": "SuccessState",
-                                "OutputPath":"$.tilejobinfo.Attempts[0].Container.ExitCode",
                                 "Retry": [
                                     {
                                         "ErrorEquals": ["States.ALL"],

@@ -17,6 +17,7 @@ def test_handler(client):
             "Attempts": [
                 {
                     "Container": {
+                        "ExitCode": 0
                     },
                     "StartedAt": 1595336905229,
                     "StatusReason": "Essential container in task exited",
@@ -28,7 +29,7 @@ def test_handler(client):
         }
     }
     client.execute_statement.return_value = {}
-    handler(event, {})
+    expected = handler(event, {})
     args, kwargs = client.execute_statement.call_args
     q = (
         "UPDATE landsat_mgrs_log SET jobinfo = :jobinfo::jsonb"
@@ -45,6 +46,7 @@ def test_handler(client):
     assert mgrs in kwargs["parameters"]
     assert acquisition in kwargs["parameters"]
     assert jobinfo in kwargs["parameters"]
+    assert expected == 0
 
 
 @patch(
@@ -57,11 +59,11 @@ def test_handler_error(client):
         "path": "210",
         "MGRS": "29VMJ",
         "tilejobinfo": {
-            "Cause": "{\"Attempts\":[{}],\"Container\":{}}"
+            "Cause": "{\"Attempts\":[{\"Container\":{\"ExitCode\": 1}}]}"
         }
     }
     client.execute_statement.return_value = {}
-    handler(event, {})
+    expected = handler(event, {})
     args, kwargs = client.execute_statement.call_args
     q = (
         "UPDATE landsat_mgrs_log SET jobinfo = :jobinfo::jsonb"
@@ -78,3 +80,4 @@ def test_handler_error(client):
     assert mgrs in kwargs["parameters"]
     assert acquisition in kwargs["parameters"]
     assert jobinfo in kwargs["parameters"]
+    assert expected == 1

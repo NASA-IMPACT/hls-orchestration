@@ -28,16 +28,19 @@ def handler(event, context):
     )
     if "Cause" in event["tilejobinfo"].keys():
         cause = json.loads(event["tilejobinfo"]["Cause"])
-        jobinfo = json.dumps(cause)
+        jobinfo = cause
+        jobinfostring = json.dumps(cause)
     else:
-        jobinfo = json.dumps(event["tilejobinfo"])
+        jobinfo = event["tilejobinfo"]
+        jobinfostring = json.dumps(event["tilejobinfo"])
+
     execute_statement(
         q,
         sql_parameters=[
             {"name": "mgrs", "value": {"stringValue": event["MGRS"]}},
             {"name": "path", "value": {"stringValue": event["path"]}},
             {"name": "acquisition", "value": {"stringValue": event["date"]}},
-            {"name": "jobinfo", "value": {"stringValue": jobinfo}}
+            {"name": "jobinfo", "value": {"stringValue": jobinfostring}}
         ],
     )
-    return event
+    return jobinfo["Attempts"][0]["Container"]["ExitCode"]
