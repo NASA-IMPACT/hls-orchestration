@@ -27,9 +27,12 @@ def handler(event, context):
         + " mgrs = :mgrs::varchar(5) AND acquisition = :acquisition::date;"
     )
     if "Cause" in event["tilejobinfo"].keys():
-        cause = json.loads(event["tilejobinfo"]["Cause"])
-        jobinfo = cause
-        jobinfostring = json.dumps(cause)
+        try:
+            jobinfo = json.loads(event["tilejobinfo"]["Cause"])
+            jobinfostring = json.dumps(jobinfo)
+        except ValueError:
+            jobinfo = event["tilejobinfo"]["Cause"]
+            jobinfostring = jobinfo
     else:
         jobinfo = event["tilejobinfo"]
         jobinfostring = json.dumps(event["tilejobinfo"])
@@ -46,6 +49,8 @@ def handler(event, context):
     try:
         exitcode = jobinfo["Attempts"][0]["Container"]["ExitCode"]
     except KeyError:
+        exitcode = "nocode"
+    except TypeError:
         exitcode = "nocode"
 
     print(f"Exit Code is {exitcode}")
