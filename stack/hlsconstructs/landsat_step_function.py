@@ -40,8 +40,33 @@ class LandsatStepFunction(core.Construct):
 
         state_definition = {
             "Comment": "Landsat Step Function",
-            "StartAt": "CheckLaads",
+            "StartAt": "GetMGRSValues",
             "States": {
+                "GetMGRSValues": {
+                    "Type": "Task",
+                    "Resource": pr2mgrs,
+                    "ResultPath": "$.mgrsvalues",
+                    "Next": "MGRSExists",
+                    "Retry": [
+                        {
+                            "ErrorEquals": ["States.ALL"],
+                            "IntervalSeconds": lambda_interval,
+                            "MaxAttempts": lambda_max_attempts,
+                            "BackoffRate": 2,
+                        }
+                    ],
+                },
+                "MGRSExists": {
+                    "Type": "Choice",
+                    "Choices": [
+                        {
+                            "Variable": "$.mgrsvalues.count",
+                            "NumericGreaterThan": 0,
+                            "Next": "CheckLaads",
+                        }
+                    ],
+                    "Default": "Done",
+                },
                 "CheckLaads": {
                     "Type": "Task",
                     "Resource": laads_available_function,
@@ -64,37 +89,12 @@ class LandsatStepFunction(core.Construct):
                         {
                             "Variable": "$.taskresult.available",
                             "BooleanEquals": True,
-                            "Next": "GetMGRSValues",
+                            "Next": "LogLandsatMGRS",
                         }
                     ],
                     "Default": "Wait",
                 },
                 "Wait": {"Type": "Wait", "Seconds": 3600, "Next": "CheckLaads"},
-                "GetMGRSValues": {
-                    "Type": "Task",
-                    "Resource": pr2mgrs,
-                    "ResultPath": "$.mgrsvalues",
-                    "Next": "MGRSExists",
-                    "Retry": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": lambda_interval,
-                            "MaxAttempts": lambda_max_attempts,
-                            "BackoffRate": 2,
-                        }
-                    ],
-                },
-                "MGRSExists": {
-                    "Type": "Choice",
-                    "Choices": [
-                        {
-                            "Variable": "$.mgrsvalues.count",
-                            "NumericGreaterThan": 0,
-                            "Next": "LogLandsatMGRS",
-                        }
-                    ],
-                    "Default": "Done",
-                },
                 "LogLandsatMGRS": {
                     "Type": "Task",
                     "Resource": landsat_mgrs_logger,
