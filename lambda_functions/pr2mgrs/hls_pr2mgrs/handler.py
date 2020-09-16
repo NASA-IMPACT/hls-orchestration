@@ -11,7 +11,7 @@ from typing import Dict
 import os
 
 # We put this outside the function so it can be cached
-lookup_file = os.path.join(os.path.dirname(__file__), "data", "L8S2overlap.txt")
+lookup_file = os.path.join(os.path.dirname(__file__), "data", "HLS.L8S2overlap.txt")
 with open(lookup_file, "r") as f:
     lookupTable = list(map(lambda x: x.split(" "), f.read().splitlines()))
 
