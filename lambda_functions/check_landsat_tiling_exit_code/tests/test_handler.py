@@ -17,7 +17,7 @@ def test_handler_exit_code_1():
     assert not actual
 
 
-def test_handler_exit_code_Null():
-    event = [0,3,None]
+def test_handler_exit_code_nocode():
+    event = [0,3,"nocode"]
     actual = handler(event, {})
     assert not actual
