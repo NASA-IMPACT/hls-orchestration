@@ -3,7 +3,7 @@ DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 env_settings="$(dirname $DIR)/environment.sh"
 source "$env_settings"
 
-jobqueue=$HLSSTACK_JOBQUEUEEXPORT
+jobqueue=$HLSSTACK_LANDSATTILEJOBQUEUEEXPORT
 jobdefinition=$HLSSTACK_LANDSATTILEJOBDEFINITION
 inputbucket=$HLSSTACK_LANDSATINTERMEDIATEOUTPUT
 outputbucket=$HLS_LANDSAT_OUTPUT_BUCKET

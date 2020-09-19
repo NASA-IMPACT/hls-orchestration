@@ -3,7 +3,7 @@ DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 env_settings="$(dirname $DIR)/environment.sh"
 source "$env_settings"
 
-jobqueue=$HLSSTACK_JOBQUEUEEXPORT
+jobqueue=$HLSSTACK_SENTINELJOBQUEUEEXPORT
 jobdefinition=$HLSSTACK_SENTINELJOBDEFINITION
 outputbucket=$HLS_SENTINEL_OUTPUT_BUCKET
 inputbucket=$HLSSTACK_SENTINELINPUTEXPORT

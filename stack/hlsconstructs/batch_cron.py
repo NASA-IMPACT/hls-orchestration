@@ -1,6 +1,5 @@
 from aws_cdk import core, aws_events, aws_lambda, aws_events_targets
 from typing import Dict
-from hlsconstructs.batch import Batch
 from hlsconstructs.lambdafunc import Lambda
 from hlsconstructs.docker_batchjob import DockerBatchJob
 from utils import aws_env, align
@@ -14,14 +13,13 @@ class BatchCron(Lambda):
         scope: core.Construct,
         id: str,
         cron_str: str,
-        batch: Batch,
+        queue: str,
         job: DockerBatchJob,
         env: Dict = {},
         timeout: int = 10,
         **kwargs,
     ) -> None:
 
-        queue = batch.jobqueue.ref
         jobdef = job.job.ref
 
         env_str = aws_env(env)

@@ -262,7 +262,7 @@ class HlsStack(core.Stack):
             self,
             "LaadsCron",
             cron_str=LAADS_CRON,
-            batch=self.batch,
+            queue=self.batch.laads_jobqueue.ref,
             job=self.laads_task,
             env={
                 "LAADS_BUCKET": LAADS_BUCKET,
@@ -280,7 +280,7 @@ class HlsStack(core.Stack):
             outputbucket=SENTINEL_OUTPUT_BUCKET,
             inputbucket=SENTINEL_INPUT_BUCKET,
             sentinel_job_definition=self.sentinel_task.job.ref,
-            jobqueue=self.batch.jobqueue.ref,
+            jobqueue=self.batch.sentinel_jobqueue.ref,
             lambda_logger=self.lambda_logger.function.function_arn,
             outputbucket_role_arn=HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN,
             replace_existing=REPLACE_EXISTING,
@@ -297,7 +297,8 @@ class HlsStack(core.Stack):
             intermediate_output_bucket=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
             ac_job_definition=self.landsat_task.job.ref,
             tile_job_definition=self.landsat_tile_task.job.ref,
-            jobqueue=self.batch.jobqueue.ref,
+            acjobqueue=self.batch.landsatac_jobqueue.ref,
+            tilejobqueue=self.batch.landsattile_jobqueue.ref,
             lambda_logger=self.lambda_logger.function.function_arn,
             landsat_mgrs_logger=self.landsat_mgrs_logger.function.function_arn,
             landsat_ac_logger=self.landsat_ac_logger.function.function_arn,
@@ -333,7 +334,12 @@ class HlsStack(core.Stack):
             actions=["s3:Get*", "s3:List*",],
         )
         self.batch_jobqueue_policy = aws_iam.PolicyStatement(
-            resources=[self.batch.jobqueue.ref],
+            resources=[
+                self.batch.sentinel_jobqueue.ref,
+                self.batch.laads_jobqueue.ref,
+                self.batch.landsatac_jobqueue.ref,
+                self.batch.landsattile_jobqueue.ref,
+            ],
             actions=["batch:SubmitJob", "batch:DescribeJobs", "batch:TerminateJob"],
         )
         self.laads_cron.function.add_to_role_policy(self.laads_bucket_read_policy)
@@ -488,9 +494,21 @@ class HlsStack(core.Stack):
         # Stack exports
         core.CfnOutput(
             self,
-            "jobqueueexport",
-            export_name=f"{STACKNAME}-jobqueue",
-            value=self.batch.jobqueue.ref,
+            "sentineljobqueueexport",
+            export_name=f"{STACKNAME}-sentineljobqueue",
+            value=self.batch.sentinel_jobqueue.ref,
+        )
+        core.CfnOutput(
+            self,
+            "landsatacjobqueueexport",
+            export_name=f"{STACKNAME}-landsatacjobqueue",
+            value=self.batch.landsatac_jobqueue.ref,
+        )
+        core.CfnOutput(
+            self,
+            "landsattilejobqueueexport",
+            export_name=f"{STACKNAME}-landsattilejobqueue",
+            value=self.batch.landsattile_jobqueue.ref,
         )
         core.CfnOutput(
             self,
