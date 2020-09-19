@@ -28,12 +28,19 @@ def handler(event, context):
         + " DO UPDATE SET jobid = excluded.jobid, jobinfo = excluded.jobinfo;"
     )
     if "Cause" in event["jobinfo"].keys():
-        cause = json.loads(event["jobinfo"]["Cause"])
-        jobid = cause["JobId"]
-        jobinfo = json.dumps(cause)
+        try:
+            jobinfo = json.loads(event["jobinfo"]["Cause"])
+            jobid = jobinfo["JobId"]
+            jobinfostring = json.dumps(jobinfo)
+        except ValueError:
+            jobinfo = event["jobinfo"]["Cause"]
+            jobid = jobinfo["JobId"]
+            jobinfostring = jobinfo
     else:
-        jobid = event["jobinfo"]["JobId"]
-        jobinfo = json.dumps(event["jobinfo"])
+        jobinfo = event["jobinfo"]
+        jobid = jobinfo["JobId"]
+        jobinfostring = json.dumps(event["jobinfo"])
+
     execute_statement(
         q,
         sql_parameters=[
@@ -41,7 +48,15 @@ def handler(event, context):
             {"name": "row", "value": {"stringValue": event["row"]}},
             {"name": "acquisition", "value": {"stringValue": event["date"]}},
             {"name": "jobid", "value": {"stringValue": jobid},},
-            {"name": "jobinfo", "value": {"stringValue": jobinfo}},
+            {"name": "jobinfo", "value": {"stringValue": jobinfostring}},
         ],
     )
-    return event
+    try:
+        exitcode = jobinfo["Attempts"][0]["Container"]["ExitCode"]
+    except KeyError:
+        exitcode = "nocode"
+    except TypeError:
+        exitcode = "nocode"
+
+    print(f"Exit Code is {exitcode}")
+    return exitcode

@@ -250,6 +250,14 @@ class HlsStack(core.Stack):
             handler="handler.handler"
         )
 
+        self.check_exit_code = Lambda(
+            self,
+            "CheckExitCode",
+            code_dir="check_exit_code/hls_check_exit_code",
+            timeout=30,
+            handler="handler.handler"
+        )
+
         self.laads_cron = BatchCron(
             self,
             "LaadsCron",
@@ -297,6 +305,7 @@ class HlsStack(core.Stack):
             pr2mgrs=self.pr2mgrs_lambda.function.function_arn,
             mgrs_logger=self.mgrs_logger.function.function_arn,
             check_landsat_tiling_exit_code=self.check_landsat_tiling_exit_code.function.function_arn,
+            check_landsat_ac_exit_code=self.check_exit_code.function.function_arn,
             replace_existing=REPLACE_EXISTING,
         )
 
@@ -372,6 +381,9 @@ class HlsStack(core.Stack):
         )
         self.landsat_step_function.steps_role.add_to_policy(
             self.check_landsat_tiling_exit_code.invoke_policy_statement
+        )
+        self.landsat_step_function.steps_role.add_to_policy(
+            self.check_exit_code.invoke_policy_statement
         )
 
         self.lambda_logger.function.add_to_role_policy(self.rds.policy_statement)

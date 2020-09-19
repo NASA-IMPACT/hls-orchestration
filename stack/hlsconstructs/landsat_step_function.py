@@ -25,6 +25,7 @@ class LandsatStepFunction(core.Construct):
         pr2mgrs: str,
         mgrs_logger: str,
         check_landsat_tiling_exit_code: str,
+        check_landsat_ac_exit_code: str,
         replace_existing: bool,
         **kwargs,
     ) -> None:
@@ -40,8 +41,33 @@ class LandsatStepFunction(core.Construct):
 
         state_definition = {
             "Comment": "Landsat Step Function",
-            "StartAt": "CheckLaads",
+            "StartAt": "GetMGRSValues",
             "States": {
+                "GetMGRSValues": {
+                    "Type": "Task",
+                    "Resource": pr2mgrs,
+                    "ResultPath": "$.mgrsvalues",
+                    "Next": "MGRSExists",
+                    "Retry": [
+                        {
+                            "ErrorEquals": ["States.ALL"],
+                            "IntervalSeconds": lambda_interval,
+                            "MaxAttempts": lambda_max_attempts,
+                            "BackoffRate": 2,
+                        }
+                    ],
+                },
+                "MGRSExists": {
+                    "Type": "Choice",
+                    "Choices": [
+                        {
+                            "Variable": "$.mgrsvalues.count",
+                            "NumericGreaterThan": 0,
+                            "Next": "CheckLaads",
+                        }
+                    ],
+                    "Default": "Done",
+                },
                 "CheckLaads": {
                     "Type": "Task",
                     "Resource": laads_available_function,
@@ -64,37 +90,12 @@ class LandsatStepFunction(core.Construct):
                         {
                             "Variable": "$.taskresult.available",
                             "BooleanEquals": True,
-                            "Next": "GetMGRSValues",
+                            "Next": "LogLandsatMGRS",
                         }
                     ],
                     "Default": "Wait",
                 },
                 "Wait": {"Type": "Wait", "Seconds": 3600, "Next": "CheckLaads"},
-                "GetMGRSValues": {
-                    "Type": "Task",
-                    "Resource": pr2mgrs,
-                    "ResultPath": "$.mgrsvalues",
-                    "Next": "MGRSExists",
-                    "Retry": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": lambda_interval,
-                            "MaxAttempts": lambda_max_attempts,
-                            "BackoffRate": 2,
-                        }
-                    ],
-                },
-                "MGRSExists": {
-                    "Type": "Choice",
-                    "Choices": [
-                        {
-                            "Variable": "$.mgrsvalues.count",
-                            "NumericGreaterThan": 0,
-                            "Next": "LogLandsatMGRS",
-                        }
-                    ],
-                    "Default": "Done",
-                },
                 "LogLandsatMGRS": {
                     "Type": "Task",
                     "Resource": landsat_mgrs_logger,
@@ -145,6 +146,7 @@ class LandsatStepFunction(core.Construct):
                 "LogLandsatAc": {
                     "Type": "Task",
                     "Resource": landsat_ac_logger,
+                    "ResultPath": None,
                     "Next": "ProcessMGRSGrid",
                     "Retry": [
                         {
@@ -268,8 +270,7 @@ class LandsatStepFunction(core.Construct):
                 "LogLandsatAcError": {
                     "Type": "Task",
                     "Resource": landsat_ac_logger,
-                    "ResultPath": None,
-                    "Next": "Error",
+                    "Next": "CheckAcExitCode",
                     "Retry": [
                         {
                             "ErrorEquals": ["States.ALL"],
@@ -278,6 +279,27 @@ class LandsatStepFunction(core.Construct):
                             "BackoffRate": lambda_backoff_rate,
                         }
                     ],
+                },
+                "CheckAcExitCode": {
+                    "Type": "Task",
+                    "Resource": check_landsat_ac_exit_code,
+                    "Next": "HadAcFailure",
+                },
+                "HadAcFailure": {
+                    "Type": "Choice",
+                    "Choices": [
+                        {
+                            "Variable": "$",
+                            "BooleanEquals": True,
+                            "Next": "Done",
+                        },
+                        {
+                            "Variable": "$",
+                            "BooleanEquals": False,
+                            "Next": "Error",
+                        }
+                    ],
+                    "Default": "Done",
                 },
                 "LogError": {
                     "Type": "Task",

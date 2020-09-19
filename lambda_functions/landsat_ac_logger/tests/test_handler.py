@@ -20,7 +20,7 @@ def test_handler_keyError(client):
     cause = json.loads(event["jobinfo"]["Cause"])
     jobinfo = {"name": "jobinfo", "value": {"stringValue": json.dumps(cause)}}
     client.execute_statement.return_value = {}
-    handler(event, {})
+    output = handler(event, {})
     args, kwargs = client.execute_statement.call_args
     path = {"name": "path", "value": {"stringValue": "127"}}
     row = {"name": "row", "value": {"stringValue": "010"}}
@@ -29,6 +29,7 @@ def test_handler_keyError(client):
     assert row in kwargs["parameters"]
     assert acquisition in kwargs["parameters"]
     assert jobinfo in kwargs["parameters"]
+    assert output == 1
 
 
 @patch("lambda_functions.landsat_ac_logger.hls_landsat_ac_logger.handler.rds_client")
@@ -43,7 +44,7 @@ def test_handler(client):
         },
     }
     client.execute_statement.return_value = {}
-    handler(event, {})
+    output = handler(event, {})
     args, kwargs = client.execute_statement.call_args
     path = {"name": "path", "value": {"stringValue": "116"}}
     row = {"name": "row", "value": {"stringValue": "078"}}
@@ -54,3 +55,4 @@ def test_handler(client):
     assert row in kwargs["parameters"]
     assert acquisition in kwargs["parameters"]
     assert jobinfo in kwargs["parameters"]
+    assert output == "nocode"
