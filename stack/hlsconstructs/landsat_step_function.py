@@ -17,7 +17,8 @@ class LandsatStepFunction(core.Construct):
         intermediate_output_bucket: str,
         ac_job_definition: str,
         tile_job_definition: str,
-        jobqueue: str,
+        acjobqueue: str,
+        tilejobqueue: str,
         lambda_logger: str,
         landsat_mgrs_logger: str,
         landsat_ac_logger: str,
@@ -116,7 +117,7 @@ class LandsatStepFunction(core.Construct):
                     "ResultPath": "$.jobinfo",
                     "Parameters": {
                         "JobName": "LandsatAcJob",
-                        "JobQueue": jobqueue,
+                        "JobQueue": acjobqueue,
                         "JobDefinition": ac_job_definition,
                         "ContainerOverrides": {
                             "Command": ["export && landsat.sh"],
@@ -196,7 +197,7 @@ class LandsatStepFunction(core.Construct):
                                 "ResultPath": "$.tilejobinfo",
                                 "Parameters": {
                                     "JobName": "LandsatTileJob",
-                                    "JobQueue": jobqueue,
+                                    "JobQueue": tilejobqueue,
                                     "JobDefinition": tile_job_definition,
                                     "ContainerOverrides": {
                                         "Command": ["export && landsat-tile.sh"],
