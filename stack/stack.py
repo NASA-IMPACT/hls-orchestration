@@ -258,6 +258,14 @@ class HlsStack(core.Stack):
             handler="handler.handler"
         )
 
+        self.sentinel_logger = Lambda(
+            self,
+            "SentinelLogger",
+            code_dir="sentinel_logger/hls_sentinel_logger",
+            timeout=30,
+            handler="handler.handler"
+        )
+
         self.laads_cron = BatchCron(
             self,
             "LaadsCron",
@@ -282,6 +290,8 @@ class HlsStack(core.Stack):
             sentinel_job_definition=self.sentinel_task.job.ref,
             jobqueue=self.batch.sentinel_jobqueue.ref,
             lambda_logger=self.lambda_logger.function.function_arn,
+            sentinel_logger=self.sentinel_logger.function.function_arn,
+            check_exit_code=self.check_exit_code.function.function_arn,
             outputbucket_role_arn=HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN,
             replace_existing=REPLACE_EXISTING,
             gibs_intermediate_output_bucket=GIBS_INTERMEDIATE_OUTPUT_BUCKET,
@@ -361,6 +371,12 @@ class HlsStack(core.Stack):
         )
         self.sentinel_step_function.steps_role.add_to_policy(
             self.lambda_logger.invoke_policy_statement
+        )
+        self.sentinel_step_function.steps_role.add_to_policy(
+            self.sentinel_logger.invoke_policy_statement
+        )
+        self.sentinel_step_function.steps_role.add_to_policy(
+            self.check_exit_code.invoke_policy_statement
         )
 
         self.landsat_step_function.steps_role.add_to_policy(self.batch_jobqueue_policy)
