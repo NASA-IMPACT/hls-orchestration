@@ -65,7 +65,7 @@ class Batch(core.Construct):
 
         self.ecs_instance_role = aws_iam.Role(
             self,
-            f"EcsInstanceRole",
+            "EcsInstanceRole",
             assumed_by=aws_iam.ServicePrincipal("ec2.amazonaws.com"),
             managed_policies=[
                 aws_iam.ManagedPolicy.from_aws_managed_policy_name(
@@ -79,10 +79,10 @@ class Batch(core.Construct):
         )
 
         ecs_instance_profile = aws_iam.CfnInstanceProfile(
-            self, f"EcsInstanceProfile", roles=[self.ecs_instance_role.role_name],
+            self, "EcsInstanceProfile", roles=[self.ecs_instance_role.role_name],
         )
 
-        cloudwatch_ssm_param = "BatchCloudwatchAgentConfig"
+        cloudwatch_ssm_param = f"BatchCloudwatchAgentConfig{self.node.unique_id}"
         userdata_file = open(os.path.join(dirname, "userdata.txt"), "rb").read()
         user_data = aws_ec2.UserData.for_linux()
         user_data_string = str(userdata_file, "utf-8").format(
@@ -116,7 +116,7 @@ class Batch(core.Construct):
         )
 
         launch_template = aws_ec2.CfnLaunchTemplate(
-            self, f"LaunchTemplate", launch_template_data=launch_template_data,
+            self, "LaunchTemplate", launch_template_data=launch_template_data,
         )
 
         launch_template_props = aws_batch.CfnComputeEnvironment.LaunchTemplateSpecificationProperty(
@@ -143,7 +143,7 @@ class Batch(core.Construct):
 
         compute_environment = aws_batch.CfnComputeEnvironment(
             self,
-            f"ComputeEnvironment",
+            "ComputeEnvironment",
             compute_resources=compute_resources,
             service_role=batch_service_role.role_arn,
             type="MANAGED",
@@ -151,7 +151,7 @@ class Batch(core.Construct):
 
         sentinel_jobqueue = aws_batch.CfnJobQueue(
             self,
-            f"SentinelJobQueue",
+            "SentinelJobQueue",
             priority=1,
             compute_environment_order=[
                 aws_batch.CfnJobQueue.ComputeEnvironmentOrderProperty(
@@ -161,7 +161,7 @@ class Batch(core.Construct):
         )
         landsatac_jobqueue = aws_batch.CfnJobQueue(
             self,
-            f"LandsatAcJobQueue",
+            "LandsatAcJobQueue",
             priority=2,
             compute_environment_order=[
                 aws_batch.CfnJobQueue.ComputeEnvironmentOrderProperty(
@@ -171,7 +171,7 @@ class Batch(core.Construct):
         )
         landsattile_jobqueue = aws_batch.CfnJobQueue(
             self,
-            f"LandsatTileJobQueue",
+            "LandsatTileJobQueue",
             priority=3,
             compute_environment_order=[
                 aws_batch.CfnJobQueue.ComputeEnvironmentOrderProperty(
@@ -181,7 +181,7 @@ class Batch(core.Construct):
         )
         laads_jobqueue = aws_batch.CfnJobQueue(
             self,
-            f"LaadsJobQueue",
+            "LaadsJobQueue",
             priority=10,
             compute_environment_order=[
                 aws_batch.CfnJobQueue.ComputeEnvironmentOrderProperty(

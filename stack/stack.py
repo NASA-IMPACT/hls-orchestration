@@ -17,15 +17,14 @@ from hlsconstructs.stepfunction_alarm import StepFunctionAlarm
 
 STACKNAME = os.getenv("HLS_STACKNAME", "hls")
 
-# SENTINEL_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-sentinel:v3.0.4"
-SENTINEL_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-sentinel:latest"
+SENTINEL_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-sentinel:v3.0.4.2"
 LANDSAT_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat:latest"
 LANDSAT_TILE_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat-tile:v1.4"
 
 LAADS_BUCKET = f"{STACKNAME}-laads-bucket"
 LAADS_TOKEN = os.getenv("HLS_LAADS_TOKEN", None)
 LAADS_CRON = os.getenv("HLS_LAADS_CRON", "cron(0 0/12 * * ? *)")
-LAADS_BUCKET_BOOTSTRAP = LAADS_BUCKET
+LAADS_BUCKET_BOOTSTRAP = "hls-development-laads-bucket"
 if LAADS_TOKEN is None:
     raise Exception("HLS_LAADS_TOKEN Env Var must be set")
 
@@ -332,13 +331,13 @@ class HlsStack(core.Stack):
             code_dir="execute_step_function/hls_execute_step_function",
             input_bucket=self.sentinel_input_bucket,
         )
-        self.landsat_step_function_trigger = StepFunctionTrigger(
-            self,
-            "LandsatStepFunctionTrigger",
-            state_machine=self.landsat_step_function.state_machine.ref,
-            code_dir="execute_landsat_step_function/hls_execute_landsat_step_function",
-            input_sns=self.landsat_sns_topic,
-        )
+        # self.landsat_step_function_trigger = StepFunctionTrigger(
+            # self,
+            # "LandsatStepFunctionTrigger",
+            # state_machine=self.landsat_step_function.state_machine.ref,
+            # code_dir="execute_landsat_step_function/hls_execute_landsat_step_function",
+            # input_sns=self.landsat_sns_topic,
+        # )
 
         # Cross construct permissions
         self.laads_bucket_read_policy = aws_iam.PolicyStatement(
