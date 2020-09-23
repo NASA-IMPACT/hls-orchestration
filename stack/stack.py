@@ -262,6 +262,11 @@ class HlsStack(core.Stack):
             self,
             "SentinelLogger",
             code_dir="sentinel_logger/hls_sentinel_logger",
+            env={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
+            },
             timeout=30,
             handler="handler.handler"
         )
@@ -416,7 +421,9 @@ class HlsStack(core.Stack):
         self.landsat_pathrow_status.function.add_to_role_policy(
             self.rds.policy_statement
         )
-
+        self.sentinel_logger.function.add_to_role_policy(
+            self.rds.policy_statement
+        )
         self.check_twin_granule.function.add_to_role_policy(
             aws_iam.PolicyStatement(
                 resources=[

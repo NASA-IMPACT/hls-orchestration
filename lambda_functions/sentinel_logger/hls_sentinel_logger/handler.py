@@ -32,7 +32,7 @@ def handler(event, context):
         jobinfo = event["jobinfo"]
         jobinfostring = json.dumps(event["jobinfo"])
 
-    q = "INSERT INTO event_log (event) VALUES (:event::jsonb);"
+    q = "INSERT INTO eventlog (event) VALUES (:event::jsonb);"
     execute_statement(
         q,
         sql_parameters=[{"name": "event", "value": {"stringValue": jobinfostring}}],

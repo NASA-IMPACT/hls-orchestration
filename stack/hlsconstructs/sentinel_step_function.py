@@ -84,6 +84,7 @@ class SentinelStepFunction(core.Construct):
                 "ProcessSentinel": {
                     "Type": "Task",
                     "Resource": "arn:aws:states:::batch:submitJob.sync",
+                    "ResultPath": "$.jobinfo",
                     "Parameters": {
                         "JobName": "BatchJobNotification",
                         "JobQueue": jobqueue,
@@ -115,13 +116,18 @@ class SentinelStepFunction(core.Construct):
                             ],
                         },
                     },
-                    "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "LogSentinel",}],
+                    "Catch": [
+                        {
+                            "ErrorEquals": ["States.ALL"],
+                            "Next": "LogSentinel",
+                            "ResultPath": "$.jobinfo",
+                        }
+                    ],
                     "Next": "LogSentinel",
                 },
                 "LogSentinel": {
                     "Type": "Task",
                     "Resource": sentinel_logger,
-                    "ResultPath": None,
                     "Next": "CheckSentinelExitCode",
                     "Retry": [
                         {
