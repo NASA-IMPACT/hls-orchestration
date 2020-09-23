@@ -19,12 +19,17 @@ class SentinelStepFunction(core.Construct):
         sentinel_job_definition: str,
         jobqueue: str,
         lambda_logger: str,
+        sentinel_logger: str,
+        check_exit_code: str,
         replace_existing: bool,
         gibs_intermediate_output_bucket: str,
         gibs_outputbucket: str,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
+        lambda_interval = 10
+        lambda_max_attempts = 3
+        lambda_backoff_rate = 2
 
         if replace_existing:
             replace = "replace"
@@ -42,9 +47,9 @@ class SentinelStepFunction(core.Construct):
                     "Retry": [
                         {
                             "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": 1,
-                            "MaxAttempts": 3,
-                            "BackoffRate": 2,
+                            "IntervalSeconds": lambda_interval,
+                            "MaxAttempts": lambda_max_attempts,
+                            "BackoffRate": lambda_backoff_rate,
                         }
                     ],
                     "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "LogError",}],
@@ -57,9 +62,9 @@ class SentinelStepFunction(core.Construct):
                     "Retry": [
                         {
                             "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": 1,
-                            "MaxAttempts": 3,
-                            "BackoffRate": 2,
+                            "IntervalSeconds": lambda_interval,
+                            "MaxAttempts": lambda_max_attempts,
+                            "BackoffRate": lambda_backoff_rate,
                         }
                     ],
                     "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "LogError",}],
@@ -79,6 +84,7 @@ class SentinelStepFunction(core.Construct):
                 "ProcessSentinel": {
                     "Type": "Task",
                     "Resource": "arn:aws:states:::batch:submitJob.sync",
+                    "ResultPath": "$.jobinfo",
                     "Parameters": {
                         "JobName": "BatchJobNotification",
                         "JobQueue": jobqueue,
@@ -110,22 +116,48 @@ class SentinelStepFunction(core.Construct):
                             ],
                         },
                     },
-                    "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "LogError",}],
-                    "Next": "Log",
+                    "Catch": [
+                        {
+                            "ErrorEquals": ["States.ALL"],
+                            "Next": "LogSentinel",
+                            "ResultPath": "$.jobinfo",
+                        }
+                    ],
+                    "Next": "LogSentinel",
                 },
-                "Log": {
+                "LogSentinel": {
                     "Type": "Task",
-                    "Resource": lambda_logger,
-                    "ResultPath": "$",
-                    "Next": "Done",
+                    "Resource": sentinel_logger,
+                    "Next": "CheckSentinelExitCode",
                     "Retry": [
                         {
                             "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": 1,
-                            "MaxAttempts": 3,
-                            "BackoffRate": 2,
+                            "IntervalSeconds": lambda_interval,
+                            "MaxAttempts": lambda_max_attempts,
+                            "BackoffRate": lambda_backoff_rate,
                         }
                     ],
+                },
+                "CheckSentinelExitCode": {
+                    "Type": "Task",
+                    "Resource": check_exit_code,
+                    "Next": "HadSentinelFailure",
+                },
+                "HadSentinelFailure": {
+                    "Type": "Choice",
+                    "Choices": [
+                        {
+                            "Variable": "$",
+                            "BooleanEquals": True,
+                            "Next": "Done",
+                        },
+                        {
+                            "Variable": "$",
+                            "BooleanEquals": False,
+                            "Next": "Error",
+                        }
+                    ],
+                    "Default": "Done",
                 },
                 "LogError": {
                     "Type": "Task",
@@ -135,9 +167,9 @@ class SentinelStepFunction(core.Construct):
                     "Retry": [
                         {
                             "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": 1,
-                            "MaxAttempts": 3,
-                            "BackoffRate": 2,
+                            "IntervalSeconds": lambda_interval,
+                            "MaxAttempts": lambda_max_attempts,
+                            "BackoffRate": lambda_backoff_rate,
                         }
                     ],
                 },
