@@ -12,6 +12,8 @@ jobs:
         python: [3.7]
 
     steps:
+      - name: Echo env
+        run: echo Hello world $AWS_DEFAULT_REGION
       - uses: actions/checkout@v2
       - name: Setup Python
         uses: actions/setup-python@v2
