@@ -270,6 +270,19 @@ class HlsStack(core.Stack):
             handler="handler.handler"
         )
 
+        self.check_sentinel_failures = Lambda(
+            self,
+            "RetrySentinel",
+            code_dir="check_sentinel_failures/hls_check_sentinel_failures",
+            env={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
+            },
+            timeout=900,
+            handler="handler.handler"
+        )
+
         self.laads_cron = BatchCron(
             self,
             "LaadsCron",
@@ -421,6 +434,9 @@ class HlsStack(core.Stack):
             self.rds.policy_statement
         )
         self.sentinel_logger.function.add_to_role_policy(
+            self.rds.policy_statement
+        )
+        self.check_sentinel_failures.function.add_to_role_policy(
             self.rds.policy_statement
         )
         self.check_twin_granule.function.add_to_role_policy(
