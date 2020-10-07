@@ -2,6 +2,12 @@ import pytest
 import json
 from unittest.mock import patch, call
 from lambda_functions.mgrs_logger.hls_mgrs_logger.handler import handler
+from lambda_functions.utils.batch_test_events import (
+    batch_failed_event,
+    batch_succeeded_event,
+    batch_failed_event_string_cause,
+    batch_failed_event_no_exit
+)
 
 
 @patch(
@@ -13,20 +19,7 @@ def test_handler(client):
         "date": "2020-07-19",
         "path": "210",
         "MGRS": "29VMJ",
-        "tilejobinfo": {
-            "Attempts": [
-                {
-                    "Container": {
-                        "ExitCode": 0
-                    },
-                    "StartedAt": 1595336905229,
-                    "StatusReason": "Essential container in task exited",
-                    "StoppedAt": 1595336905412
-                }
-            ],
-            "Container": {
-            }
-        }
+        "tilejobinfo": batch_succeeded_event
     }
     client.execute_statement.return_value = {}
     expected = handler(event, {})
@@ -58,9 +51,7 @@ def test_handler_error(client):
         "date": "2020-07-19",
         "path": "210",
         "MGRS": "29VMJ",
-        "tilejobinfo": {
-            "Cause": "{\"Attempts\":[{\"Container\":{\"ExitCode\": 1}}]}"
-        }
+        "tilejobinfo": batch_failed_event
     }
     client.execute_statement.return_value = {}
     expected = handler(event, {})
@@ -92,9 +83,7 @@ def test_handler_error_no_exit_code(client):
         "date": "2020-07-19",
         "path": "210",
         "MGRS": "29VMJ",
-        "tilejobinfo": {
-            "Cause": "{\"Attempts\":[{\"Container\":{}}]}"
-        }
+        "tilejobinfo": batch_failed_event_no_exit
     }
     client.execute_statement.return_value = {}
     expected = handler(event, {})
@@ -126,9 +115,7 @@ def test_handler_error_non_json(client):
         "date": "2020-07-19",
         "path": "210",
         "MGRS": "29VMJ",
-        "tilejobinfo": {
-            "Cause": "jobdefinition error"
-        }
+        "tilejobinfo": batch_failed_event_string_cause
     }
     client.execute_statement.return_value = {}
     expected = handler(event, {})

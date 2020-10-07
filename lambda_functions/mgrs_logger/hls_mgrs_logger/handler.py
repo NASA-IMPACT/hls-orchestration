@@ -1,6 +1,8 @@
 import os
 import boto3
 import json
+from operator import itemgetter
+from lambda_functions.utils.batch_job_parser import parse_jobinfo
 
 rds_client = boto3.client("rds-data")
 
@@ -21,21 +23,16 @@ def execute_statement(sql, sql_parameters=[]):
 
 
 def handler(event, context):
+    parsed_info = parse_jobinfo("tilejobinfo", event)
+    jobinfo, jobinfostring, exitcode = itemgetter(
+        "jobinfo", "jobinfostring", "exitcode"
+    )(parsed_info)
+
     q = (
         "UPDATE landsat_mgrs_log SET jobinfo = :jobinfo::jsonb"
         + " WHERE path = :path::varchar(3) AND"
         + " mgrs = :mgrs::varchar(5) AND acquisition = :acquisition::date;"
     )
-    if "Cause" in event["tilejobinfo"].keys():
-        try:
-            jobinfo = json.loads(event["tilejobinfo"]["Cause"])
-            jobinfostring = json.dumps(jobinfo)
-        except ValueError:
-            jobinfo = event["tilejobinfo"]["Cause"]
-            jobinfostring = jobinfo
-    else:
-        jobinfo = event["tilejobinfo"]
-        jobinfostring = json.dumps(event["tilejobinfo"])
 
     execute_statement(
         q,
@@ -46,12 +43,6 @@ def handler(event, context):
             {"name": "jobinfo", "value": {"stringValue": jobinfostring}}
         ],
     )
-    try:
-        exitcode = jobinfo["Attempts"][0]["Container"]["ExitCode"]
-    except KeyError:
-        exitcode = "nocode"
-    except TypeError:
-        exitcode = "nocode"
 
     print(f"Exit Code is {exitcode}")
     return exitcode

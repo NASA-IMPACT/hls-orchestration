@@ -1,6 +1,8 @@
 import os
 import boto3
 import json
+from operator import itemgetter
+from lambda_functions.utils.batch_job_parser import parse_jobinfo
 
 
 db_credentials_secrets_store_arn = os.getenv("HLS_SECRETS")
@@ -21,26 +23,16 @@ def execute_statement(sql, sql_parameters=[]):
 
 
 def handler(event, context):
+    parsed_info = parse_jobinfo("jobinfo", event)
+    jobinfo, jobinfostring, exitcode, jobid = itemgetter(
+        "jobinfo", "jobinfostring", "exitcode", "jobid"
+    )(parsed_info)
     q = (
         "INSERT INTO landsat_ac_log (path, row, acquisition, jobid, jobinfo) VALUES"
         + "(:path::varchar(3), :row::varchar(3), :acquisition::date, :jobid::text, :jobinfo::jsonb)"
         + " ON CONFLICT ON CONSTRAINT no_dupe_pathrowdate"
         + " DO UPDATE SET jobid = excluded.jobid, jobinfo = excluded.jobinfo;"
     )
-    if "Cause" in event["jobinfo"].keys():
-        try:
-            jobinfo = json.loads(event["jobinfo"]["Cause"])
-            jobid = jobinfo["JobId"]
-            jobinfostring = json.dumps(jobinfo)
-        except ValueError:
-            jobinfo = event["jobinfo"]["Cause"]
-            jobid = jobinfo["JobId"]
-            jobinfostring = jobinfo
-    else:
-        jobinfo = event["jobinfo"]
-        jobid = jobinfo["JobId"]
-        jobinfostring = json.dumps(event["jobinfo"])
-
     execute_statement(
         q,
         sql_parameters=[
@@ -51,12 +43,6 @@ def handler(event, context):
             {"name": "jobinfo", "value": {"stringValue": jobinfostring}},
         ],
     )
-    try:
-        exitcode = jobinfo["Attempts"][0]["Container"]["ExitCode"]
-    except KeyError:
-        exitcode = "nocode"
-    except TypeError:
-        exitcode = "nocode"
 
     print(f"Exit Code is {exitcode}")
     return exitcode
