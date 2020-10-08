@@ -19,6 +19,7 @@ class Lambda(core.Construct):
         env: Dict = None,
         runtime: aws_lambda.Runtime = aws_lambda.Runtime.PYTHON_3_7,
         handler: str = "index.handler",
+        layers: list = None,
         **kwargs,
     ) -> None:
         """Create AWS Lambda stack."""
@@ -58,6 +59,10 @@ class Lambda(core.Construct):
             runtime=runtime,
             environment=env,
         )
+
+        if layers is not None:
+            for layer in layers:
+                self.function.add_layers(layer)
 
         self.invoke_policy_statement = aws_iam.PolicyStatement(
             resources=[self.function.function_arn], actions=["lambda:InvokeFunction",],

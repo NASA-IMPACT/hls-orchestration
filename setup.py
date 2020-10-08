@@ -6,7 +6,10 @@ import os
 
 with open("README.md") as f:
     readme = f.read()
-subprocess.check_call([sys.executable, "-m", "pip", "install", "./layers/python"])
+
+# Install lambda layers needed for testing imports.
+subprocess.check_call([sys.executable, "-m", "pip", "install",
+                       "./layers/hls_lambda_layer/python"])
 
 # Runtime requirements.
 aws_cdk_version = "1.39.0"
