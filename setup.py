@@ -1,9 +1,12 @@
 """Setup for hls-orchestration"""
-
+import sys
+import subprocess
 from setuptools import setup, find_packages
+import os
 
 with open("README.md") as f:
     readme = f.read()
+subprocess.check_call([sys.executable, "-m", "pip", "install", "./layers/python"])
 
 # Runtime requirements.
 aws_cdk_version = "1.39.0"
@@ -28,7 +31,9 @@ aws_cdk_reqs = [
     "aws-cloudwatch-actions",
 ]
 
-inst_reqs = ["boto3"]
+inst_reqs = [
+    "boto3",
+]
 
 inst_reqs.append([f"aws_cdk.{x}=={aws_cdk_version}" for x in aws_cdk_reqs])
 

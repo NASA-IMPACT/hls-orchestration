@@ -2,7 +2,7 @@ import os
 import boto3
 import json
 from operator import itemgetter
-from lambda_functions.utils.batch_job_parser import parse_jobinfo
+from hls_lambda_layer.hls_batch_utils import parse_jobinfo
 
 rds_client = boto3.client("rds-data")
 

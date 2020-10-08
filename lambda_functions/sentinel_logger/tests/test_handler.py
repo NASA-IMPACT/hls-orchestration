@@ -2,7 +2,7 @@ import pytest
 import json
 from unittest.mock import patch
 from lambda_functions.sentinel_logger.hls_sentinel_logger.handler import handler
-from lambda_functions.utils.batch_test_events import (
+from hls_lambda_layer.batch_test_events import (
     batch_failed_event,
     batch_succeeded_event,
     batch_failed_event_string_cause

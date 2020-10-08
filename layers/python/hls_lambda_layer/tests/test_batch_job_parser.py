@@ -1,6 +1,6 @@
 import pytest
-from lambda_functions.utils.batch_job_parser import parse_jobinfo
-from lambda_functions.utils.batch_test_events import (
+from hls_lambda_layer.hls_batch_utils import parse_jobinfo
+from hls_lambda_layer.batch_test_events import (
     batch_failed_event,
     batch_succeeded_event,
     batch_failed_event_string_cause,
