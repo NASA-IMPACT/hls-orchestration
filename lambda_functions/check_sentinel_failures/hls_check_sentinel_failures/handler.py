@@ -33,7 +33,13 @@ def handler(event, context):
     q = (
         "SELECT id, granule from granule_log WHERE"
         + " event->'Container'->>'ExitCode' = '1'"
+        + " AND DATE(ts) < TO_DATE(:fromdate::text,'DD/MM/YYYY');"
     )
-    response = execute_statement(q,)
+    response = execute_statement(
+        q,
+        sql_parameters=[
+            {"name": "fromdate", "value": {"stringValue": event["fromdate"]}},
+        ]
+    )
     records = map(convert_records, response["records"])
     return list(records)

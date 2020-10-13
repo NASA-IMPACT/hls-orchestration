@@ -27,6 +27,9 @@ def test_handler_convert(client):
         "granule": "S2B_MSIL1C_20200214T200849_N0209_R042_T06KTF_20200214T211703",
     }
     client.execute_statement.return_value = return_value
-    actual = handler({}, {})
+    event = {
+        "fromdate": "14/09/2020"
+    }
+    actual = handler(event, {})
     assert len(actual) == 2
     assert record in actual
