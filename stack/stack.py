@@ -226,6 +226,7 @@ class HlsStack(core.Stack):
             },
             timeout=30,
             handler="handler.handler",
+            layers=[self.hls_lambda_layer],
         )
 
         self.landsat_ac_logger = Lambda(
@@ -239,6 +240,7 @@ class HlsStack(core.Stack):
             },
             timeout=30,
             handler="handler.handler",
+            layers=[self.hls_lambda_layer],
         )
 
         self.landsat_pathrow_status = Lambda(
@@ -280,7 +282,9 @@ class HlsStack(core.Stack):
                 "HLS_DB_ARN": self.rds.arn,
             },
             timeout=30,
-            handler="handler.handler"
+            handler="handler.handler",
+            layers=[self.hls_lambda_layer],
+
         )
 
         self.check_sentinel_failures = Lambda(
