@@ -17,7 +17,7 @@ class StepFunctionTrigger(core.Construct):
         scope: core.Construct,
         id: str,
         state_machine: str,
-        code_dir: str,
+        code_file: str,
         input_bucket: aws_s3.Bucket = None,
         input_sns: aws_sns.Topic = None,
         **kwargs,
@@ -26,9 +26,9 @@ class StepFunctionTrigger(core.Construct):
         self.execute_step_function = Lambda(
             self,
             "ExecuteStepFunction",
-            code_dir=code_dir,
+            code_file=code_file,
             env={"STATE_MACHINE": state_machine},
-            handler="handler.handler",
+            timeout=90,
         )
         if input_bucket is not None:
             self.event_source = aws_lambda_event_sources.S3EventSource(

@@ -184,15 +184,19 @@ class HlsStack(core.Stack):
         )
 
         self.pr2mgrs_lambda = Lambda(
-            self, "Pr2Mgrs", code_dir="pr2mgrs/hls_pr2mgrs", handler="handler.handler",
+            self,
+            "Pr2Mgrs",
+            code_dir="pr2mgrs/hls_pr2mgrs",
+            handler="handler.handler",
+            timeout=120,
         )
 
         self.laads_available = Lambda(
             self,
             "LaadsAvailable",
-            code_dir="laads_available/hls_laads_available",
+            code_file="laads_available.py",
             env={"LAADS_BUCKET": LAADS_BUCKET},
-            handler="handler.handler",
+            timeout=120,
         )
 
         self.check_twin_granule = Lambda(
@@ -200,89 +204,83 @@ class HlsStack(core.Stack):
             "CheckGranule",
             code_file="twin_granule.py",
             env={"SENTINEL_INPUT_BUCKET": SENTINEL_INPUT_BUCKET},
+            timeout=120,
         )
 
         self.landsat_mgrs_logger = Lambda(
             self,
             "LandsatMGRSLogger",
-            code_dir="landsat_mgrs_logger/hls_landsat_mgrs_logger",
+            code_file="landsat_mgrs_logger.py",
             env={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
                 "HLS_DB_NAME": self.rds.database.database_name,
                 "HLS_DB_ARN": self.rds.arn,
             },
-            timeout=30,
-            handler="handler.handler",
+            timeout=120,
         )
 
         self.mgrs_logger = Lambda(
             self,
             "MGRSLogger",
-            code_dir="mgrs_logger/hls_mgrs_logger",
+            code_file="mgrs_logger.py",
             env={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
                 "HLS_DB_NAME": self.rds.database.database_name,
                 "HLS_DB_ARN": self.rds.arn,
             },
-            timeout=30,
-            handler="handler.handler",
+            timeout=120,
             layers=[self.hls_lambda_layer],
         )
 
         self.landsat_ac_logger = Lambda(
             self,
             "LandsatAcLogger",
-            code_dir="landsat_ac_logger/hls_landsat_ac_logger",
+            code_file="landsat_ac_logger.py",
             env={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
                 "HLS_DB_NAME": self.rds.database.database_name,
                 "HLS_DB_ARN": self.rds.arn,
             },
-            timeout=30,
-            handler="handler.handler",
+            timeout=120,
             layers=[self.hls_lambda_layer],
         )
 
         self.landsat_pathrow_status = Lambda(
             self,
             "LandsatPathrowStatus",
-            code_dir="landsat_pathrow_status/hls_landsat_pathrow_status",
+            code_file="landsat_pathrow_status.py",
             env={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
                 "HLS_DB_NAME": self.rds.database.database_name,
                 "HLS_DB_ARN": self.rds.arn,
             },
-            timeout=30,
-            handler="handler.handler",
+            timeout=120,
         )
 
         self.check_landsat_tiling_exit_code = Lambda(
             self,
             "CheckLandsatTilingExitCode",
-            code_dir="check_landsat_tiling_exit_code/hls_check_landsat_tiling_exit_code",
+            code_file="check_landsat_tiling_exit_code.py",
             timeout=30,
-            handler="handler.handler"
         )
 
         self.check_exit_code = Lambda(
             self,
             "CheckExitCode",
-            code_dir="check_exit_code/hls_check_exit_code",
+            code_file="check_exit_code.py",
             timeout=30,
-            handler="handler.handler"
         )
 
         self.sentinel_logger = Lambda(
             self,
             "SentinelLogger",
-            code_dir="sentinel_logger/hls_sentinel_logger",
+            code_file="sentinel_logger.py",
             env={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
                 "HLS_DB_NAME": self.rds.database.database_name,
                 "HLS_DB_ARN": self.rds.arn,
             },
-            timeout=30,
-            handler="handler.handler",
+            timeout=120,
             layers=[self.hls_lambda_layer],
 
         )
@@ -290,14 +288,13 @@ class HlsStack(core.Stack):
         self.check_sentinel_failures = Lambda(
             self,
             "CheckSentinelFailures",
-            code_dir="check_sentinel_failures/hls_check_sentinel_failures",
+            code_file="check_sentinel_failures.py",
             env={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
                 "HLS_DB_NAME": self.rds.database.database_name,
                 "HLS_DB_ARN": self.rds.arn,
             },
             timeout=900,
-            handler="handler.handler"
         )
 
         self.update_sentinel_failure = Lambda(
@@ -385,14 +382,14 @@ class HlsStack(core.Stack):
             self,
             "SentinelStepFunctionTrigger",
             state_machine=self.sentinel_step_function.sentinel_state_machine.ref,
-            code_dir="execute_step_function/hls_execute_step_function",
+            code_file="execute_step_function.py",
             input_bucket=self.sentinel_input_bucket,
         )
         self.landsat_step_function_trigger = StepFunctionTrigger(
             self,
             "LandsatStepFunctionTrigger",
             state_machine=self.landsat_step_function.state_machine.ref,
-            code_dir="execute_landsat_step_function/hls_execute_landsat_step_function",
+            code_file="execute_landsat_step_function.py",
             input_sns=self.landsat_sns_topic,
         )
 
