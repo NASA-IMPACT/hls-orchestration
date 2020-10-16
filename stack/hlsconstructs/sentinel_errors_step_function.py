@@ -18,6 +18,7 @@ class SentinelErrorsStepFunction(core.Construct):
         jobqueue: str,
         lambda_logger: str,
         check_sentinel_failures: str,
+        update_sentinel_failure: str,
         gibs_intermediate_output_bucket: str,
         gibs_outputbucket: str,
         **kwargs,
@@ -56,11 +57,67 @@ class SentinelErrorsStepFunction(core.Construct):
                     "ItemsPath": "$.errors",
                     "MaxConcurrency": 20,
                     "Iterator": {
-                        "StartAt": "Noop",
+                        "StartAt": "ProcessSentinel",
                         "States": {
-                            "Noop": {
-                                "Type": "Pass",
-                                "Next": "SuccessState"
+                            "ProcessSentinel": {
+                                "Type": "Task",
+                                "Resource": "arn:aws:states:::batch:submitJob.sync",
+                                "ResultPath": "$.jobinfo",
+                                "Parameters": {
+                                    "JobName": "BatchJobNotification",
+                                    "JobQueue": jobqueue,
+                                    "JobDefinition": sentinel_job_definition,
+                                    "ContainerOverrides": {
+                                        "Command": ["export && sentinel.sh"],
+                                        "Environment": [
+                                            {"Name": "GRANULE_LIST", "Value.$": "$.granule"},
+                                            {"Name": "OUTPUT_BUCKET", "Value": outputbucket},
+                                            {"Name": "INPUT_BUCKET", "Value": inputbucket},
+                                            {"Name": "LASRC_AUX_DIR", "Value": "/var/lasrc_aux"},
+                                            {
+                                                "Name": "GCC_ROLE_ARN",
+                                                "Value": outputbucket_role_arn,
+                                            },
+                                            {
+                                                "Name": "REPLACE_EXISTING",
+                                                "Value": "replace",
+                                            },
+                                            {
+                                                "Name": "GIBS_INTERMEDIATE_BUCKET",
+                                                "Value": gibs_intermediate_output_bucket,
+                                            },
+                                            {
+                                                "Name": "GIBS_OUTPUT_BUCKET",
+                                                "Value": gibs_outputbucket,
+                                            },
+                                            {
+                                                "Name": "OMP_NUM_THREADS",
+                                                "Value": "2",
+                                            },
+                                        ],
+                                    },
+                                },
+                                "Catch": [
+                                    {
+                                        "ErrorEquals": ["States.ALL"],
+                                        "Next": "UpdatetSentinelFailure",
+                                        "ResultPath": "$.jobinfo",
+                                    }
+                                ],
+                                "Next": "UpdatetSentinelFailure",
+                            },
+                            "UpdatetSentinelFailure": {
+                                "Type": "Task",
+                                "Resource": update_sentinel_failure,
+                                "Next": "SuccessState",
+                                "Retry": [
+                                    {
+                                        "ErrorEquals": ["States.ALL"],
+                                        "IntervalSeconds": lambda_interval,
+                                        "MaxAttempts": lambda_max_attempts,
+                                        "BackoffRate": lambda_backoff_rate,
+                                    }
+                                ],
                             },
                             "SuccessState": {
                                 "Type": "Succeed"

@@ -351,6 +351,7 @@ class HlsStack(core.Stack):
             jobqueue=self.batch.sentinel_jobqueue.ref,
             lambda_logger=self.lambda_logger.function.function_arn,
             check_sentinel_failures=self.check_sentinel_failures.function.function_arn,
+            update_sentinel_failure=self.update_sentinel_failure.function.function_arn,
             outputbucket_role_arn=HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN,
             gibs_intermediate_output_bucket=GIBS_INTERMEDIATE_OUTPUT_BUCKET,
             gibs_outputbucket=GIBS_OUTPUT_BUCKET,
