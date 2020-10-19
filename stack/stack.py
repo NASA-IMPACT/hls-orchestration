@@ -394,6 +394,21 @@ class HlsStack(core.Stack):
             input_sns=self.landsat_sns_topic,
         )
 
+        # Alarms
+        self.sentinel_step_function_alarm = StepFunctionAlarm(
+            self,
+            "SentinelStepFunctionAlarm",
+            state_machine=self.sentinel_step_function.sentinel_state_machine.ref,
+            root_name="Sentinel",
+        )
+
+        self.landsat_step_function_alarm = StepFunctionAlarm(
+            self,
+            "LandsatStepFunctionAlarm",
+            state_machine=self.landsat_step_function.state_machine.ref,
+            root_name="Landsat",
+        )
+
         # Cross construct permissions
         self.laads_bucket_read_policy = aws_iam.PolicyStatement(
             resources=[
@@ -422,69 +437,60 @@ class HlsStack(core.Stack):
         )
 
         self.sentinel_step_function.steps_role.add_to_policy(self.batch_jobqueue_policy)
-        self.sentinel_step_function.steps_role.add_to_policy(
-            self.check_twin_granule.invoke_policy_statement
-        )
-        self.sentinel_step_function.steps_role.add_to_policy(
-            self.laads_available.invoke_policy_statement
-        )
-        self.sentinel_step_function.steps_role.add_to_policy(
-            self.lambda_logger.invoke_policy_statement
-        )
-        self.sentinel_step_function.steps_role.add_to_policy(
-            self.sentinel_logger.invoke_policy_statement
-        )
-        self.sentinel_step_function.steps_role.add_to_policy(
-            self.check_exit_code.invoke_policy_statement
+        sentinel_lambdas = [
+            self.check_twin_granule,
+            self.laads_available,
+            self.lambda_logger,
+            self.sentinel_logger,
+            self.check_exit_code,
+        ]
+        self.addLambdaInvokePolicies(
+            self.sentinel_step_function,
+            sentinel_lambdas,
         )
 
-        self.sentinel_errors_step_function.steps_role.add_to_policy(
-            self.check_sentinel_failures.invoke_policy_statement
-        )
-        self.sentinel_errors_step_function.steps_role.add_to_policy(
-            self.update_sentinel_failure.invoke_policy_statement
+        sentinel_errors_lambdas = [
+            self.check_sentinel_failures,
+            self.update_sentinel_failure,
+        ]
+        self.addLambdaInvokePolicies(
+            self.sentinel_errors_step_function,
+            sentinel_errors_lambdas,
         )
 
         self.landsat_step_function.steps_role.add_to_policy(self.batch_jobqueue_policy)
-        self.landsat_step_function.steps_role.add_to_policy(
-            self.laads_available.invoke_policy_statement
+        landsat_lambdas = [
+            self.laads_available,
+            self.lambda_logger,
+            self.landsat_mgrs_logger,
+            self.pr2mgrs_lambda,
+            self.landsat_ac_logger,
+            self.landsat_pathrow_status,
+            self.mgrs_logger,
+            self.check_landsat_tiling_exit_code,
+            self.check_exit_code,
+        ]
+        self.addLambdaInvokePolicies(
+            self.landsat_step_function,
+            landsat_lambdas
         )
-        self.landsat_step_function.steps_role.add_to_policy(
-            self.lambda_logger.invoke_policy_statement
-        )
-        self.landsat_step_function.steps_role.add_to_policy(
-            self.landsat_mgrs_logger.invoke_policy_statement
-        )
-        self.landsat_step_function.steps_role.add_to_policy(
-            self.pr2mgrs_lambda.invoke_policy_statement
-        )
-        self.landsat_step_function.steps_role.add_to_policy(
-            self.landsat_ac_logger.invoke_policy_statement
-        )
-        self.landsat_step_function.steps_role.add_to_policy(
-            self.landsat_pathrow_status.invoke_policy_statement
-        )
-        self.landsat_step_function.steps_role.add_to_policy(
-            self.mgrs_logger.invoke_policy_statement
-        )
-        self.landsat_step_function.steps_role.add_to_policy(
-            self.check_landsat_tiling_exit_code.invoke_policy_statement
-        )
-        self.landsat_step_function.steps_role.add_to_policy(
-            self.check_exit_code.invoke_policy_statement
-        )
+
         self.addRDSpolicy()
 
-        self.check_twin_granule.function.add_to_role_policy(
-            aws_iam.PolicyStatement(
-                resources=[
-                    self.sentinel_input_bucket.bucket_arn,
-                    f"{self.sentinel_input_bucket.bucket_arn}/*",
-                ],
-                actions=["s3:Get*", "s3:List*",],
-            )
+        # Bucket policies
+        self.sentinel_input_bucket_policy = aws_iam.PolicyStatement(
+            resources=[
+                self.sentinel_input_bucket.bucket_arn,
+                f"{self.sentinel_input_bucket.bucket_arn}/*",
+            ],
+            actions=["s3:Get*", "s3:List*",],
         )
-
+        self.check_twin_granule.function.add_to_role_policy(
+            self.sentinel_input_bucket_policy
+        )
+        self.sentinel_task.role.add_to_policy(
+            self.sentinel_input_bucket_policy
+        )
         self.laads_task.role.add_to_policy(
             aws_iam.PolicyStatement(
                 resources=[
@@ -492,15 +498,6 @@ class HlsStack(core.Stack):
                     f"{self.laads_bucket.bucket_arn}/*",
                 ],
                 actions=["s3:Get*", "s3:Put*", "s3:List*", "s3:AbortMultipartUpload",],
-            )
-        )
-        self.sentinel_task.role.add_to_policy(
-            aws_iam.PolicyStatement(
-                resources=[
-                    self.sentinel_input_bucket.bucket_arn,
-                    f"{self.sentinel_input_bucket.bucket_arn}/*",
-                ],
-                actions=["s3:Get*", "s3:List*",],
             )
         )
         self.sentinel_task.role.add_to_policy(
@@ -549,21 +546,6 @@ class HlsStack(core.Stack):
             self, "cweventsfull", "arn:aws:iam::aws:policy/CloudWatchEventsFullAccess"
         )
         self.sentinel_step_function.steps_role.add_managed_policy(cw_events_full)
-
-        # Alarms
-        self.sentinel_step_function_alarm = StepFunctionAlarm(
-            self,
-            "SentinelStepFunctionAlarm",
-            state_machine=self.sentinel_step_function.sentinel_state_machine.ref,
-            root_name="Sentinel",
-        )
-
-        self.landsat_step_function_alarm = StepFunctionAlarm(
-            self,
-            "LandsatStepFunctionAlarm",
-            state_machine=self.landsat_step_function.state_machine.ref,
-            root_name="Landsat",
-        )
 
         # Stack exports
         core.CfnOutput(
@@ -638,6 +620,12 @@ class HlsStack(core.Stack):
             export_name=f"{STACKNAME}-gibsintermediateoutput",
             value=self.gibs_intermediate_output_bucket.bucket_name,
         )
+
+    def addLambdaInvokePolicies(self, stepfunction, lambdas):
+        for lambda_function in lambdas:
+            stepfunction.steps_role.add_to_policy(
+                lambda_function.invoke_policy_statement
+            )
 
     def addRDSpolicy(self):
         lambdas = [
