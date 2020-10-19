@@ -6,12 +6,13 @@ source "$env_settings"
 jobqueue=$HLSSTACK_SENTINELJOBQUEUEEXPORT
 jobdefinition=$HLSSTACK_SENTINELJOBDEFINITION
 outputbucket=$HLS_SENTINEL_OUTPUT_BUCKET
-inputbucket=$HLSSTACK_SENTINELINPUTEXPORT
+# inputbucket=$HLSSTACK_SENTINELINPUTEXPORT
 gibsbucket=$HLSSTACK_GIBSINTERMEDIATEOUTPUT
 gibsoutputbucket=$HLS_GIBS_OUTPUT_BUCKET
 outputbucket_role_arn=$HLS_SENTINEL_BUCKET_ROLE_ARN
 command=sentinel.sh
 granulelist=$1
+inputbucket=$2
 
 # If multiple granules are in the granulelist, create a jobname without the granule unique id.
 IFS=',' # commma is set as delimiter
