@@ -386,13 +386,13 @@ class HlsStack(core.Stack):
             code_file="execute_step_function.py",
             input_bucket=self.sentinel_input_bucket,
         )
-        self.landsat_step_function_trigger = StepFunctionTrigger(
-            self,
-            "LandsatStepFunctionTrigger",
-            state_machine=self.landsat_step_function.state_machine.ref,
-            code_file="execute_landsat_step_function.py",
-            input_sns=self.landsat_sns_topic,
-        )
+        # self.landsat_step_function_trigger = StepFunctionTrigger(
+            # self,
+            # "LandsatStepFunctionTrigger",
+            # state_machine=self.landsat_step_function.state_machine.ref,
+            # code_file="execute_landsat_step_function.py",
+            # input_sns=self.landsat_sns_topic,
+        # )
 
         # Alarms
         self.sentinel_step_function_alarm = StepFunctionAlarm(
