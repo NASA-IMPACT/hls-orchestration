@@ -19,7 +19,7 @@ from hlsconstructs.stepfunction_alarm import StepFunctionAlarm
 STACKNAME = os.getenv("HLS_STACKNAME", "hls")
 
 SENTINEL_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-sentinel:latest"
-LANDSAT_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat:latest"
+LANDSAT_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat-c2:latest"
 LANDSAT_TILE_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat-tile:v1.4"
 
 LAADS_BUCKET = f"{STACKNAME}-laads-bucket"
@@ -386,13 +386,13 @@ class HlsStack(core.Stack):
             code_file="execute_step_function.py",
             input_bucket=self.sentinel_input_bucket,
         )
-        self.landsat_step_function_trigger = StepFunctionTrigger(
-            self,
-            "LandsatStepFunctionTrigger",
-            state_machine=self.landsat_step_function.state_machine.ref,
-            code_file="execute_landsat_step_function.py",
-            input_sns=self.landsat_sns_topic,
-        )
+        # self.landsat_step_function_trigger = StepFunctionTrigger(
+            # self,
+            # "LandsatStepFunctionTrigger",
+            # state_machine=self.landsat_step_function.state_machine.ref,
+            # code_file="execute_landsat_step_function.py",
+            # input_sns=self.landsat_sns_topic,
+        # )
 
         # Alarms
         self.sentinel_step_function_alarm = StepFunctionAlarm(
@@ -520,7 +520,7 @@ class HlsStack(core.Stack):
         )
         self.landsat_task.role.add_to_policy(
             aws_iam.PolicyStatement(
-                resources=["arn:aws:s3:::landsat-pds", "arn:aws:s3:::landsat-pds/*",],
+                resources=["arn:aws:s3:::usgs-landsat", "arn:aws:s3:::usgs-landsat/*",],
                 actions=["s3:Get*", "s3:List*",],
             )
         )
