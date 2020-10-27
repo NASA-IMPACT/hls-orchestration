@@ -8,44 +8,55 @@ from lambda_functions.execute_landsat_step_function import handler
     "lambda_functions.execute_landsat_step_function.boto3.client"
 )
 def test_handler(client):
-    """Test handler."""
-
     scene_meta = {
         "sensor": "C",
         "satellite": "08",
-        "processingCorrectionLevel": "L1GT",
-        "path": "127",
-        "row": "010",
+        "processingCorrectionLevel": "L1TP",
+        "path": "231",
+        "row": "089",
         "acquisitionYear": "2020",
-        "acquisitionMonth": "05",
-        "acquisitionDay": "27",
+        "acquisitionMonth": "08",
+        "acquisitionDay": "07",
         "processingYear": "2020",
-        "processingMonth": "05",
-        "processingDay": "27",
-        "collectionNumber": "01",
+        "processingMonth": "08",
+        "processingDay": "08",
+        "collectionNumber": "02",
         "collectionCategory": "RT",
-        "scene": "LC08_L1GT_127010_20200527_20200527_01_RT",
-        "date": "2020-05-27",
+        "scene": "LC08_L1TP_231089_20200807_20200808_02_RT",
+        "date": "2020-08-07",
         "scheme": "s3",
-        "bucket": "landsat-pds",
-        "prefix": "c1/L8/127/010/LC08_L1GT_127010_20200527_20200527_01_RT",
+        "bucket": "usgs-landsat",
+        "prefix": "collection02/level-1/standard/oli-tirs/2020/231/089/LC08_L1TP_231089_20200807_20200808_02_RT"
     }
-    expected_input = json.dumps(scene_meta)
-    start_execution_response = {"executionArn": "arn", "startDate": 10}
+
+    message = {
+        "Records": [{
+            "s3": {
+                "bucket": {
+                    "name": "usgs-landsat"
+                },
+                "object": {
+                    "key": "collection02/level-1/standard/oli-tirs/2020/231/089/LC08_L1TP_231089_20200807_20200808_02_RT/LC08_L1TP_231089_20200807_20200808_02_RT_stac.json"
+                }
+            }
+        }]
+    }
+    messagestring = json.dumps(message)
     event = {
         "Records": [
             {
                 "Sns": {
-                    "Message":
-                    '{"Records":[{"eventVersion":"2.0","eventSource":"aws:s3","awsRegion":"us-west-2","eventTime":"2016-01-16T01:36:55.014Z","eventName":"ObjectCreated:Put","userIdentity":{"principalId":"AWS:AIDAILHHXPNIKSGVUGOZK"},"requestParameters":{"sourceIPAddress":"52.27.39.85"},"responseElements":{"x-amz-request-id":"078952E6C7CC52B4","x-amz-id-2":"Xboo1ULzd7PxY27iIaGXjUStV8TmG52JAbiWQpiRJWuRqfaBhLcc0XMUKNmXgd5fbIfRd1IcrgE="},"s3":{"s3SchemaVersion":"1.0","configurationId":"NewHTML","bucket":{"name":"landsat-pds","ownerIdentity":{"principalId":"A3LZTVCZQ87CNW"},"arn":"arn:aws:s3:::landsat-pds"},"object":{"key":"c1/L8/127/010/LC08_L1GT_127010_20200527_20200527_01_RT/index.html","size":3780,"eTag":"736e4e5a36cb8a1c6cbfc58659126ff1","sequencer":"0056999EB6F8BDBB8D"}}}]}',
+                    "Message": messagestring
                 }
             }
         ]
     }
 
+    start_execution_response = {"executionArn": "arn", "startDate": 10}
     client.return_value.start_execution.return_value = start_execution_response
     handler(event, {})
     args, kwargs = client.return_value.start_execution.call_args
+    expected_input = json.dumps(scene_meta)
     assert kwargs["input"] == expected_input
 
 
@@ -53,13 +64,24 @@ def test_handler(client):
     "lambda_functions.execute_landsat_step_function.boto3.client"
 )
 def test_handler_non_RT(client):
-    """Test handler."""
-
+    message = {
+        "Records": [{
+            "s3": {
+                "bucket": {
+                    "name": "usgs-landsat"
+                },
+                "object": {
+                    "key": "collection02/level-1/standard/oli-tirs/2020/231/089/LC08_L1TP_231089_20200807_20200808_02_T1/LC08_L1TP_231089_20200807_20200808_02_T1_stac.json"
+                }
+            }
+        }]
+    }
+    messagestring = json.dumps(message)
     event = {
         "Records": [
             {
                 "Sns": {
-                    "Message": '{"Records":[{"eventVersion":"2.0","eventSource":"aws:s3","awsRegion":"us-west-2","eventTime":"2016-01-16T01:36:55.014Z","eventName":"ObjectCreated:Put","userIdentity":{"principalId":"AWS:AIDAILHHXPNIKSGVUGOZK"},"requestParameters":{"sourceIPAddress":"52.27.39.85"},"responseElements":{"x-amz-request-id":"078952E6C7CC52B4","x-amz-id-2":"Xboo1ULzd7PxY27iIaGXjUStV8TmG52JAbiWQpiRJWuRqfaBhLcc0XMUKNmXgd5fbIfRd1IcrgE="},"s3":{"s3SchemaVersion":"1.0","configurationId":"NewHTML","bucket":{"name":"landsat-pds","ownerIdentity":{"principalId":"A3LZTVCZQ87CNW"},"arn":"arn:aws:s3:::landsat-pds"},"object":{"key":"/c1/L8/139/045/LC08_L1TP_139045_20170304_20170316_01_T1/index.html","size":3780,"eTag":"736e4e5a36cb8a1c6cbfc58659126ff1","sequencer":"0056999EB6F8BDBB8D"}}}]}',
+                    "Message": messagestring
                 }
             }
         ]

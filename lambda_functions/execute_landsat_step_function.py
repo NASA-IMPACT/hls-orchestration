@@ -74,16 +74,14 @@ def landsat_parse_scene_id(sceneid):
         meta["date"] = date.strftime("%Y-%m-%d")
     else:
         meta["date"] = "{}-{}-{}".format(
-            meta["acquisitionYear"], meta["acquisitionMonth"], meta["acquisitionDay"]
+            meta["acquisitionYear"],
+            meta["acquisitionMonth"],
+            meta["acquisitionDay"]
         )
 
     collection = meta.get("collectionNumber", "")
     if collection != "":
         collection = "c{}".format(int(collection))
-
-    meta["scheme"] = "s3"
-    meta["bucket"] = "landsat-pds"
-    meta["prefix"] = os.path.join(collection, "L8", meta["path"], meta["row"], sceneid)
 
     return meta
 
@@ -96,12 +94,17 @@ def handler(event: Dict, context: Dict):
         message = event["Records"][0]["Sns"]["Message"]
         parsed_message = json.loads(message)
         key = parsed_message["Records"][0]["s3"]["object"]["key"]
+        bucket = parsed_message["Records"][0]["s3"]["bucket"]["name"]
 
     except KeyError:
         print("Message body does not contain key")
 
-    scene_id = key.split("/")[-2]
+    path_elements = key.split("/")
+    scene_id = path_elements[-2]
     scene_meta = landsat_parse_scene_id(scene_id)
+    scene_meta["scheme"] = "s3"
+    scene_meta["bucket"] = bucket
+    scene_meta["prefix"] = "/".join(path_elements[:-1])
     print(scene_meta)
     # Skip unless real-time (RT) collection
     if scene_meta["collectionCategory"] == "RT":
