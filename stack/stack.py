@@ -338,7 +338,6 @@ class HlsStack(core.Stack):
             check_exit_code=self.check_exit_code.function.function_arn,
             outputbucket_role_arn=HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN,
             replace_existing=REPLACE_EXISTING,
-            gibs_intermediate_output_bucket=GIBS_INTERMEDIATE_OUTPUT_BUCKET,
             gibs_outputbucket=GIBS_OUTPUT_BUCKET,
         )
 
@@ -376,6 +375,7 @@ class HlsStack(core.Stack):
             mgrs_logger=self.mgrs_logger.function.function_arn,
             check_landsat_tiling_exit_code=self.check_landsat_tiling_exit_code.function.function_arn,
             check_landsat_ac_exit_code=self.check_exit_code.function.function_arn,
+            gibs_outputbucket=GIBS_OUTPUT_BUCKET,
             replace_existing=REPLACE_EXISTING,
         )
 

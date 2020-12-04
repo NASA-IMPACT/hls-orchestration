@@ -57,7 +57,7 @@ overrides=$(cat <<EOF
       },
       {
         "name": "OMP_NUM_THREADS",
-        "value": "4"
+        "value": "2"
       }
     ]
 }

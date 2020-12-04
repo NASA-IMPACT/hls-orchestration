@@ -6,7 +6,6 @@ source "$env_settings"
 jobqueue=$HLSSTACK_LANDSATACJOBQUEUEEXPORT
 jobdefinition=$HLSSTACK_LANDSATJOBDEFINITION
 outputbucket=$HLS_LANDSAT_INTERMEDIATE_OUTPUT_BUCKET
-gibsoutputbucket=$HLS_GIBS_OUTPUT_BUCKET
 command=landsat.sh
 granule=$1
 prefix=$2
@@ -47,8 +46,8 @@ overrides=$(cat <<EOF
         "value": "$inputbucket"
       },
       {
-        "name": "GIBS_OUTPUT_BUCKET",
-        "value": "$gibsoutputbucket"
+        "name": "OMP_NUM_THREADS",
+        "value": "2"
       }
     ]
 }

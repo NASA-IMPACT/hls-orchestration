@@ -28,6 +28,7 @@ class LandsatStepFunction(core.Construct):
         check_landsat_tiling_exit_code: str,
         check_landsat_ac_exit_code: str,
         replace_existing: bool,
+        gibs_outputbucket: str,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -216,7 +217,7 @@ class LandsatStepFunction(core.Construct):
                                             {"Name": "LANDSAT_PATH", "Value.$": "$.path"},
                                             {"Name": "MGRS_ULX", "Value.$": "$.mgrs_metadata.mgrs_ulx"},
                                             {"Name": "MGRS_ULY", "Value.$": "$.mgrs_metadata.mgrs_uly"},
-                                            {"Name": "REPLACE_EXISTING", "Value": replace},
+                                            {"Name": "GIBS_OUTPUT_BUCKET", "Value": gibs_outputbucket},
                                         ],
                                     },
                                 },
