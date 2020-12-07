@@ -36,6 +36,7 @@ aws_cdk_reqs = [
 
 inst_reqs = [
     "boto3",
+    "usgs",
 ]
 
 inst_reqs.append([f"aws_cdk.{x}=={aws_cdk_version}" for x in aws_cdk_reqs])
