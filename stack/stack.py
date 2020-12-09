@@ -46,6 +46,8 @@ GIBS_INTERMEDIATE_OUTPUT_BUCKET = f"{STACKNAME}-gibs-intermediate-output"
 GIBS_OUTPUT_BUCKET = os.getenv("HLS_GIBS_OUTPUT_BUCKET")
 
 SSH_KEYNAME = os.getenv("HLS_SSH_KEYNAME")
+USGS_USERNAME = os.getenv("USERNAME")
+USGS_PASSWORD = os.getenv("PASSWORD")
 try:
     # MAXV_CPUS = int(os.getenv("HLS_MAXV_CPUS"))
     MAXV_CPUS = 1200
@@ -308,6 +310,20 @@ class HlsStack(core.Stack):
             },
             timeout=120,
             layers=[self.hls_lambda_layer],
+        )
+
+        self.retrieve_landsat = Lambda(
+            self,
+            "RetrieveLandsat",
+            package_code_dir="usgs_landsat",
+            timeout=900,
+            env={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
+                "USERNAME": USGS_USERNAME,
+                "PASSWORD": USGS_PASSWORD,
+            }
         )
 
         self.laads_cron = BatchCron(
@@ -638,6 +654,7 @@ class HlsStack(core.Stack):
             self.sentinel_logger,
             self.check_sentinel_failures,
             self.update_sentinel_failure,
+            self.retrieve_landsat,
         ]
         for lambda_function in lambdas:
             lambda_function.function.add_to_role_policy(

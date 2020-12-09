@@ -98,10 +98,10 @@ def get_metdata(results):
         yield meta
 
 
-def batch_execute_statement(parameters):
+def batch_execute_statement(parameterSets):
     sql = (
         "INSERT INTO landsat_ac_log (path, row, acquisition, scene_id) VALUES"
-        + "(:path::varchar(3), :row::varchar(3), :acquisition::date, :scene_id:text)"
+        + "(:path::varchar(3), :row::varchar(3), :acquisition::date, :scene_id::varchar(200))"
         + " ON CONFLICT ON CONSTRAINT no_dupe_pathrowdate"
         + " DO NOTHING"
     )
@@ -110,19 +110,19 @@ def batch_execute_statement(parameters):
         database=database_name,
         resourceArn=db_cluster_arn,
         sql=sql,
-        parameters=parameters,
+        parameterSets=parameterSets,
     )
     return response
 
 
-def add_sql_parameter(sql_parameters, scene):
-    sql_parameter = [
+def add_sql_parameter(parameter_sets, scene):
+    sql_parameters = [
         {"name": "path", "value": {"stringValue": scene["path"]}},
         {"name": "row", "value": {"stringValue": scene["row"]}},
         {"name": "acquisition", "value": {"stringValue": scene["date"]}},
         {"name": "scene_id", "value": {"stringValue": scene["scene"]}},
-    ],
-    sql_parameters.append(sql_parameter)
+    ]
+    parameter_sets.append(sql_parameters)
 
 
 def handler(event, context):
@@ -139,14 +139,14 @@ def handler(event, context):
     api_key = api.login(username, password, save=False)["data"]
     search_results = api.search("LANDSAT_OT_C2_L1", "EE", where=where, api_key=api_key)
     scenes = get_metdata(search_results["data"]["results"])
-    sql_parameters = []
+    sql_parameter_sets = []
     for scene in scenes:
-        if len(sql_parameters) == 10:
-            batch_execute_statement(sql_parameters)
-            sql_parameters = []
+        if len(sql_parameter_sets) == 10:
+            batch_execute_statement(sql_parameter_sets)
+            sql_parameter_sets = []
         else:
-            add_sql_parameter(sql_parameters, scene)
+            add_sql_parameter(sql_parameter_sets, scene)
     # Load remaining batch of scenes
-    batch_execute_statement(sql_parameters)
+    batch_execute_statement(sql_parameter_sets)
 
 # handler({"time": "2020-12-04T12:00:00Z"}, {})

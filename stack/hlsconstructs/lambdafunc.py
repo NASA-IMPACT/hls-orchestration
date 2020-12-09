@@ -1,5 +1,6 @@
 import os
-from aws_cdk import aws_lambda, core, aws_iam
+from aws_cdk import aws_lambda, core, aws_iam, aws_lambda_python
+
 from typing import Dict
 from utils import align
 
@@ -16,6 +17,7 @@ class Lambda(core.Construct):
         code_dir: str = None,
         code_file: str = None,
         code_str: str = None,
+        package_code_dir: str = None,
         env: Dict = None,
         runtime: aws_lambda.Runtime = aws_lambda.Runtime.PYTHON_3_7,
         handler: str = "index.handler",
@@ -25,40 +27,55 @@ class Lambda(core.Construct):
         """Create AWS Lambda stack."""
         super().__init__(scope, id, **kwargs)
 
-        if code_dir is not None:
-            self.code = aws_lambda.Code.from_asset(
-                os.path.join(
-                    os.path.dirname(__file__), "..", "..", "lambda_functions", code_dir
+        if package_code_dir is not None:
+            absolute_path = os.path.join(
+                os.path.dirname(__file__), "..", "..",
+                "lambda_functions", package_code_dir
+            )
+            self.function = aws_lambda_python.PythonFunction(
+                self,
+                "function",
+                entry=absolute_path,
+                index="index.py",
+                memory_size=memory,
+                timeout=core.Duration.seconds(timeout),
+                runtime=runtime,
+                environment=env,
+            )
+        else:
+            if code_dir is not None:
+                self.code = aws_lambda.Code.from_asset(
+                    os.path.join(
+                        os.path.dirname(__file__), "..", "..", "lambda_functions", code_dir
+                    )
                 )
+            elif code_file is not None:
+                file = os.path.join(
+                    os.path.dirname(__file__), "..", "..", "lambda_functions", code_file
+                )
+                with open(file, encoding="utf8") as fp:
+                    code_str = fp.read()
+                self.code = aws_lambda.InlineCode(code=code_str)
+                self.handler = "index.handler"
+            elif code_str is not None:
+                code_str = align(code_str)
+                self.code = aws_lambda.InlineCode(code=code_str)
+                self.handler = "index.handler"
+            if self.code is None:
+                raise Exception("Must define function code")
+
+            self.handler = handler
+
+            self.function = aws_lambda.Function(
+                self,
+                "function",
+                code=self.code,
+                handler=self.handler,
+                memory_size=memory,
+                timeout=core.Duration.seconds(timeout),
+                runtime=runtime,
+                environment=env,
             )
-        elif code_file is not None:
-            file = os.path.join(
-                os.path.dirname(__file__), "..", "..", "lambda_functions", code_file
-            )
-            with open(file, encoding="utf8") as fp:
-                code_str = fp.read()
-            self.code = aws_lambda.InlineCode(code=code_str)
-            self.handler = "index.handler"
-        elif code_str is not None:
-            code_str = align(code_str)
-            self.code = aws_lambda.InlineCode(code=code_str)
-            self.handler = "index.handler"
-
-        if self.code is None:
-            raise Exception("Must define function code")
-
-        self.handler = handler
-
-        self.function = aws_lambda.Function(
-            self,
-            "function",
-            code=self.code,
-            handler=self.handler,
-            memory_size=memory,
-            timeout=core.Duration.seconds(timeout),
-            runtime=runtime,
-            environment=env,
-        )
 
         if layers is not None:
             for layer in layers:
