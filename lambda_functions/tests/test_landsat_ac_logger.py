@@ -17,7 +17,7 @@ def test_handler_keyError(client):
         "path": "127",
         "row": "010",
         "date": "2020-05-27",
-        "scene": "LC08_L1TP_127010_20200527_20200527_RT",
+        "scene": "LC08_L1TP_127010_20200527_20200527_02_RT",
         "jobinfo": batch_failed_event
     }
     cause = json.loads(event["jobinfo"]["Cause"])
@@ -25,7 +25,8 @@ def test_handler_keyError(client):
     client.execute_statement.return_value = {}
     output = handler(event, {})
     args, kwargs = client.execute_statement.call_args
-    scene = {"name": "scene", "value": {"stringValue": "LC08_L1TP_127010_20200527_20200527_RT"}}
+    scene = {"name": "scene", "value": {"stringValue":
+                                        "LC08_L1TP_127010_20200527_20200527_02_RT"}}
     assert jobinfo in kwargs["parameters"]
     assert scene in kwargs["parameters"]
     assert output == 1
@@ -38,7 +39,7 @@ def test_handler(client):
         "path": "116",
         "row": "078",
         "date": "2020-05-30",
-        "scene": "LC08_L1TP_127010_20200527_20200527_RT",
+        "scene": "LC08_L1TP_127010_20200527_20200527_02_RT",
         "jobinfo": batch_succeeded_event
     }
     client.execute_statement.return_value = {}
@@ -47,7 +48,8 @@ def test_handler(client):
     jobinfo = {"name": "jobinfo", "value": {"stringValue":
                                             json.dumps(event["jobinfo"])}}
 
-    scene = {"name": "scene", "value": {"stringValue": "LC08_L1TP_127010_20200527_20200527_RT"}}
+    scene = {"name": "scene", "value": {"stringValue":
+                                        "LC08_L1TP_127010_20200527_20200527_02_RT"}}
     assert jobinfo in kwargs["parameters"]
     assert scene in kwargs["parameters"]
     assert output == 0
