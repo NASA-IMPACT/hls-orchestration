@@ -38,7 +38,6 @@ HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN = os.getenv(
 if HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN is None:
     raise Exception("HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN Env Var must be set")
 
-LANDSAT_SNS_TOPIC = os.getenv("HLS_LANDSAT_SNS_TOPIC",)
 LANDSAT_OUTPUT_BUCKET = os.getenv("HLS_LANDSAT_OUTPUT_BUCKET",)
 LANDSAT_INTERMEDIATE_OUTPUT_BUCKET = f"{STACKNAME}-landsat-intermediate-output"
 
@@ -90,10 +89,6 @@ class HlsStack(core.Stack):
 
         self.gibs_intermediate_output_bucket = aws_s3.Bucket(
             self, "GibsIntermediateBucket", bucket_name=GIBS_INTERMEDIATE_OUTPUT_BUCKET,
-        )
-
-        self.landsat_sns_topic = aws_sns.Topic.from_topic_arn(
-            self, "LandsatSNSTopc", topic_arn=LANDSAT_SNS_TOPIC
         )
 
         self.efs = Efs(self, "Efs", network=self.network)
@@ -415,14 +410,6 @@ class HlsStack(core.Stack):
             },
             timeout=900,
         )
-
-        # self.landsat_step_function_trigger = StepFunctionTrigger(
-            # self,
-            # "LandsatStepFunctionTrigger",
-            # state_machine=self.landsat_step_function.state_machine.ref,
-            # code_file="execute_landsat_step_function.py",
-            # input_sns=self.landsat_sns_topic,
-        # )
 
         # Alarms
         self.sentinel_step_function_alarm = StepFunctionAlarm(
