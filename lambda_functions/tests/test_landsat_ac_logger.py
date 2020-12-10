@@ -17,6 +17,7 @@ def test_handler_keyError(client):
         "path": "127",
         "row": "010",
         "date": "2020-05-27",
+        "scene": "LC08_L1TP_127010_20200527_20200527_RT",
         "jobinfo": batch_failed_event
     }
     cause = json.loads(event["jobinfo"]["Cause"])
@@ -24,13 +25,9 @@ def test_handler_keyError(client):
     client.execute_statement.return_value = {}
     output = handler(event, {})
     args, kwargs = client.execute_statement.call_args
-    path = {"name": "path", "value": {"stringValue": "127"}}
-    row = {"name": "row", "value": {"stringValue": "010"}}
-    acquisition = {"name": "acquisition", "value": {"stringValue": "2020-05-27"}}
-    assert path in kwargs["parameters"]
-    assert row in kwargs["parameters"]
-    assert acquisition in kwargs["parameters"]
+    scene = {"name": "scene", "value": {"stringValue": "LC08_L1TP_127010_20200527_20200527_RT"}}
     assert jobinfo in kwargs["parameters"]
+    assert scene in kwargs["parameters"]
     assert output == 1
 
 
@@ -41,18 +38,16 @@ def test_handler(client):
         "path": "116",
         "row": "078",
         "date": "2020-05-30",
+        "scene": "LC08_L1TP_127010_20200527_20200527_RT",
         "jobinfo": batch_succeeded_event
     }
     client.execute_statement.return_value = {}
     output = handler(event, {})
     args, kwargs = client.execute_statement.call_args
-    path = {"name": "path", "value": {"stringValue": "116"}}
-    row = {"name": "row", "value": {"stringValue": "078"}}
-    acquisition = {"name": "acquisition", "value": {"stringValue": "2020-05-30"}}
     jobinfo = {"name": "jobinfo", "value": {"stringValue":
                                             json.dumps(event["jobinfo"])}}
-    assert path in kwargs["parameters"]
-    assert row in kwargs["parameters"]
-    assert acquisition in kwargs["parameters"]
+
+    scene = {"name": "scene", "value": {"stringValue": "LC08_L1TP_127010_20200527_20200527_RT"}}
     assert jobinfo in kwargs["parameters"]
+    assert scene in kwargs["parameters"]
     assert output == 0

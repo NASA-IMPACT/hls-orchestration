@@ -28,19 +28,16 @@ def handler(event, context):
         "jobinfo", "jobinfostring", "exitcode", "jobid"
     )(parsed_info)
     q = (
-        "INSERT INTO landsat_ac_log (path, row, acquisition, jobid, jobinfo) VALUES"
-        + "(:path::varchar(3), :row::varchar(3), :acquisition::date, :jobid::text, :jobinfo::jsonb)"
-        + " ON CONFLICT ON CONSTRAINT no_dupe_pathrowdate"
-        + " DO UPDATE SET jobid = excluded.jobid, jobinfo = excluded.jobinfo;"
+        "UPDATE landsat_ac_log SET (jobid, jobinfo) ="
+        + " (:jobid::text, :jobinfo::jsonb)"
+        + " WHERE scene_id = :scene::text"
     )
     execute_statement(
         q,
         sql_parameters=[
-            {"name": "path", "value": {"stringValue": event["path"]}},
-            {"name": "row", "value": {"stringValue": event["row"]}},
-            {"name": "acquisition", "value": {"stringValue": event["date"]}},
             {"name": "jobid", "value": {"stringValue": jobid},},
             {"name": "jobinfo", "value": {"stringValue": jobinfostring}},
+            {"name": "scene", "value": {"stringValue": event["scene"]}}
         ],
     )
 

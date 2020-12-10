@@ -402,13 +402,27 @@ class HlsStack(core.Stack):
             code_file="execute_step_function.py",
             input_bucket=self.sentinel_input_bucket,
         )
-        self.landsat_step_function_trigger = StepFunctionTrigger(
+
+        self.process_landsat_day = Lambda(
             self,
-            "LandsatStepFunctionTrigger",
-            state_machine=self.landsat_step_function.state_machine.ref,
-            code_file="execute_landsat_step_function.py",
-            input_sns=self.landsat_sns_topic,
+            "ProcessLandsatDay",
+            code_file="process_landsat_day.py",
+            env={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
+                "STATE_MACHINE": self.landsat_step_function.state_machine.ref
+            },
+            timeout=900,
         )
+
+        # self.landsat_step_function_trigger = StepFunctionTrigger(
+            # self,
+            # "LandsatStepFunctionTrigger",
+            # state_machine=self.landsat_step_function.state_machine.ref,
+            # code_file="execute_landsat_step_function.py",
+            # input_sns=self.landsat_sns_topic,
+        # )
 
         # Alarms
         self.sentinel_step_function_alarm = StepFunctionAlarm(
@@ -555,7 +569,12 @@ class HlsStack(core.Stack):
                 actions=["sts:AssumeRole"],
             )
         )
-
+        self.process_landsat_day.function.add_to_role_policy(
+            aws_iam.PolicyStatement(
+                resources=[self.landsat_step_function.state_machine.ref],
+                actions=["states:StartExecution"]
+            )
+        )
         # Add policies for Lambda to listen for bucket events and trigger step
         # function
         cw_events_full = aws_iam.ManagedPolicy.from_managed_policy_arn(
@@ -655,6 +674,7 @@ class HlsStack(core.Stack):
             self.check_sentinel_failures,
             self.update_sentinel_failure,
             self.retrieve_landsat,
+            self.process_landsat_day,
         ]
         for lambda_function in lambdas:
             lambda_function.function.add_to_role_policy(

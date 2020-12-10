@@ -1,15 +1,18 @@
-import boto3
 import os
+import boto3
+from typing import Dict, Any
+from botocore.errorfactory import ClientError
+from random import randint
 import json
 import re
-from typing import Dict, Any
-from datetime import datetime, timedelta
+import datetime
 
-from usgs import api
 
 db_credentials_secrets_store_arn = os.getenv("HLS_SECRETS")
 database_name = os.getenv("HLS_DB_NAME")
 db_cluster_arn = os.getenv("HLS_DB_ARN")
+
+
 rds_client = boto3.client("rds-data")
 
 
@@ -17,14 +20,6 @@ def landsat_parse_scene_id(sceneid):
     """
     Parse Landsat-8 scene id.
     Author @perrygeo - http://www.perrygeo.com
-    Attributes
-    ----------
-        sceneid : str
-            Landsat sceneid.
-    Returns
-    -------
-        out : dict
-            dictionary with metadata constructed from the sceneid.
     """
 
     precollection_pattern = (
@@ -89,63 +84,60 @@ def landsat_parse_scene_id(sceneid):
     return meta
 
 
-def get_metdata(results):
-    for result in results:
-        scene = result["summary"]
-        fields = scene.split(",")
-        sceneId = fields[0].split(":")[1].strip()
-        meta = landsat_parse_scene_id(sceneId)
-        yield meta
-
-
-def batch_execute_statement(parameterSets):
-    sql = (
-        "INSERT INTO landsat_ac_log (path, row, acquisition, scene_id) VALUES"
-        + "(:path::varchar(3), :row::varchar(3), :acquisition::date, :scene_id::varchar(200))"
-        + " ON CONFLICT ON CONSTRAINT no_dupe_pathrowdate"
-        + " DO NOTHING"
-    )
-    response = rds_client.batch_execute_statement(
+def execute_statement(sql, sql_parameters=[]):
+    response = rds_client.execute_statement(
         secretArn=db_credentials_secrets_store_arn,
         database=database_name,
         resourceArn=db_cluster_arn,
         sql=sql,
-        parameterSets=parameterSets,
+        parameters=sql_parameters,
     )
     return response
 
 
-def add_sql_parameter(parameter_sets, scene):
-    sql_parameters = [
-        {"name": "path", "value": {"stringValue": scene["path"]}},
-        {"name": "row", "value": {"stringValue": scene["row"]}},
-        {"name": "acquisition", "value": {"stringValue": scene["date"]}},
-        {"name": "scene_id", "value": {"stringValue": scene["scene"]}},
-    ]
-    parameter_sets.append(sql_parameters)
+def execute_step_function(scene_id, errors):
+    state_machine = os.getenv("STATE_MACHINE")
+    step_functions = boto3.client("stepfunctions")
+
+    scene_meta = landsat_parse_scene_id(scene_id)
+    s3_basepath = "collection02/level-1/standard/oli-tirs"
+    year = scene_meta["acquisitionYear"]
+    path = scene_meta["path"]
+    row = scene_meta["row"]
+    prefix = f"{s3_basepath}/{year}/{path}/{row}/{scene_id}"
+    scene_meta["scheme"] = "s3"
+    scene_meta["bucket"] = "usgs-landsat"
+    scene_meta["prefix"] = prefix
+
+    try:
+        rand = randint(100, 999)
+        input = json.dumps(scene_meta)
+        step_functions.start_execution(
+            stateMachineArn=state_machine,
+            name=f"{scene_id}_{rand}",
+            input=input,
+        )
+    except ClientError as ce:
+        print(ce)
+        errors.append(ce)
 
 
 def handler(event, context):
-    time = event["time"]
-    invocation_date = datetime.strptime(time,"%Y-%m-%dT%H:%M:%SZ").date()
-    modified_date = invocation_date - timedelta(1)
-    where = {
-        20510: "RT",
-        20517: "L1TP",
-        20511: modified_date.strftime("%Y/%m/%d")
-    }
-    username = os.environ["USERNAME"]
-    password = os.environ["PASSWORD"]
-    api_key = api.login(username, password, save=False)["data"]
-    search_results = api.search("LANDSAT_OT_C2_L1", "EE", where=where, api_key=api_key)
-    scenes = get_metdata(search_results["data"]["results"])
-    sql_parameter_sets = []
-    for scene in scenes:
-        if len(sql_parameter_sets) == 10:
-            batch_execute_statement(sql_parameter_sets)
-            sql_parameter_sets = []
-        else:
-            add_sql_parameter(sql_parameter_sets, scene)
-    # Load remaining batch of scenes
-    batch_execute_statement(sql_parameter_sets)
-    return event
+    q = (
+        "SELECT scene_id FROM landsat_ac_log WHERE"
+        + " DATE(ts) = TO_DATE(:retrieved_date::text,'DD/MM/YYYY');"
+    )
+    response = execute_statement(
+        q,
+        sql_parameters=[
+            {"name": "retrieved_date", "value": {"stringValue":
+                                                 event["retrieved_date"]}},
+        ]
+    )
+    errors = []
+    for record in response["records"]:
+        scene_id = record[0]["stringValue"]
+        execute_step_function(scene_id, errors)
+
+    if len(errors) > 0:
+        raise NameError("A step function execution error occurred")
