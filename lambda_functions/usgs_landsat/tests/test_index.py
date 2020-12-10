@@ -18,6 +18,8 @@ event = {
 
 @patch("lambda_functions.usgs_landsat.index.api")
 @patch("lambda_functions.usgs_landsat.index.rds_client")
+@patch.dict("os.environ", {"USERNAME": "username"})
+@patch.dict("os.environ", {"PASSWORD": "password"})
 def test_handler_usgs(rds_client, api):
     api.login.return_value = {"data": "key"}
     api.search.return_value = search_results
