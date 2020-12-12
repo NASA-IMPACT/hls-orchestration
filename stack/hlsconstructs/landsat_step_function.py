@@ -66,9 +66,34 @@ class LandsatStepFunction(core.Construct):
                             "Variable": "$.mgrsvalues.count",
                             "NumericGreaterThan": 0,
                             "Next": "CheckLaads",
+                        },
+                        {
+                            "Variable": "$.mgrsvalues.count",
+                            "NumericEquals": 0,
+                            "Next": "LogNoMGRS",
                         }
                     ],
                     "Default": "Done",
+                },
+                "LogNoMGRS": {
+                    "Type": "Task",
+                    "Resource": landsat_ac_logger,
+                    "ResultPath": None,
+                    "Next": "Done",
+                    "Parameters": {
+                        "jobinfo": {
+                            "JobId": "mgrs_skipped",
+                        },
+                        "scene.$": "$.scene"
+                    },
+                    "Retry": [
+                        {
+                            "ErrorEquals": ["States.ALL"],
+                            "IntervalSeconds": lambda_interval,
+                            "MaxAttempts": lambda_max_attempts,
+                            "BackoffRate": 2,
+                        }
+                    ],
                 },
                 "CheckLaads": {
                     "Type": "Task",
