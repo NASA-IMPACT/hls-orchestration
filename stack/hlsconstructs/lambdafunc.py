@@ -1,5 +1,7 @@
 import os
-from aws_cdk import aws_lambda, core, aws_iam, aws_lambda_python
+from aws_cdk import (
+    aws_lambda, core, aws_iam, aws_lambda_python, aws_events, aws_events_targets
+)
 
 from typing import Dict
 from utils import align
@@ -22,6 +24,7 @@ class Lambda(core.Construct):
         runtime: aws_lambda.Runtime = aws_lambda.Runtime.PYTHON_3_7,
         handler: str = "index.handler",
         layers: list = None,
+        cron_str: str = None,
         **kwargs,
     ) -> None:
         """Create AWS Lambda stack."""
@@ -80,6 +83,12 @@ class Lambda(core.Construct):
         if layers is not None:
             for layer in layers:
                 self.function.add_layers(layer)
+
+        if cron_str is not None:
+            self.rule = aws_events.Rule(
+                self, "rule", schedule=aws_events.Schedule.expression(cron_str),
+            )
+            self.rule.add_target(aws_events_targets.LambdaFunction(self.function))
 
         self.invoke_policy_statement = aws_iam.PolicyStatement(
             resources=[self.function.function_arn], actions=["lambda:InvokeFunction",],

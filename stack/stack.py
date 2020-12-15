@@ -25,6 +25,8 @@ LANDSAT_TILE_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat
 LAADS_BUCKET = f"{STACKNAME}-laads-bucket"
 LAADS_TOKEN = os.getenv("HLS_LAADS_TOKEN", None)
 LAADS_CRON = os.getenv("HLS_LAADS_CRON", "cron(0 0/12 * * ? *)")
+LANDSAT_RETRIEVE_CRON = "cron(5 0 * * ? *)"
+LANDSAT_PROCESS_CRON = "cron(0 1 * * ? *)"
 LAADS_BUCKET_BOOTSTRAP = "hls-development-laads-bucket"
 if LAADS_TOKEN is None:
     raise Exception("HLS_LAADS_TOKEN Env Var must be set")
@@ -312,6 +314,7 @@ class HlsStack(core.Stack):
             "RetrieveLandsat",
             package_code_dir="usgs_landsat",
             timeout=900,
+            cron_str=LANDSAT_RETRIEVE_CRON,
             env={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
                 "HLS_DB_NAME": self.rds.database.database_name,
@@ -402,6 +405,7 @@ class HlsStack(core.Stack):
             self,
             "ProcessLandsatDay",
             code_file="process_landsat_day.py",
+            cron_str=LANDSAT_PROCESS_CRON,
             env={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
                 "HLS_DB_NAME": self.rds.database.database_name,
@@ -424,6 +428,20 @@ class HlsStack(core.Stack):
             "LandsatStepFunctionAlarm",
             state_machine=self.landsat_step_function.state_machine.ref,
             root_name="Landsat",
+        )
+
+        self.retrieve_landsat.function.metric_errors().create_alarm(
+            self,
+            "RetrieveLandsatAlarm",
+            threshold=1,
+            evaluation_periods=1,
+        )
+
+        self.process_landsat_day.function.metric_errors().create_alarm(
+            self,
+            "ProcessLandsatDayAlarm",
+            threshold=1,
+            evaluation_periods=1,
         )
 
         # Cross construct permissions
