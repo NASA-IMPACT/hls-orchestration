@@ -52,6 +52,8 @@ def handler(event, context):
     time = event["time"]
     invocation_date = datetime.strptime(time,"%Y-%m-%dT%H:%M:%SZ").date()
     modified_date = invocation_date - timedelta(1)
+    print(time)
+    print(modified_date)
     where = {
         20510: "RT",
         20517: "L1TP",

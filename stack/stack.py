@@ -25,8 +25,8 @@ LANDSAT_TILE_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat
 LAADS_BUCKET = f"{STACKNAME}-laads-bucket"
 LAADS_TOKEN = os.getenv("HLS_LAADS_TOKEN", None)
 LAADS_CRON = os.getenv("HLS_LAADS_CRON", "cron(0 0/12 * * ? *)")
-LANDSAT_RETRIEVE_CRON = "cron(5 0 * * ? *)"
-LANDSAT_PROCESS_CRON = "cron(0 1 * * ? *)"
+LANDSAT_RETRIEVE_CRON = "cron(45 5 * * ? *)"
+LANDSAT_PROCESS_CRON = "cron(30 19 * * ? *)"
 LAADS_BUCKET_BOOTSTRAP = "hls-development-laads-bucket"
 if LAADS_TOKEN is None:
     raise Exception("HLS_LAADS_TOKEN Env Var must be set")
@@ -321,7 +321,8 @@ class HlsStack(core.Stack):
                 "HLS_DB_ARN": self.rds.arn,
                 "USERNAME": USGS_USERNAME,
                 "PASSWORD": USGS_PASSWORD,
-            }
+            },
+            layers=[self.hls_lambda_layer],
         )
 
         self.laads_cron = BatchCron(
@@ -413,6 +414,7 @@ class HlsStack(core.Stack):
                 "STATE_MACHINE": self.landsat_step_function.state_machine.ref
             },
             timeout=900,
+            layers=[self.hls_lambda_layer],
         )
 
         # Alarms

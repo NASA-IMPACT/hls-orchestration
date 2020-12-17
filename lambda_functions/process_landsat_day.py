@@ -57,7 +57,7 @@ def execute_step_function(scene_id, errors):
 def handler(event, context):
     time = event["time"]
     invocation_date = datetime.datetime.strptime(time,"%Y-%m-%dT%H:%M:%SZ").date()
-    retrieved_date = invocation_date - timedelta(2)
+    retrieved_date = invocation_date - timedelta(1)
     formatted_retrieved_date = retrieved_date.strftime("%d/%m/%Y")
     q = (
         "SELECT scene_id FROM landsat_ac_log WHERE"
