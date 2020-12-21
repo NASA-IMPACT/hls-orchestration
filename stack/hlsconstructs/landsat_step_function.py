@@ -66,7 +66,7 @@ class LandsatStepFunction(core.Construct):
                         {
                             "Variable": "$.mgrsvalues.count",
                             "NumericGreaterThan": 0,
-                            "Next": "CheckLaads",
+                            "Next": "LogLandsatMGRS",
                         },
                         {
                             "Variable": "$.mgrsvalues.count",
@@ -96,6 +96,20 @@ class LandsatStepFunction(core.Construct):
                         }
                     ],
                 },
+                "LogLandsatMGRS": {
+                    "Type": "Task",
+                    "Resource": landsat_mgrs_logger,
+                    "ResultPath": None,
+                    "Next": "CheckLaads",
+                    "Retry": [
+                        {
+                            "ErrorEquals": ["States.ALL"],
+                            "IntervalSeconds": lambda_interval,
+                            "MaxAttempts": lambda_max_attempts,
+                            "BackoffRate": lambda_backoff_rate,
+                        }
+                    ],
+                },
                 "CheckLaads": {
                     "Type": "Task",
                     "Resource": laads_available_function,
@@ -118,25 +132,15 @@ class LandsatStepFunction(core.Construct):
                         {
                             "Variable": "$.taskresult.available",
                             "BooleanEquals": True,
-                            "Next": "LogLandsatMGRS",
+                            "Next": "GetRandomWait",
                         }
                     ],
                     "Default": "Wait",
                 },
-                "Wait": {"Type": "Wait", "Seconds": 3600, "Next": "CheckLaads"},
-                "LogLandsatMGRS": {
-                    "Type": "Task",
-                    "Resource": landsat_mgrs_logger,
-                    "ResultPath": None,
-                    "Next": "GetRandomWait",
-                    "Retry": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": lambda_interval,
-                            "MaxAttempts": lambda_max_attempts,
-                            "BackoffRate": lambda_backoff_rate,
-                        }
-                    ],
+                "Wait": {
+                    "Type": "Wait",
+                    "Seconds": 3600,
+                    "Next": "CheckLaads"
                 },
                 "GetRandomWait": {
                     "Type": "Task",
