@@ -5,6 +5,7 @@ from random import randint
 import json
 import datetime
 from datetime import timedelta
+from time import sleep
 from hls_lambda_layer.landsat_scene_parser import landsat_parse_scene_id
 
 
@@ -57,8 +58,7 @@ def execute_step_function(scene_id, errors):
 def handler(event, context):
     time = event["time"]
     invocation_date = datetime.datetime.strptime(time,"%Y-%m-%dT%H:%M:%SZ").date()
-    retrieved_date = invocation_date - timedelta(1)
-    formatted_retrieved_date = retrieved_date.strftime("%d/%m/%Y")
+    formatted_retrieved_date = invocation_date.strftime("%d/%m/%Y")
     q = (
         "SELECT scene_id FROM landsat_ac_log WHERE"
         + " DATE(ts) = TO_DATE(:retrieved_date::text,'DD/MM/YYYY');"
@@ -74,6 +74,8 @@ def handler(event, context):
     for record in response["records"]:
         scene_id = record[0]["stringValue"]
         execute_step_function(scene_id, errors)
+        # Include throttling to avoid Batch API TooManyRequestsException
+        sleep(0.5)
 
     if len(errors) > 0:
         raise NameError("A step function execution error occurred")

@@ -325,6 +325,13 @@ class HlsStack(core.Stack):
             layers=[self.hls_lambda_layer],
         )
 
+        self.get_random_wait = Lambda(
+            self,
+            "GetRandomWait",
+            code_file="get_random_wait.py",
+            timeout=120,
+        )
+
         self.laads_cron = BatchCron(
             self,
             "LaadsCron",
@@ -390,6 +397,7 @@ class HlsStack(core.Stack):
             mgrs_logger=self.mgrs_logger.function.function_arn,
             check_landsat_tiling_exit_code=self.check_landsat_tiling_exit_code.function.function_arn,
             check_landsat_ac_exit_code=self.check_exit_code.function.function_arn,
+            get_random_wait=self.get_random_wait.function.function_arn,
             gibs_outputbucket=GIBS_OUTPUT_BUCKET,
             replace_existing=REPLACE_EXISTING,
         )
@@ -506,6 +514,7 @@ class HlsStack(core.Stack):
             self.mgrs_logger,
             self.check_landsat_tiling_exit_code,
             self.check_exit_code,
+            self.get_random_wait,
         ]
         self.addLambdaInvokePolicies(
             self.landsat_step_function,

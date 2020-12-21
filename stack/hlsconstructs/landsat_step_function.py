@@ -27,6 +27,7 @@ class LandsatStepFunction(core.Construct):
         mgrs_logger: str,
         check_landsat_tiling_exit_code: str,
         check_landsat_ac_exit_code: str,
+        get_random_wait: str,
         replace_existing: bool,
         gibs_outputbucket: str,
         **kwargs,
@@ -127,7 +128,7 @@ class LandsatStepFunction(core.Construct):
                     "Type": "Task",
                     "Resource": landsat_mgrs_logger,
                     "ResultPath": None,
-                    "Next": "WaitForAc",
+                    "Next": "GetRandomWait",
                     "Retry": [
                         {
                             "ErrorEquals": ["States.ALL"],
@@ -137,7 +138,17 @@ class LandsatStepFunction(core.Construct):
                         }
                     ],
                 },
-                "WaitForAc": {"Type": "Wait", "Seconds": 60, "Next": "RunLandsatAc"},
+                "GetRandomWait": {
+                    "Type": "Task",
+                    "Resource": get_random_wait,
+                    "ResultPath": "$.wait_time",
+                    "Next": "WaitForAc",
+                },
+                "WaitForAc": {
+                    "Type": "Wait",
+                    "SecondsPath": "$.wait_time",
+                    "Next": "RunLandsatAc"
+                },
                 "RunLandsatAc": {
                     "Type": "Task",
                     "Resource": "arn:aws:states:::batch:submitJob.sync",

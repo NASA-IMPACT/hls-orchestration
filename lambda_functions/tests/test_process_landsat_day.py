@@ -14,6 +14,6 @@ def test_handler_date(rds_client):
     args, kwargs = rds_client.execute_statement.call_args
     retrieved_date = {
         "name": "retrieved_date",
-        "value": {"stringValue": "02/12/2020"}
+        "value": {"stringValue": "03/12/2020"}
     }
     assert retrieved_date in kwargs["parameters"]
