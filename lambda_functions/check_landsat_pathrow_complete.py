@@ -51,6 +51,6 @@ def handler(event, context):
     )
     if len(response["records"]) > 0:
         complete_pathrows_string = build_pathrows_string(response["records"])
-        return complete_pathrows_string[:-1]
+        return complete_pathrows_string.rstrip(",")
     else:
         return None
