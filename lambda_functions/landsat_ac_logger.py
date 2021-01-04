@@ -32,13 +32,17 @@ def handler(event, context):
         + " (:jobid::text, :jobinfo::jsonb)"
         + " WHERE scene_id = :scene::text"
     )
+    sql_parameters = [
+        {"name": "jobinfo", "value": {"stringValue": jobinfostring}},
+        {"name": "scene", "value": {"stringValue": event["scene"]}}
+    ]
+    if jobid:
+        sql_parameters.append(
+            {"name": "jobid", "value": {"stringValue": jobid},},
+        )
     execute_statement(
         q,
-        sql_parameters=[
-            {"name": "jobid", "value": {"stringValue": jobid},},
-            {"name": "jobinfo", "value": {"stringValue": jobinfostring}},
-            {"name": "scene", "value": {"stringValue": event["scene"]}}
-        ],
+        sql_parameters=sql_parameters
     )
 
     print(f"Exit Code is {exitcode}")
