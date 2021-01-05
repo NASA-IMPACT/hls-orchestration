@@ -12,6 +12,7 @@ from hlsconstructs.batch_cron import BatchCron
 from hlsconstructs.dummy_lambda import Dummy
 from hlsconstructs.sentinel_step_function import SentinelStepFunction
 from hlsconstructs.landsat_step_function import LandsatStepFunction
+from hlsconstructs.landsat_incomplete_step_function import LandsatIncompleteStepFunction
 from hlsconstructs.sentinel_errors_step_function import SentinelErrorsStepFunction
 from hlsconstructs.step_function_trigger import StepFunctionTrigger
 from hlsconstructs.stepfunction_alarm import StepFunctionAlarm
@@ -45,10 +46,9 @@ LANDSAT_INTERMEDIATE_OUTPUT_BUCKET = f"{STACKNAME}-landsat-intermediate-output"
 
 GIBS_INTERMEDIATE_OUTPUT_BUCKET = f"{STACKNAME}-gibs-intermediate-output"
 GIBS_OUTPUT_BUCKET = os.getenv("HLS_GIBS_OUTPUT_BUCKET")
-
 SSH_KEYNAME = os.getenv("HLS_SSH_KEYNAME")
-USGS_USERNAME = os.getenv("USERNAME")
-USGS_PASSWORD = os.getenv("PASSWORD")
+USGS_USERNAME = os.getenv("USGS_USERNAME")
+USGS_PASSWORD = os.getenv("USGS_PASSWORD")
 try:
     # MAXV_CPUS = int(os.getenv("HLS_MAXV_CPUS"))
     MAXV_CPUS = 1200
@@ -332,6 +332,30 @@ class HlsStack(core.Stack):
             timeout=120,
         )
 
+        self.check_landsat_pathrow_complete = Lambda(
+            self,
+            "CheckLandsatPathrowComplete",
+            code_file="check_landsat_pathrow_complete.py",
+            env={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
+            },
+            timeout=900
+        )
+
+        self.check_landsat_mgrs_incompletes = Lambda(
+            self,
+            "CheckLandsatMGRSIncompletes",
+            code_file="check_landsat_mgrs_incompletes.py",
+            env={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
+            },
+            timeout=900
+        )
+
         self.laads_cron = BatchCron(
             self,
             "LaadsCron",
@@ -400,6 +424,22 @@ class HlsStack(core.Stack):
             get_random_wait=self.get_random_wait.function.function_arn,
             gibs_outputbucket=GIBS_OUTPUT_BUCKET,
             replace_existing=REPLACE_EXISTING,
+        )
+
+        self.landsat_incomplete_step_function = LandsatIncompleteStepFunction(
+            self,
+            "LandsatIncompleteStateMachine",
+            outputbucket=LANDSAT_OUTPUT_BUCKET,
+            outputbucket_role_arn=HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN,
+            tilejobqueue=self.batch.landsattile_jobqueue.ref,
+            tile_job_definition=self.landsat_tile_task.job.ref,
+            intermediate_output_bucket=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
+            lambda_logger=self.lambda_logger.function.function_arn,
+            check_landsat_incompletes=self.check_landsat_mgrs_incompletes.function.function_arn,
+            check_mgrs_pathrow_complete=self.check_landsat_pathrow_complete.function.function_arn,
+            pr2mgrs=self.pr2mgrs_lambda.function.function_arn,
+            mgrs_logger=self.mgrs_logger.function.function_arn,
+            gibs_outputbucket=GIBS_OUTPUT_BUCKET,
         )
 
         self.step_function_trigger = StepFunctionTrigger(
@@ -519,6 +559,18 @@ class HlsStack(core.Stack):
         self.addLambdaInvokePolicies(
             self.landsat_step_function,
             landsat_lambdas
+        )
+
+        landsat_incomplete_lambdas = [
+            self.check_landsat_mgrs_incompletes,
+            self.check_landsat_pathrow_complete,
+            self.pr2mgrs_lambda,
+            self.lambda_logger,
+            self.mgrs_logger,
+        ]
+        self.addLambdaInvokePolicies(
+            self.landsat_incomplete_step_function,
+            landsat_incomplete_lambdas
         )
 
         self.addRDSpolicy()
@@ -691,6 +743,8 @@ class HlsStack(core.Stack):
             self.update_sentinel_failure,
             self.retrieve_landsat,
             self.process_landsat_day,
+            self.check_landsat_pathrow_complete,
+            self.check_landsat_mgrs_incompletes,
         ]
         for lambda_function in lambdas:
             lambda_function.function.add_to_role_policy(
