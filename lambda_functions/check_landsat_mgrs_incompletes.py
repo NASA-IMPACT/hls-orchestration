@@ -23,9 +23,9 @@ def execute_statement(sql, sql_parameters=[]):
 
 def convert_records(record):
     converted = {
-        "mgrs": record[0]["stringValue"],
+        "MGRS": record[0]["stringValue"],
         "path": record[1]["stringValue"],
-        "acquisition": record[2]["stringValue"]
+        "date": record[2]["stringValue"]
     }
     return converted
 

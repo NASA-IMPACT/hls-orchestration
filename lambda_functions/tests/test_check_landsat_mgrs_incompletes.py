@@ -18,9 +18,9 @@ def test_handler_convert(client):
         ]
     }
     record = {
-        "mgrs": "15UUT",
+        "MGRS": "15UUT",
         "path": "030",
-        "acquisition": "2020-12-29"
+        "date": "2020-12-29"
     }
     client.execute_statement.return_value = return_value
     event = {
