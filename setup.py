@@ -12,7 +12,7 @@ subprocess.check_call([sys.executable, "-m", "pip", "install",
                        "./layers/hls_lambda_layer/python"])
 
 # Runtime requirements.
-aws_cdk_version = "1.39.0"
+aws_cdk_version = "1.65.0"
 aws_cdk_reqs = [
     "core",
     "aws-s3",
@@ -32,10 +32,12 @@ aws_cdk_reqs = [
     "aws-sns",
     "aws-cloudwatch",
     "aws-cloudwatch-actions",
+    "aws-lambda-python",
 ]
 
 inst_reqs = [
     "boto3",
+    "usgs",
 ]
 
 inst_reqs.append([f"aws_cdk.{x}=={aws_cdk_version}" for x in aws_cdk_reqs])

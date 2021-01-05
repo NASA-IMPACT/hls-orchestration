@@ -1,13 +1,6 @@
-import os
-import boto3
-import json
-from pathlib import Path
-from typing import Dict
-from botocore.errorfactory import ClientError
-from random import randint
 import re
 import datetime
-from typing import Any
+from typing import Any, Dict
 
 
 def landsat_parse_scene_id(sceneid):
@@ -74,44 +67,13 @@ def landsat_parse_scene_id(sceneid):
         meta["date"] = date.strftime("%Y-%m-%d")
     else:
         meta["date"] = "{}-{}-{}".format(
-            meta["acquisitionYear"], meta["acquisitionMonth"], meta["acquisitionDay"]
+            meta["acquisitionYear"],
+            meta["acquisitionMonth"],
+            meta["acquisitionDay"]
         )
 
     collection = meta.get("collectionNumber", "")
     if collection != "":
         collection = "c{}".format(int(collection))
 
-    meta["scheme"] = "s3"
-    meta["bucket"] = "landsat-pds"
-    meta["prefix"] = os.path.join(collection, "L8", meta["path"], meta["row"], sceneid)
-
     return meta
-
-
-def handler(event: Dict, context: Dict):
-    state_machine = os.getenv("STATE_MACHINE")
-    step_functions = boto3.client("stepfunctions")
-    prefix = randint(100, 999)
-    try:
-        message = event["Records"][0]["Sns"]["Message"]
-        parsed_message = json.loads(message)
-        key = parsed_message["Records"][0]["s3"]["object"]["key"]
-
-    except KeyError:
-        print("Message body does not contain key")
-
-    scene_id = key.split("/")[-2]
-    scene_meta = landsat_parse_scene_id(scene_id)
-    print(scene_meta)
-    # Skip unless real-time (RT) collection
-    if scene_meta["collectionCategory"] == "RT":
-        try:
-            input = json.dumps(scene_meta)
-            step_functions.start_execution(
-                stateMachineArn=state_machine,
-                name=f"{prefix}_{scene_meta['scene']}",
-                input=input,
-            )
-        except ClientError as ce:
-            print(ce)
-    return event

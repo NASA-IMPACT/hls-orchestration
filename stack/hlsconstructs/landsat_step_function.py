@@ -27,7 +27,9 @@ class LandsatStepFunction(core.Construct):
         mgrs_logger: str,
         check_landsat_tiling_exit_code: str,
         check_landsat_ac_exit_code: str,
+        get_random_wait: str,
         replace_existing: bool,
+        gibs_outputbucket: str,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -64,10 +66,49 @@ class LandsatStepFunction(core.Construct):
                         {
                             "Variable": "$.mgrsvalues.count",
                             "NumericGreaterThan": 0,
-                            "Next": "CheckLaads",
+                            "Next": "LogLandsatMGRS",
+                        },
+                        {
+                            "Variable": "$.mgrsvalues.count",
+                            "NumericEquals": 0,
+                            "Next": "LogNoMGRS",
                         }
                     ],
                     "Default": "Done",
+                },
+                "LogNoMGRS": {
+                    "Type": "Task",
+                    "Resource": landsat_ac_logger,
+                    "ResultPath": None,
+                    "Next": "Done",
+                    "Parameters": {
+                        "jobinfo": {
+                            "JobId": "mgrs_skipped",
+                        },
+                        "scene.$": "$.scene"
+                    },
+                    "Retry": [
+                        {
+                            "ErrorEquals": ["States.ALL"],
+                            "IntervalSeconds": lambda_interval,
+                            "MaxAttempts": lambda_max_attempts,
+                            "BackoffRate": 2,
+                        }
+                    ],
+                },
+                "LogLandsatMGRS": {
+                    "Type": "Task",
+                    "Resource": landsat_mgrs_logger,
+                    "ResultPath": None,
+                    "Next": "CheckLaads",
+                    "Retry": [
+                        {
+                            "ErrorEquals": ["States.ALL"],
+                            "IntervalSeconds": lambda_interval,
+                            "MaxAttempts": lambda_max_attempts,
+                            "BackoffRate": lambda_backoff_rate,
+                        }
+                    ],
                 },
                 "CheckLaads": {
                     "Type": "Task",
@@ -91,27 +132,27 @@ class LandsatStepFunction(core.Construct):
                         {
                             "Variable": "$.taskresult.available",
                             "BooleanEquals": True,
-                            "Next": "LogLandsatMGRS",
+                            "Next": "GetRandomWait",
                         }
                     ],
                     "Default": "Wait",
                 },
-                "Wait": {"Type": "Wait", "Seconds": 3600, "Next": "CheckLaads"},
-                "LogLandsatMGRS": {
-                    "Type": "Task",
-                    "Resource": landsat_mgrs_logger,
-                    "ResultPath": None,
-                    "Next": "WaitForAc",
-                    "Retry": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": lambda_interval,
-                            "MaxAttempts": lambda_max_attempts,
-                            "BackoffRate": lambda_backoff_rate,
-                        }
-                    ],
+                "Wait": {
+                    "Type": "Wait",
+                    "Seconds": 3600,
+                    "Next": "CheckLaads"
                 },
-                "WaitForAc": {"Type": "Wait", "Seconds": 60, "Next": "RunLandsatAc"},
+                "GetRandomWait": {
+                    "Type": "Task",
+                    "Resource": get_random_wait,
+                    "ResultPath": "$.wait_time",
+                    "Next": "WaitForAc",
+                },
+                "WaitForAc": {
+                    "Type": "Wait",
+                    "SecondsPath": "$.wait_time",
+                    "Next": "RunLandsatAc"
+                },
                 "RunLandsatAc": {
                     "Type": "Task",
                     "Resource": "arn:aws:states:::batch:submitJob.sync",
@@ -216,7 +257,7 @@ class LandsatStepFunction(core.Construct):
                                             {"Name": "LANDSAT_PATH", "Value.$": "$.path"},
                                             {"Name": "MGRS_ULX", "Value.$": "$.mgrs_metadata.mgrs_ulx"},
                                             {"Name": "MGRS_ULY", "Value.$": "$.mgrs_metadata.mgrs_uly"},
-                                            {"Name": "REPLACE_EXISTING", "Value": replace},
+                                            {"Name": "GIBS_OUTPUT_BUCKET", "Value": gibs_outputbucket},
                                         ],
                                     },
                                 },

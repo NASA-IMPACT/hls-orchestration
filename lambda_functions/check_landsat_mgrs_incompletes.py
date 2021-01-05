@@ -23,16 +23,17 @@ def execute_statement(sql, sql_parameters=[]):
 
 def convert_records(record):
     converted = {
-        "id": record[0]["longValue"],
-        "granule": record[1]["stringValue"]
+        "MGRS": record[0]["stringValue"],
+        "path": record[1]["stringValue"],
+        "date": record[2]["stringValue"]
     }
     return converted
 
 
 def handler(event, context):
     q = (
-        "SELECT id, granule from granule_log WHERE"
-        + " event->'Container'->>'ExitCode' = '1'"
+        "SELECT mgrs, path, acquisition from landsat_mgrs_log WHERE"
+        + " (jobinfo->'Container'->>'ExitCode' IS NULL OR jobinfo->'Container'->>'ExitCode' != '0')"
         + " AND DATE(ts) = TO_DATE(:fromdate::text,'DD/MM/YYYY');"
     )
     response = execute_statement(
