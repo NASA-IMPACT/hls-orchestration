@@ -33,7 +33,7 @@ def handler(event, context):
     q = (
         "SELECT id, granule from granule_log WHERE"
         + " event->'Container'->>'ExitCode' = '1'"
-        + " AND DATE(ts) < TO_DATE(:fromdate::text,'DD/MM/YYYY');"
+        + " AND DATE(ts) = TO_DATE(:fromdate::text,'DD/MM/YYYY');"
     )
     response = execute_statement(
         q,
