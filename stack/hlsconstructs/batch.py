@@ -82,6 +82,17 @@ class Batch(core.Construct):
             self, "EcsInstanceProfile", roles=[self.ecs_instance_role.role_name],
         )
 
+        self.ec2_spot_fleet_role = aws_iam.Role(
+            self,
+            "AmazonEC2SpotFleetRole",
+            assumed_by=aws_iam.ServicePrincipal("spotfleet.amazonaws.com"),
+            managed_policies=[
+                aws_iam.ManagedPolicy.from_aws_managed_policy_name(
+                    "service-role/AmazonEC2SpotFleetTaggingRole"
+                ),
+            ]
+        )
+
         cloudwatch_ssm_param = f"BatchCloudwatchAgentConfig{self.node.unique_id}"
         userdata_file = open(os.path.join(dirname, "userdata.txt"), "rb").read()
         user_data = aws_ec2.UserData.for_linux()
@@ -138,7 +149,8 @@ class Batch(core.Construct):
             minv_cpus=0,
             security_group_ids=[self.ecs_host_security_group.ref],
             subnets=[s.subnet_id for s in network.public_subnets],
-            type="EC2",
+            type="SPOT",
+            spot_iam_fleet_role=self.ecs_host_security_group.ref,
         )
 
         compute_environment = aws_batch.CfnComputeEnvironment(
