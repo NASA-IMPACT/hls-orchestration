@@ -61,6 +61,12 @@ if os.getenv("HLS_REPLACE_EXISTING") == "true":
 else:
     REPLACE_EXISTING = False
 
+HLS_USE_CLOUD_WATCH = os.getenv("HLS_USE_CLOUD_WATCH", None)
+if os.getenv("HLS_USE_CLOUD_WATCH") == "true":
+    USE_CLOUD_WATCH = True
+else:
+    USE_CLOUD_WATCH = False
+
 
 class HlsStack(core.Stack):
     def __init__(self, scope: core.Construct, id: str, **kwargs) -> None:
@@ -129,6 +135,7 @@ class HlsStack(core.Stack):
             maxv_cpus=MAXV_CPUS,
             instance_types=["r5d.2xlarge"],
             ssh_keyname=SSH_KEYNAME,
+            use_cw=USE_CLOUD_WATCH,
         )
 
         self.laads_task = DockerBatchJob(
