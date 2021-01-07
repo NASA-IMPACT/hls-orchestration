@@ -36,6 +36,9 @@ HLS_REPLACE_EXISTING=true
 # ssh keyname for use with Batch instance debugging.
 HLS_SSH_KEYNAME=hls-mount
 
+# Use Cloudwatch metrics for containers
+HLS_USE_CLOUD_WATCH=true
+
 # end of allexport mode
 set +a
 
