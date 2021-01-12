@@ -164,15 +164,34 @@ class LandsatStepFunction(core.Construct):
                         "ContainerOverrides": {
                             "Command": ["export && landsat.sh"],
                             "Environment": [
-                                {"Name": "INPUT_BUCKET", "Value.$": "$.bucket"},
-                                {"Name": "PREFIX", "Value.$": "$.prefix"},
-                                {"Name": "GRANULE", "Value.$": "$.scene"},
+                                {
+                                    "Name": "INPUT_BUCKET",
+                                    "Value.$": "$.bucket"
+                                },
+                                {
+                                    "Name": "PREFIX",
+                                    "Value.$": "$.prefix"
+                                },
+                                {
+                                    "Name": "GRANULE",
+                                    "Value.$": "$.scene"
+                                },
                                 {
                                     "Name": "OUTPUT_BUCKET",
                                     "Value": intermediate_output_bucket,
                                 },
-                                {"Name": "LASRC_AUX_DIR", "Value": "/var/lasrc_aux"},
-                                {"Name": "REPLACE_EXISTING", "Value": replace},
+                                {
+                                    "Name": "LASRC_AUX_DIR",
+                                    "Value": "/var/lasrc_aux"
+                                },
+                                {
+                                    "Name": "REPLACE_EXISTING",
+                                    "Value": replace
+                                },
+                                {
+                                    "Name": "OMP_NUM_THREADS",
+                                    "Value": "2"
+                                }
                             ],
                         },
                     },
@@ -245,19 +264,46 @@ class LandsatStepFunction(core.Construct):
                                     "ContainerOverrides": {
                                         "Command": ["export && landsat-tile.sh"],
                                         "Environment": [
-                                            {"Name": "PATHROW_LIST", "Value.$": "$.mgrs_metadata.pathrows_string"},
-                                            {"Name": "INPUT_BUCKET", "Value": intermediate_output_bucket},
-                                            {"Name": "OUTPUT_BUCKET", "Value": outputbucket},
+                                            {
+                                                "Name":"PATHROW_LIST",
+                                                "Value.$": "$.mgrs_metadata.pathrows_string"
+                                            },
+                                            {
+                                                "Name": "INPUT_BUCKET",
+                                                "Value": intermediate_output_bucket
+                                            },
+                                            {
+                                                "Name": "OUTPUT_BUCKET",
+                                                "Value": outputbucket
+                                            },
                                             {
                                                 "Name": "GCC_ROLE_ARN",
                                                 "Value": outputbucket_role_arn,
                                             },
-                                            {"Name": "DATE", "Value.$": "$.date"},
-                                            {"Name": "MGRS", "Value.$": "$.MGRS"},
-                                            {"Name": "LANDSAT_PATH", "Value.$": "$.path"},
-                                            {"Name": "MGRS_ULX", "Value.$": "$.mgrs_metadata.mgrs_ulx"},
-                                            {"Name": "MGRS_ULY", "Value.$": "$.mgrs_metadata.mgrs_uly"},
-                                            {"Name": "GIBS_OUTPUT_BUCKET", "Value": gibs_outputbucket},
+                                            {
+                                                "Name": "DATE",
+                                                "Value.$": "$.date"
+                                            },
+                                            {
+                                                "Name": "MGRS",
+                                                "Value.$": "$.MGRS"
+                                            },
+                                            {
+                                                "Name": "LANDSAT_PATH",
+                                                "Value.$": "$.path"
+                                            },
+                                            {
+                                                "Name": "MGRS_ULX",
+                                                "Value.$": "$.mgrs_metadata.mgrs_ulx"
+                                            },
+                                            {
+                                                "Name": "MGRS_ULY",
+                                                "Value.$": "$.mgrs_metadata.mgrs_uly"
+                                            },
+                                            {
+                                                "Name": "GIBS_OUTPUT_BUCKET",
+                                                "Value": gibs_outputbucket
+                                            },
                                         ],
                                     },
                                 },
