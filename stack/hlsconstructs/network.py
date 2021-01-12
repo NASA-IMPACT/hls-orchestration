@@ -6,19 +6,14 @@ class Network(core.Construct):
     def __init__(self, scope: core.Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
 
-        self.vpc = aws_ec2.Vpc(
-            self,
-            "Vpc",
-            cidr="10.1.0.0/16",
-            enable_dns_hostnames=True,
-            enable_dns_support=True,
-            nat_gateways=0,
-            subnet_configuration=[
-                aws_ec2.SubnetConfiguration(
-                    name="PublicSubnet1", subnet_type=aws_ec2.SubnetType.PUBLIC,
-                ),
-            ],
-            max_azs=2,
-        )
+#       vpcid = self.node.try_get_context("vpc-0e7684c7341e1e0db")
+        vpcid ="vpc-07a334625775da83c"
+#       stack vpcid ="vpc-0e7684c7341e1e0db"
+        self.vpc = aws_ec2.Vpc.from_lookup(self, "VPC",vpc_id=vpcid)
+        print(self.vpc.public_subnets)
+#               public_subnets = vpc.select_subnets(subnetType=ec2.SubnetType.PUBLIC)
+#               cdk.CfnOutput(self, "publicsubnets",
+#                     value=public_subnets.subnet_ids.to_string())
+                 #vpc_id = "vpc-0e7684c7341e1e0db"
 
         self.public_subnets = self.vpc.public_subnets

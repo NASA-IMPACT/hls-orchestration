@@ -17,6 +17,9 @@ from hlsconstructs.sentinel_errors_step_function import SentinelErrorsStepFuncti
 from hlsconstructs.step_function_trigger import StepFunctionTrigger
 from hlsconstructs.stepfunction_alarm import StepFunctionAlarm
 
+from permission_boundary import PermissionBoundaryAspect
+
+
 STACKNAME = os.getenv("HLS_STACKNAME", "hls")
 
 SENTINEL_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-sentinel:latest"
@@ -114,6 +117,13 @@ class HlsStack(core.Stack):
             },
             timeout=300,
         )
+
+        self.node.apply_aspect(
+            PermissionBoundaryAspect(
+            f'arn:aws:iam::{core.Aws.ACCOUNT_ID}:policy/gcc-tenantOperatorBoundary'
+            )
+        )
+
 
         self.lambda_logger = Lambda(
             self,

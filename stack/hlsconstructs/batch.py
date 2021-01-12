@@ -151,7 +151,8 @@ class Batch(core.Construct):
             version=launch_template.attr_latest_version_number
         )
 
-        image_id = aws_ecs.EcsOptimizedImage.amazon_linux2().get_image(self).image_id
+        #image_id = aws_ecs.EcsOptimizedImage.amazon_linux2().get_image(self).image_id
+        image_id = "ami-07b076384b4cbadf6"
         compute_resources = aws_batch.CfnComputeEnvironment.ComputeResourcesProperty(
             allocation_strategy="BEST_FIT_PROGRESSIVE",
             desiredv_cpus=0,
