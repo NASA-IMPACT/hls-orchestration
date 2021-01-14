@@ -1,6 +1,5 @@
 import os
 import boto3
-from pathlib import Path
 from typing import Dict
 from botocore.errorfactory import ClientError
 from datetime import datetime, timedelta
