@@ -1,4 +1,5 @@
 import pytest
+import json
 from hls_lambda_layer.hls_batch_utils import parse_jobinfo
 from hls_lambda_layer.batch_test_events import (
     batch_failed_event,
@@ -37,8 +38,9 @@ def test_parse_jobinfo_valueError():
     }
     parsed_info = parse_jobinfo(key, event)
     assert parsed_info["jobid"] is None
-    assert parsed_info["jobinfo"] == "A cause message"
+    assert parsed_info["jobinfo"]["cause"] == "A cause message"
     assert parsed_info["exitcode"] == "nocode"
+    assert parsed_info["jobinfostring"] == '{"cause": "A cause message"}'
 
 
 def test_parse_jobinfo_no_exit():
