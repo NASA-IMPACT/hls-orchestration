@@ -8,9 +8,11 @@ def parse_jobinfo(key, event):
             jobid = jobinfo["JobId"]
             jobinfostring = json.dumps(jobinfo)
         except ValueError:
-            jobinfo = event[key]["Cause"]
+            jobinfo = {
+                "cause": event[key]["Cause"]
+            }
             jobid = None
-            jobinfostring = jobinfo
+            jobinfostring = json.dumps(jobinfo)
     else:
         jobinfo = event[key]
         jobid = jobinfo["JobId"]

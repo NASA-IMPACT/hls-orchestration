@@ -45,8 +45,17 @@ def test_handler_valueError(client):
     event = {
         "jobinfo": batch_failed_event_string_cause
     }
-    cause = event["jobinfo"]["Cause"]
-    jobinfo = {"name": "event", "value": {"stringValue": cause}}
+
+    jobinfo_value = {
+        "cause": event["jobinfo"]["Cause"]
+    }
+
+    jobinfo = {
+        "name": "event",
+        "value": {
+            "stringValue": json.dumps(jobinfo_value)
+        }
+    }
     client.execute_statement.return_value = {}
     output = handler(event, {})
     args, kwargs = client.execute_statement.call_args
