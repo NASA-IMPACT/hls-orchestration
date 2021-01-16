@@ -39,6 +39,12 @@ HLS_SSH_KEYNAME=hls-mount
 # Use Cloudwatch metrics for containers
 HLS_USE_CLOUD_WATCH=true
 
+# Number of days to go back for Landsat reprocessing.
+HLS_LANDSAT_DAYS_PRIOR=4
+
+# Number of days to go back for Landsat reprocessing.
+HLS_SENTINEL_DAYS_PRIOR=4
+
 # end of allexport mode
 set +a
 

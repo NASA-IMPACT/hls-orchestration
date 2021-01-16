@@ -28,6 +28,7 @@ LAADS_TOKEN = os.getenv("HLS_LAADS_TOKEN", None)
 LAADS_CRON = os.getenv("HLS_LAADS_CRON", "cron(0 0/12 * * ? *)")
 LANDSAT_RETRIEVE_CRON = "cron(45 5 * * ? *)"
 LANDSAT_PROCESS_CRON = "cron(30 19 * * ? *)"
+LANDSAT_INCOMPLETE_CRON = "cron(0 12 * * ? *)"
 LAADS_BUCKET_BOOTSTRAP = "hls-development-laads-bucket"
 if LAADS_TOKEN is None:
     raise Exception("HLS_LAADS_TOKEN Env Var must be set")
@@ -49,6 +50,7 @@ GIBS_OUTPUT_BUCKET = os.getenv("HLS_GIBS_OUTPUT_BUCKET")
 SSH_KEYNAME = os.getenv("HLS_SSH_KEYNAME")
 USGS_USERNAME = os.getenv("USGS_USERNAME")
 USGS_PASSWORD = os.getenv("USGS_PASSWORD")
+LANDSAT_DAYS_PRIOR = os.getenv("HLS_SENTINEL_DAYS_PRIOR")
 try:
     # MAXV_CPUS = int(os.getenv("HLS_MAXV_CPUS"))
     MAXV_CPUS = 1200
@@ -455,6 +457,14 @@ class HlsStack(core.Stack):
             state_machine=self.sentinel_step_function.sentinel_state_machine.ref,
             code_file="execute_step_function.py",
             input_bucket=self.sentinel_input_bucket,
+        )
+
+        self.landsat_incomplete_step_function_trigger = StepFunctionTrigger(
+            self,
+            "LandsatIncompleteStepFunctionTrigger",
+            state_machine=self.landsat_incomplete_step_function.state_machine.ref,
+            code_file="execute_step_function_fromdate.py",
+            cron_str=LANDSAT_INCOMPLETE_CRON,
         )
 
         self.process_landsat_day = Lambda(
