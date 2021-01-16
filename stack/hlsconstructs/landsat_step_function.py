@@ -253,6 +253,17 @@ class LandsatStepFunction(core.Construct):
                                 ],
                                 "Default": "SuccessState",
                             },
+                            "GetRandomWaitTile": {
+                                "Type": "Task",
+                                "Resource": get_random_wait,
+                                "ResultPath": "$.wait_time",
+                                "Next": "WaitForAc",
+                            },
+                            "WaitForTiling": {
+                                "Type": "Wait",
+                                "SecondsPath": "$.wait_time",
+                                "Next": "RunLandsatTile"
+                            },
                             "RunLandsatTile": {
                                 "Type": "Task",
                                 "Resource": "arn:aws:states:::batch:submitJob.sync",
