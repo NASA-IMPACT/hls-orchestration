@@ -21,6 +21,7 @@ class LandsatIncompleteStepFunction(core.Construct):
         lambda_logger: str,
         check_landsat_incompletes: str,
         check_mgrs_pathrow_complete: str,
+        get_random_wait: str,
         gibs_outputbucket: str,
         **kwargs,
     ) -> None:
@@ -56,7 +57,7 @@ class LandsatIncompleteStepFunction(core.Construct):
                 "ProcessIncompletes": {
                     "Type": "Map",
                     "ItemsPath": "$.incompletes",
-                    "MaxConcurrency": 20,
+                    "MaxConcurrency": 100,
                     "Iterator": {
                         "StartAt": "GetPathRowValues",
                         "States": {
@@ -90,10 +91,21 @@ class LandsatIncompleteStepFunction(core.Construct):
                                     {
                                         "Variable": "$.mgrs_completed",
                                         "IsNull": False,
-                                        "Next": "RunLandsatTile",
+                                        "Next": "GetRandomWaitTile",
                                     }
                                 ],
                                 "Default": "SuccessState",
+                            },
+                            "GetRandomWaitTile": {
+                                "Type": "Task",
+                                "Resource": get_random_wait,
+                                "ResultPath": "$.wait_time",
+                                "Next": "WaitForTiling",
+                            },
+                            "WaitForTiling": {
+                                "Type": "Wait",
+                                "SecondsPath": "$.wait_time",
+                                "Next": "RunLandsatTile"
                             },
                             "RunLandsatTile": {
                                 "Type": "Task",
