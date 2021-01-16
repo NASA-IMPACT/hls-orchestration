@@ -128,8 +128,16 @@ def test_handler_error_non_json(client):
     path = {"name": "path", "value": {"stringValue": "210"}}
     acquisition = {"name": "acquisition", "value": {"stringValue": "2020-07-19"}}
     mgrs = {"name": "mgrs", "value": {"stringValue": "29VMJ"}}
-    cause = event["tilejobinfo"]["Cause"]
-    jobinfo = {"name": "jobinfo", "value": {"stringValue": cause}}
+    jobinfo_value = {
+        "cause": event["tilejobinfo"]["Cause"]
+    }
+
+    jobinfo = {
+        "name": "jobinfo",
+        "value": {
+            "stringValue": json.dumps(jobinfo_value)
+        }
+    }
     assert q == kwargs["sql"]
     assert path in kwargs["parameters"]
     assert mgrs in kwargs["parameters"]
