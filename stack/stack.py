@@ -449,6 +449,7 @@ class HlsStack(core.Stack):
             pr2mgrs=self.pr2mgrs_lambda.function.function_arn,
             mgrs_logger=self.mgrs_logger.function.function_arn,
             gibs_outputbucket=GIBS_OUTPUT_BUCKET,
+            get_random_wait=self.get_random_wait.function.function_arn,
         )
 
         self.step_function_trigger = StepFunctionTrigger(
@@ -465,6 +466,7 @@ class HlsStack(core.Stack):
             state_machine=self.landsat_incomplete_step_function.state_machine.ref,
             code_file="execute_step_function_fromdate.py",
             cron_str=LANDSAT_INCOMPLETE_CRON,
+            days_prior=LANDSAT_DAYS_PRIOR,
         )
 
         self.process_landsat_day = Lambda(
@@ -584,6 +586,7 @@ class HlsStack(core.Stack):
             self.pr2mgrs_lambda,
             self.lambda_logger,
             self.mgrs_logger,
+            self.get_random_wait,
         ]
         self.addLambdaInvokePolicies(
             self.landsat_incomplete_step_function,

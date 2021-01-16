@@ -248,7 +248,7 @@ class LandsatStepFunction(core.Construct):
                                     {
                                         "Variable": "$.ready_for_tiling",
                                         "BooleanEquals": True,
-                                        "Next": "RunLandsatTile",
+                                        "Next": "GetRandomWaitTile",
                                     }
                                 ],
                                 "Default": "SuccessState",
@@ -257,7 +257,7 @@ class LandsatStepFunction(core.Construct):
                                 "Type": "Task",
                                 "Resource": get_random_wait,
                                 "ResultPath": "$.wait_time",
-                                "Next": "WaitForAc",
+                                "Next": "WaitForTiling",
                             },
                             "WaitForTiling": {
                                 "Type": "Wait",
