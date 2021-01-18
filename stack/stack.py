@@ -26,7 +26,9 @@ LANDSAT_TILE_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat
 LAADS_BUCKET = f"{STACKNAME}-laads-bucket"
 LAADS_TOKEN = os.getenv("HLS_LAADS_TOKEN", None)
 LAADS_CRON = os.getenv("HLS_LAADS_CRON", "cron(0 0/12 * * ? *)")
-LANDSAT_RETRIEVE_CRON = "cron(45 5 * * ? *)"
+LANDSAT_RETRIEVE_CRON = os.getenv(
+    "HLS_LANDSAT_RETRIEVE_CRON", "cron(45 5 * * ? *)"
+)
 LANDSAT_PROCESS_CRON = "cron(30 19 * * ? *)"
 LANDSAT_INCOMPLETE_CRON = "cron(0 12 * * ? *)"
 LAADS_BUCKET_BOOTSTRAP = "hls-development-laads-bucket"
