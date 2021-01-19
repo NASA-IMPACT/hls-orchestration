@@ -461,7 +461,7 @@ class HlsStack(core.Stack):
             code_file="execute_step_function.py",
             input_bucket=self.sentinel_input_bucket,
         )
-
+        
         self.landsat_incomplete_step_function_trigger = StepFunctionTrigger(
             self,
             "LandsatIncompleteStepFunctionTrigger",
