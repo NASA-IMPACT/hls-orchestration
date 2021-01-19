@@ -1,0 +1,49 @@
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="==MYBOUNDARY=="
+
+--==MYBOUNDARY==
+Content-Type: text/cloud-config; charset="us-ascii"
+
+packages:
+- mdadm
+
+runcmd:
+- ephemeral_disks=$(realpath -P  /dev/disk/by-id/nvme*Instance_Storage* | uniq)
+- ephemeral_disks_count=$(echo "$ephemeral_disks" | wc -w)
+- scratch_fs=ext4
+- scratch_directory=/scratch
+- if [[ "$ephemeral_disks_count" -eq "1" ]]; then
+- mkfs -t "$scratch_fs" "$ephemeral_disks"
+- mkdir -p "$scratch_directory"
+- mount -t "$scratch_fs" "$ephemeral_disks" "$scratch_directory"
+- fi
+- if [[ "$ephemeral_disks_count" -gt "1" ]]; then
+- mdadm_device=/dev/md0
+- mdadm --create ${{mdadm_device}} --level 0 --raid-devices $(echo ${{ephemeral_disks}} | wc -w) ${{ephemeral_disks}}
+- mkfs -t "$scratch_fs" "$mdadm_device"
+- mkdir -p "$scratch_directory"
+- mount -t "$scratch_fs" "$mdadm_device" "$scratch_directory"
+- fi
+
+--==MYBOUNDARY==
+Content-Type: text/cloud-boothook; charset="us-ascii"
+
+# Install amazon-efs-utils
+cloud-init-per once yum_update yum update -y
+cloud-init-per once install_amazon-efs-utils yum install -y amazon-efs-utils
+
+# Create /efs folder
+cloud-init-per once mkdir_efs mkdir /mnt/efs
+
+# Mount /efs
+cloud-init-per once mount_efs echo -e '{}:/ /mnt/efs efs defaults,_netdev 0 0' >> /etc/fstab
+mount -a
+
+--==MYBOUNDARY==
+Content-Type: text/x-shellscript; charset="us-ascii"
+
+#!/bin/bash -xe
+echo ECS_IMAGE_PULL_BEHAVIOR=always >> /etc/ecs/ecs.config
+--==MYBOUNDARY==--
+
+
