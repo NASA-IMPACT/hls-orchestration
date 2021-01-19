@@ -19,15 +19,9 @@ from hlsconstructs.stepfunction_alarm import StepFunctionAlarm
 
 STACKNAME = os.getenv("HLS_STACKNAME", "hls")
 
-<<<<<<< HEAD
-SENTINEL_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-sentinel:v3.0.4.3"
-LANDSAT_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat:latest"
-LANDSAT_TILE_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat-tile:v1.4"
-=======
-SENTINEL_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-sentinel:latest"
-LANDSAT_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat-c2:latest"
-LANDSAT_TILE_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat-tile:latest"
->>>>>>> dev
+SENTINEL_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-sentinel:v3.0.5"
+LANDSAT_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat-c2:v3.0.5"
+LANDSAT_TILE_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat-tile:v1.5"
 
 LAADS_BUCKET = f"{STACKNAME}-laads-bucket"
 LAADS_TOKEN = os.getenv("HLS_LAADS_TOKEN", None)
