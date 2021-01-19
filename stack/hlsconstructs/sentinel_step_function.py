@@ -22,7 +22,6 @@ class SentinelStepFunction(core.Construct):
         sentinel_logger: str,
         check_exit_code: str,
         replace_existing: bool,
-        gibs_intermediate_output_bucket: str,
         gibs_outputbucket: str,
         **kwargs,
     ) -> None:
@@ -101,10 +100,6 @@ class SentinelStepFunction(core.Construct):
                                     "Value": outputbucket_role_arn,
                                 },
                                 {"Name": "REPLACE_EXISTING", "Value": replace},
-                                {
-                                    "Name": "GIBS_INTERMEDIATE_BUCKET",
-                                    "Value": gibs_intermediate_output_bucket,
-                                },
                                 {
                                     "Name": "GIBS_OUTPUT_BUCKET",
                                     "Value": gibs_outputbucket,

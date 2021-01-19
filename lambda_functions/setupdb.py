@@ -45,6 +45,8 @@ CREATE TABLE IF NOT EXISTS landsat_ac_log (
     jobinfo jsonb,
     constraint no_dupe_pathrowdate unique(path, row, acquisition)
 );
+ALTER TABLE landsat_ac_log ADD COLUMN IF NOT EXISTS scene_id VARCHAR(100);
+ALTER TABLE landsat_ac_log ALTER COLUMN jobid DROP NOT NULL;
 CREATE OR REPLACE FUNCTION
 granule(IN event jsonb, OUT granule text)
 AS $$
@@ -52,8 +54,7 @@ SELECT a->>'Value'
 FROM jsonb_array_elements(event->'Container'->'Environment') a
 WHERE a->>'Name'='GRANULE_LIST'
 $$ LANGUAGE SQL IMMUTABLE STRICT;
-DROP VIEW IF EXISTS granule_log;
-CREATE VIEW granule_log AS
+CREATE OR REPLACE VIEW granule_log AS
 select id, ts,
 granule(event),
 event->>'Status' as status,
@@ -63,7 +64,7 @@ to_timestamp((event->>'StartedAt')::float/1000) as job_started,
 to_timestamp((event->>'StoppedAt')::float/1000) as job_stopped,
 event
 from eventlog WHERE granule(event) IS NOT NULL;
-CREATE VIEW landsat_ac_granule_log AS
+CREATE OR REPLACE VIEW landsat_ac_granule_log AS
 select id, ts,
 jobinfo->>'Status' as status,
 to_timestamp((jobinfo->>'CreatedAt')::float/1000) as job_created,

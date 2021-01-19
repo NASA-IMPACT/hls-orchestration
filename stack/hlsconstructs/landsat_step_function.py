@@ -27,7 +27,9 @@ class LandsatStepFunction(core.Construct):
         mgrs_logger: str,
         check_landsat_tiling_exit_code: str,
         check_landsat_ac_exit_code: str,
+        get_random_wait: str,
         replace_existing: bool,
+        gibs_outputbucket: str,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -64,10 +66,49 @@ class LandsatStepFunction(core.Construct):
                         {
                             "Variable": "$.mgrsvalues.count",
                             "NumericGreaterThan": 0,
-                            "Next": "CheckLaads",
+                            "Next": "LogLandsatMGRS",
+                        },
+                        {
+                            "Variable": "$.mgrsvalues.count",
+                            "NumericEquals": 0,
+                            "Next": "LogNoMGRS",
                         }
                     ],
                     "Default": "Done",
+                },
+                "LogNoMGRS": {
+                    "Type": "Task",
+                    "Resource": landsat_ac_logger,
+                    "ResultPath": None,
+                    "Next": "Done",
+                    "Parameters": {
+                        "jobinfo": {
+                            "JobId": "mgrs_skipped",
+                        },
+                        "scene.$": "$.scene"
+                    },
+                    "Retry": [
+                        {
+                            "ErrorEquals": ["States.ALL"],
+                            "IntervalSeconds": lambda_interval,
+                            "MaxAttempts": lambda_max_attempts,
+                            "BackoffRate": 2,
+                        }
+                    ],
+                },
+                "LogLandsatMGRS": {
+                    "Type": "Task",
+                    "Resource": landsat_mgrs_logger,
+                    "ResultPath": None,
+                    "Next": "CheckLaads",
+                    "Retry": [
+                        {
+                            "ErrorEquals": ["States.ALL"],
+                            "IntervalSeconds": lambda_interval,
+                            "MaxAttempts": lambda_max_attempts,
+                            "BackoffRate": lambda_backoff_rate,
+                        }
+                    ],
                 },
                 "CheckLaads": {
                     "Type": "Task",
@@ -91,27 +132,27 @@ class LandsatStepFunction(core.Construct):
                         {
                             "Variable": "$.taskresult.available",
                             "BooleanEquals": True,
-                            "Next": "LogLandsatMGRS",
+                            "Next": "GetRandomWait",
                         }
                     ],
                     "Default": "Wait",
                 },
-                "Wait": {"Type": "Wait", "Seconds": 3600, "Next": "CheckLaads"},
-                "LogLandsatMGRS": {
-                    "Type": "Task",
-                    "Resource": landsat_mgrs_logger,
-                    "ResultPath": None,
-                    "Next": "WaitForAc",
-                    "Retry": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": lambda_interval,
-                            "MaxAttempts": lambda_max_attempts,
-                            "BackoffRate": lambda_backoff_rate,
-                        }
-                    ],
+                "Wait": {
+                    "Type": "Wait",
+                    "Seconds": 3600,
+                    "Next": "CheckLaads"
                 },
-                "WaitForAc": {"Type": "Wait", "Seconds": 60, "Next": "RunLandsatAc"},
+                "GetRandomWait": {
+                    "Type": "Task",
+                    "Resource": get_random_wait,
+                    "ResultPath": "$.wait_time",
+                    "Next": "WaitForAc",
+                },
+                "WaitForAc": {
+                    "Type": "Wait",
+                    "SecondsPath": "$.wait_time",
+                    "Next": "RunLandsatAc"
+                },
                 "RunLandsatAc": {
                     "Type": "Task",
                     "Resource": "arn:aws:states:::batch:submitJob.sync",
@@ -123,15 +164,34 @@ class LandsatStepFunction(core.Construct):
                         "ContainerOverrides": {
                             "Command": ["export && landsat.sh"],
                             "Environment": [
-                                {"Name": "INPUT_BUCKET", "Value.$": "$.bucket"},
-                                {"Name": "PREFIX", "Value.$": "$.prefix"},
-                                {"Name": "GRANULE", "Value.$": "$.scene"},
+                                {
+                                    "Name": "INPUT_BUCKET",
+                                    "Value.$": "$.bucket"
+                                },
+                                {
+                                    "Name": "PREFIX",
+                                    "Value.$": "$.prefix"
+                                },
+                                {
+                                    "Name": "GRANULE",
+                                    "Value.$": "$.scene"
+                                },
                                 {
                                     "Name": "OUTPUT_BUCKET",
                                     "Value": intermediate_output_bucket,
                                 },
-                                {"Name": "LASRC_AUX_DIR", "Value": "/var/lasrc_aux"},
-                                {"Name": "REPLACE_EXISTING", "Value": replace},
+                                {
+                                    "Name": "LASRC_AUX_DIR",
+                                    "Value": "/var/lasrc_aux"
+                                },
+                                {
+                                    "Name": "REPLACE_EXISTING",
+                                    "Value": replace
+                                },
+                                {
+                                    "Name": "OMP_NUM_THREADS",
+                                    "Value": "2"
+                                }
                             ],
                         },
                     },
@@ -188,10 +248,21 @@ class LandsatStepFunction(core.Construct):
                                     {
                                         "Variable": "$.ready_for_tiling",
                                         "BooleanEquals": True,
-                                        "Next": "RunLandsatTile",
+                                        "Next": "GetRandomWaitTile",
                                     }
                                 ],
                                 "Default": "SuccessState",
+                            },
+                            "GetRandomWaitTile": {
+                                "Type": "Task",
+                                "Resource": get_random_wait,
+                                "ResultPath": "$.wait_time",
+                                "Next": "WaitForTiling",
+                            },
+                            "WaitForTiling": {
+                                "Type": "Wait",
+                                "SecondsPath": "$.wait_time",
+                                "Next": "RunLandsatTile"
                             },
                             "RunLandsatTile": {
                                 "Type": "Task",
@@ -204,19 +275,46 @@ class LandsatStepFunction(core.Construct):
                                     "ContainerOverrides": {
                                         "Command": ["export && landsat-tile.sh"],
                                         "Environment": [
-                                            {"Name": "PATHROW_LIST", "Value.$": "$.mgrs_metadata.pathrows_string"},
-                                            {"Name": "INPUT_BUCKET", "Value": intermediate_output_bucket},
-                                            {"Name": "OUTPUT_BUCKET", "Value": outputbucket},
+                                            {
+                                                "Name":"PATHROW_LIST",
+                                                "Value.$": "$.mgrs_metadata.pathrows_string"
+                                            },
+                                            {
+                                                "Name": "INPUT_BUCKET",
+                                                "Value": intermediate_output_bucket
+                                            },
+                                            {
+                                                "Name": "OUTPUT_BUCKET",
+                                                "Value": outputbucket
+                                            },
                                             {
                                                 "Name": "GCC_ROLE_ARN",
                                                 "Value": outputbucket_role_arn,
                                             },
-                                            {"Name": "DATE", "Value.$": "$.date"},
-                                            {"Name": "MGRS", "Value.$": "$.MGRS"},
-                                            {"Name": "LANDSAT_PATH", "Value.$": "$.path"},
-                                            {"Name": "MGRS_ULX", "Value.$": "$.mgrs_metadata.mgrs_ulx"},
-                                            {"Name": "MGRS_ULY", "Value.$": "$.mgrs_metadata.mgrs_uly"},
-                                            {"Name": "REPLACE_EXISTING", "Value": replace},
+                                            {
+                                                "Name": "DATE",
+                                                "Value.$": "$.date"
+                                            },
+                                            {
+                                                "Name": "MGRS",
+                                                "Value.$": "$.MGRS"
+                                            },
+                                            {
+                                                "Name": "LANDSAT_PATH",
+                                                "Value.$": "$.path"
+                                            },
+                                            {
+                                                "Name": "MGRS_ULX",
+                                                "Value.$": "$.mgrs_metadata.mgrs_ulx"
+                                            },
+                                            {
+                                                "Name": "MGRS_ULY",
+                                                "Value.$": "$.mgrs_metadata.mgrs_uly"
+                                            },
+                                            {
+                                                "Name": "GIBS_OUTPUT_BUCKET",
+                                                "Value": gibs_outputbucket
+                                            },
                                         ],
                                     },
                                 },
