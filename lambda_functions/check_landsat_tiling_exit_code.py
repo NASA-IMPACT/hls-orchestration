@@ -3,6 +3,10 @@ def handler(event, context):
     valid_exits = [0, 5]
     valid = True
     for code in event:
-        if code not in valid_exits:
-            valid = False
+        if isinstance(code, int):
+            if code not in valid_exits:
+                valid = False
+        else:
+            if code == "nocode":
+                valid = False
     return valid
