@@ -411,6 +411,7 @@ class HlsStack(core.Stack):
             outputbucket_role_arn=HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN,
             gibs_intermediate_output_bucket=GIBS_INTERMEDIATE_OUTPUT_BUCKET,
             gibs_outputbucket=GIBS_OUTPUT_BUCKET,
+            get_random_wait=self.get_random_wait.function.function_arn,
         )
 
         self.landsat_step_function = LandsatStepFunction(
@@ -558,6 +559,7 @@ class HlsStack(core.Stack):
         sentinel_errors_lambdas = [
             self.check_sentinel_failures,
             self.update_sentinel_failure,
+            self.get_random_wait
         ]
         self.addLambdaInvokePolicies(
             self.sentinel_errors_step_function,
