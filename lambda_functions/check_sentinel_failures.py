@@ -32,7 +32,8 @@ def convert_records(record):
 def handler(event, context):
     q = (
         "SELECT id, granule from granule_log WHERE"
-        + " event->'Container'->>'ExitCode' = '1'"
+        + " (event->'Container'->>'ExitCode' = '1'"
+        + " or event->'Container'->>'ExitCode' is NULL)"
         + " AND DATE(ts) = TO_DATE(:fromdate::text,'DD/MM/YYYY');"
     )
     response = execute_statement(
