@@ -19,6 +19,7 @@ class SentinelErrorsStepFunction(core.Construct):
         lambda_logger: str,
         check_sentinel_failures: str,
         update_sentinel_failure: str,
+        get_random_wait: str,
         gibs_intermediate_output_bucket: str,
         gibs_outputbucket: str,
         **kwargs,
@@ -55,10 +56,21 @@ class SentinelErrorsStepFunction(core.Construct):
                 "ProcessErrors": {
                     "Type": "Map",
                     "ItemsPath": "$.errors",
-                    "MaxConcurrency": 20,
+                    "MaxConcurrency": 400,
                     "Iterator": {
-                        "StartAt": "ProcessSentinel",
+                        "StartAt": "GetRandomWait",
                         "States": {
+                            "GetRandomWait": {
+                                "Type": "Task",
+                                "Resource": get_random_wait,
+                                "ResultPath": "$.wait_time",
+                                "Next": "WaitForProcessSentinel",
+                            },
+                            "WaitForProcessSentinel": {
+                                "Type": "Wait",
+                                "SecondsPath": "$.wait_time",
+                                "Next": "ProcessSentinel"
+                            },
                             "ProcessSentinel": {
                                 "Type": "Task",
                                 "Resource": "arn:aws:states:::batch:submitJob.sync",
