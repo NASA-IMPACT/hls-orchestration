@@ -17,7 +17,6 @@ class SentinelErrorsStepFunction(core.Construct):
         sentinel_job_definition: str,
         jobqueue: str,
         lambda_logger: str,
-        check_sentinel_failures: str,
         update_sentinel_failure: str,
         get_random_wait: str,
         gibs_intermediate_output_bucket: str,
@@ -31,28 +30,8 @@ class SentinelErrorsStepFunction(core.Construct):
 
         state_definition = {
             "Comment": "Sentinel Errors Step Function",
-            "StartAt": "CheckSentinelFailures",
+            "StartAt": "ProcessErrors",
             "States": {
-                "CheckSentinelFailures": {
-                    "Type": "Task",
-                    "Resource": check_sentinel_failures,
-                    "ResultPath": "$.errors",
-                    "Next": "ProcessErrors",
-                    "Retry": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": lambda_interval,
-                            "MaxAttempts": lambda_max_attempts,
-                            "BackoffRate": lambda_backoff_rate,
-                        }
-                    ],
-                    "Catch": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "Next": "LogError",
-                        }
-                    ],
-                },
                 "ProcessErrors": {
                     "Type": "Map",
                     "ItemsPath": "$.errors",
@@ -138,22 +117,7 @@ class SentinelErrorsStepFunction(core.Construct):
                     },
                     "Next": "Done"
                 },
-                "LogError": {
-                    "Type": "Task",
-                    "Resource": lambda_logger,
-                    "ResultPath": "$",
-                    "Next": "Error",
-                    "Retry": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": lambda_interval,
-                            "MaxAttempts": lambda_max_attempts,
-                            "BackoffRate": lambda_backoff_rate,
-                        }
-                    ],
-                },
-                "Done": {"Type": "Succeed"},
-                "Error": {"Type": "Fail"},
+                "Done": {"Type": "Succeed"}
             }
         }
 
