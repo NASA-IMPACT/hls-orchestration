@@ -295,18 +295,7 @@ class HlsStack(core.Stack):
 
         )
 
-        self.check_sentinel_failures = Lambda(
-            self,
-            "CheckSentinelFailures",
-            code_file="check_sentinel_failures.py",
-            env={
-                "HLS_SECRETS": self.rds.secret.secret_arn,
-                "HLS_DB_NAME": self.rds.database.database_name,
-                "HLS_DB_ARN": self.rds.arn,
-            },
-            timeout=900,
-        )
-
+        
         self.update_sentinel_failure = Lambda(
             self,
             "UpdateSentinelFailure",
@@ -406,7 +395,6 @@ class HlsStack(core.Stack):
             sentinel_job_definition=self.sentinel_task.job.ref,
             jobqueue=self.batch.sentinel_jobqueue.ref,
             lambda_logger=self.lambda_logger.function.function_arn,
-            check_sentinel_failures=self.check_sentinel_failures.function.function_arn,
             update_sentinel_failure=self.update_sentinel_failure.function.function_arn,
             outputbucket_role_arn=HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN,
             gibs_intermediate_output_bucket=GIBS_INTERMEDIATE_OUTPUT_BUCKET,
@@ -487,6 +475,25 @@ class HlsStack(core.Stack):
             layers=[self.hls_lambda_layer],
         )
 
+        self.process_sentinel_errors_by_date = Lambda(
+            self,
+            "ProcessSentinelErrors",
+            code_file="process_sentinel_errors_by_date.py",
+            env={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
+            },
+            timeout=900,
+        )
+
+        self.process_sentinel_errors_by_date.function.add_to_role_policy(
+            aws_iam.PolicyStatement(
+                resources=[self.sentinel_errors_step_function.state_machine.ref],
+                actions=["states:StartExecution"]
+            )
+        )
+
         # Alarms
         self.sentinel_step_function_alarm = StepFunctionAlarm(
             self,
@@ -557,7 +564,6 @@ class HlsStack(core.Stack):
         )
 
         sentinel_errors_lambdas = [
-            self.check_sentinel_failures,
             self.update_sentinel_failure,
             self.get_random_wait
         ]
@@ -763,7 +769,7 @@ class HlsStack(core.Stack):
             self.mgrs_logger,
             self.landsat_pathrow_status,
             self.sentinel_logger,
-            self.check_sentinel_failures,
+            self.process_sentinel_errors_by_date,
             self.update_sentinel_failure,
             self.retrieve_landsat,
             self.process_landsat_day,
