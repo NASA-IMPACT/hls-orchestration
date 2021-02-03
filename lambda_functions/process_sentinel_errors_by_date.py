@@ -1,5 +1,6 @@
 import os
 import boto3
+import json
 from botocore.errorfactory import ClientError
 from random import randint
 
@@ -37,10 +38,10 @@ def convert_records(record):
 
 
 def execute_step_function(error_chunk, submit_errors, job_stopped):
-    input = {
+    input = json.dumps({
         "errors": error_chunk,
         "fromdate": job_stopped,
-    }
+    })
     try:
         rand = randint(100, 999)
         step_function_client.start_execution(

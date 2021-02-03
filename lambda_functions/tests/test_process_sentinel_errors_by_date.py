@@ -1,4 +1,5 @@
 import pytest
+import json
 from unittest.mock import patch
 from lambda_functions.process_sentinel_errors_by_date import handler
 
@@ -17,5 +18,6 @@ def test_handler_chunking(rds_client, step_function_client):
     handler(event, {})
     assert step_function_client.start_execution.call_count == 4
     args, kwargs = step_function_client.start_execution.call_args_list[3]
-    assert kwargs["input"]["errors"][0] == {"id": 1, "granule": "granule"}
-    assert kwargs["input"]["fromdate"] == event["fromdate"]
+    input = json.loads(kwargs["input"])
+    assert input["errors"][0] == {"id": 1, "granule": "granule"}
+    assert input["fromdate"] == event["fromdate"]
