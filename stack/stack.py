@@ -295,7 +295,6 @@ class HlsStack(core.Stack):
 
         )
 
-        
         self.update_sentinel_failure = Lambda(
             self,
             "UpdateSentinelFailure",
@@ -483,6 +482,7 @@ class HlsStack(core.Stack):
                 "HLS_SECRETS": self.rds.secret.secret_arn,
                 "HLS_DB_NAME": self.rds.database.database_name,
                 "HLS_DB_ARN": self.rds.arn,
+                "STATE_MACHINE": self.sentinel_errors_step_function.state_machine.ref
             },
             timeout=900,
         )
