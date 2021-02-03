@@ -7,6 +7,7 @@ from random import randint
 db_credentials_secrets_store_arn = os.getenv("HLS_SECRETS")
 database_name = os.getenv("HLS_DB_NAME")
 db_cluster_arn = os.getenv("HLS_DB_ARN")
+state_machine = os.getenv("STATE_MACHINE")
 rds_client = boto3.client("rds-data")
 step_function_client = boto3.client("stepfunctions")
 
@@ -36,7 +37,6 @@ def convert_records(record):
 
 
 def execute_step_function(error_chunk, submit_errors, job_stopped):
-    state_machine = os.getenv("STATE_MACHINE")
     input = {
         "errors": error_chunk,
         "fromdate": job_stopped,
