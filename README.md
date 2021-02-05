@@ -2,6 +2,8 @@
 
 AWS Stack for processing HLS data.
 
+![Alt text](/docs/HLS_architecture.png)
+
 ### Requirements
 Python>=3.7 \
 tox \
