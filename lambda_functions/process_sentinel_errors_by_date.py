@@ -2,7 +2,6 @@ import os
 import boto3
 import json
 from botocore.errorfactory import ClientError
-from random import randint
 
 
 db_credentials_secrets_store_arn = os.getenv("HLS_SECRETS")
@@ -43,10 +42,8 @@ def execute_step_function(error_chunk, submit_errors, job_stopped):
         "fromdate": job_stopped,
     })
     try:
-        rand = randint(100, 999)
         step_function_client.start_execution(
             stateMachineArn=state_machine,
-            name=f"{rand}",
             input=input,
         )
     except ClientError as ce:
