@@ -19,7 +19,6 @@ class LandsatIncompleteStepFunction(core.Construct):
         pr2mgrs: str,
         mgrs_logger: str,
         lambda_logger: str,
-        check_landsat_incompletes: str,
         check_mgrs_pathrow_complete: str,
         get_random_wait: str,
         gibs_outputbucket: str,
@@ -32,28 +31,8 @@ class LandsatIncompleteStepFunction(core.Construct):
 
         state_definition = {
             "Comment": "Landsat Incomplete Step Function",
-            "StartAt": "CheckLandsatIncomplete",
+            "StartAt": "ProcessIncompletes",
             "States": {
-                "CheckLandsatIncomplete": {
-                    "Type": "Task",
-                    "Resource": check_landsat_incompletes,
-                    "ResultPath": "$.incompletes",
-                    "Next": "ProcessIncompletes",
-                    "Retry": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": lambda_interval,
-                            "MaxAttempts": lambda_max_attempts,
-                            "BackoffRate": lambda_backoff_rate,
-                        }
-                    ],
-                    "Catch": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "Next": "LogError",
-                        }
-                    ],
-                },
                 "ProcessIncompletes": {
                     "Type": "Map",
                     "ItemsPath": "$.incompletes",
@@ -183,41 +162,12 @@ class LandsatIncompleteStepFunction(core.Construct):
                                     }
                                 ],
                             },
-                            "LogMapError": {
-                                "Type": "Task",
-                                "Resource": lambda_logger,
-                                "ResultPath": "$",
-                                "Next": "SuccessState",
-                                "Retry": [
-                                    {
-                                        "ErrorEquals": ["States.ALL"],
-                                        "IntervalSeconds": lambda_interval,
-                                        "MaxAttempts": lambda_max_attempts,
-                                        "BackoffRate": lambda_backoff_rate,
-                                    }
-                                ],
-                            },
                             "SuccessState": {"Type": "Succeed"},
                         }
                     },
                     "Next": "Done",
                 },
-                "LogError": {
-                    "Type": "Task",
-                    "Resource": lambda_logger,
-                    "ResultPath": "$",
-                    "Next": "Error",
-                    "Retry": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": lambda_interval,
-                            "MaxAttempts": lambda_max_attempts,
-                            "BackoffRate": lambda_backoff_rate,
-                        }
-                    ],
-                },
                 "Done": {"Type": "Succeed"},
-                "Error": {"Type": "Fail"},
             }
         }
         self.steps_role = aws_iam.Role(
