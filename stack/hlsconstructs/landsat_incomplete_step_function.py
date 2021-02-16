@@ -162,6 +162,20 @@ class LandsatIncompleteStepFunction(core.Construct):
                                     }
                                 ],
                             },
+                            "LogMapError": {
+                                "Type": "Task",
+                                "Resource": lambda_logger,
+                                "ResultPath": "$",
+                                "Next": "SuccessState",
+                                "Retry": [
+                                    {
+                                        "ErrorEquals": ["States.ALL"],
+                                        "IntervalSeconds": lambda_interval,
+                                        "MaxAttempts": lambda_max_attempts,
+                                        "BackoffRate": lambda_backoff_rate,
+                                    }
+                                ],
+                            },
                             "SuccessState": {"Type": "Succeed"},
                         }
                     },
