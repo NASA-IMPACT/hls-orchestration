@@ -2,6 +2,7 @@ import os
 import boto3
 import json
 from botocore.errorfactory import ClientError
+from datetime import datetime, timedelta
 
 
 db_credentials_secrets_store_arn = os.getenv("HLS_SECRETS")
@@ -52,6 +53,9 @@ def execute_step_function(error_chunk, submit_errors, job_stopped):
 
 
 def handler(event, context):
+    date_delta = int(os.getenv("DAYS_PRIOR"))
+    event_time = datetime.strptime(event["time"], '%Y-%m-%dT%H:%M:%SZ')
+    fromdate = (event_time - timedelta(days=date_delta)).strftime('%d/%m/%Y')
     q = (
         "SELECT id, granule, job_stopped from granule_log WHERE"
         + " (event->'Container'->>'ExitCode' = '1'"
@@ -61,7 +65,7 @@ def handler(event, context):
     response = execute_statement(
         q,
         sql_parameters=[
-            {"name": "fromdate", "value": {"stringValue": event["fromdate"]}},
+            {"name": "fromdate", "value": {"stringValue": fromdate}},
         ]
     )
     records = map(convert_records, response["records"])
@@ -70,7 +74,7 @@ def handler(event, context):
     submission_errors = []
 
     for error_chunk in error_chunks:
-        execute_step_function(error_chunk, submission_errors, event["fromdate"])
+        execute_step_function(error_chunk, submission_errors, fromdate)
 
     if len(submission_errors) > 0:
         raise NameError("A step function execution error occurred")
