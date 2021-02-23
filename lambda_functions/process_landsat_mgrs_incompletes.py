@@ -31,15 +31,16 @@ def execute_statement(sql, sql_parameters=[]):
 
 def convert_records(record):
     converted = {
-        "id": record[0]["longValue"],
-        "granule": record[1]["stringValue"]
+        "MGRS": record[0]["stringValue"],
+        "path": record[1]["stringValue"],
+        "date": record[2]["stringValue"]
     }
     return converted
 
 
-def execute_step_function(error_chunk, submit_errors, job_stopped):
+def execute_step_function(chunk, submit_errors, job_stopped):
     input = json.dumps({
-        "errors": error_chunk,
+        "incompletes": chunk,
         "fromdate": job_stopped,
     })
     try:
@@ -57,10 +58,9 @@ def handler(event, context):
     event_time = datetime.strptime(event["time"], '%Y-%m-%dT%H:%M:%SZ')
     fromdate = (event_time - timedelta(days=date_delta)).strftime('%d/%m/%Y')
     q = (
-        "SELECT id, granule, job_stopped from granule_log WHERE"
-        + " (event->'Container'->>'ExitCode' = '1'"
-        + " or event->'Container'->>'ExitCode' is NULL)"
-        + " AND DATE(job_stopped) = TO_DATE(:fromdate::text,'DD/MM/YYYY');"
+        "SELECT mgrs, path, acquisition from landsat_mgrs_log WHERE"
+        + " (jobinfo->'Container'->>'ExitCode' IS NULL OR jobinfo->'Container'->>'ExitCode' != '0')"
+        + " AND DATE(ts) = TO_DATE(:fromdate::text,'DD/MM/YYYY');"
     )
     response = execute_statement(
         q,
@@ -69,12 +69,12 @@ def handler(event, context):
         ]
     )
     records = map(convert_records, response["records"])
-    granule_errors = list(records)
-    error_chunks = list(chunk(granule_errors, 100))
+    incompletes = list(records)
+    incomplete_chunks = list(chunk(incompletes, 100))
     submission_errors = []
 
-    for error_chunk in error_chunks:
-        execute_step_function(error_chunk, submission_errors, fromdate)
+    for incomplete_chunk in incomplete_chunks:
+        execute_step_function(incomplete_chunk, submission_errors, fromdate)
 
     if len(submission_errors) > 0:
         raise NameError("A step function execution error occurred")

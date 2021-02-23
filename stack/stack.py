@@ -31,6 +31,7 @@ LANDSAT_RETRIEVE_CRON = os.getenv(
 )
 LANDSAT_PROCESS_CRON = "cron(30 19 * * ? *)"
 LANDSAT_INCOMPLETE_CRON = "cron(0 12 * * ? *)"
+SENTINEL_ERRORS_CRON = "cron(0 20 * * ? *)"
 LAADS_BUCKET_BOOTSTRAP = "hls-development-laads-bucket"
 if LAADS_TOKEN is None:
     raise Exception("HLS_LAADS_TOKEN Env Var must be set")
@@ -52,7 +53,8 @@ GIBS_OUTPUT_BUCKET = os.getenv("HLS_GIBS_OUTPUT_BUCKET")
 SSH_KEYNAME = os.getenv("HLS_SSH_KEYNAME")
 USGS_USERNAME = os.getenv("USGS_USERNAME")
 USGS_PASSWORD = os.getenv("USGS_PASSWORD")
-LANDSAT_DAYS_PRIOR = os.getenv("HLS_SENTINEL_DAYS_PRIOR")
+LANDSAT_DAYS_PRIOR = os.getenv("HLS_LANDSAT_DAYS_PRIOR")
+SENTINEL_DAYS_PRIOR = os.getenv("HLS_SENTINEL_DAYS_PRIOR")
 try:
     # MAXV_CPUS = int(os.getenv("HLS_MAXV_CPUS"))
     MAXV_CPUS = 1200
@@ -343,18 +345,6 @@ class HlsStack(core.Stack):
             timeout=900
         )
 
-        self.check_landsat_mgrs_incompletes = Lambda(
-            self,
-            "CheckLandsatMGRSIncompletes",
-            code_file="check_landsat_mgrs_incompletes.py",
-            env={
-                "HLS_SECRETS": self.rds.secret.secret_arn,
-                "HLS_DB_NAME": self.rds.database.database_name,
-                "HLS_DB_ARN": self.rds.arn,
-            },
-            timeout=900
-        )
-
         self.laads_cron = BatchCron(
             self,
             "LaadsCron",
@@ -434,7 +424,6 @@ class HlsStack(core.Stack):
             tile_job_definition=self.landsat_tile_task.job.ref,
             intermediate_output_bucket=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
             lambda_logger=self.lambda_logger.function.function_arn,
-            check_landsat_incompletes=self.check_landsat_mgrs_incompletes.function.function_arn,
             check_mgrs_pathrow_complete=self.check_landsat_pathrow_complete.function.function_arn,
             pr2mgrs=self.pr2mgrs_lambda.function.function_arn,
             mgrs_logger=self.mgrs_logger.function.function_arn,
@@ -447,6 +436,7 @@ class HlsStack(core.Stack):
             "SentinelStepFunctionTrigger",
             state_machine=self.sentinel_step_function.sentinel_state_machine.ref,
             code_file="execute_step_function.py",
+            timeout=180,
             input_bucket=self.sentinel_input_bucket,
         )
 
@@ -454,9 +444,17 @@ class HlsStack(core.Stack):
             self,
             "LandsatIncompleteStepFunctionTrigger",
             state_machine=self.landsat_incomplete_step_function.state_machine.ref,
-            code_file="execute_step_function_fromdate.py",
+            code_file="process_landsat_mgrs_incompletes.py",
+            timeout=900,
+            lambda_name="ProcessLandsatMgrsIncompletes",
+            layers=[self.hls_lambda_layer],
             cron_str=LANDSAT_INCOMPLETE_CRON,
-            days_prior=LANDSAT_DAYS_PRIOR,
+            env_vars={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
+                "DAYS_PRIOR": LANDSAT_DAYS_PRIOR,
+            },
         )
 
         self.process_landsat_day = Lambda(
@@ -474,24 +472,20 @@ class HlsStack(core.Stack):
             layers=[self.hls_lambda_layer],
         )
 
-        self.process_sentinel_errors_by_date = Lambda(
+        self.sentinel_errors_step_function_trigger = StepFunctionTrigger(
             self,
-            "ProcessSentinelErrors",
+            "SentinelErrorsStepFunctionTrigger",
+            state_machine=self.sentinel_errors_step_function.state_machine.ref,
             code_file="process_sentinel_errors_by_date.py",
-            env={
+            timeout=900,
+            lambda_name="ProcessSentinelErrors",
+            cron_str=SENTINEL_ERRORS_CRON,
+            env_vars={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
                 "HLS_DB_NAME": self.rds.database.database_name,
                 "HLS_DB_ARN": self.rds.arn,
-                "STATE_MACHINE": self.sentinel_errors_step_function.state_machine.ref
+                "DAYS_PRIOR": SENTINEL_DAYS_PRIOR,
             },
-            timeout=900,
-        )
-
-        self.process_sentinel_errors_by_date.function.add_to_role_policy(
-            aws_iam.PolicyStatement(
-                resources=[self.sentinel_errors_step_function.state_machine.ref],
-                actions=["states:StartExecution"]
-            )
         )
 
         # Alarms
@@ -591,7 +585,6 @@ class HlsStack(core.Stack):
         )
 
         landsat_incomplete_lambdas = [
-            self.check_landsat_mgrs_incompletes,
             self.check_landsat_pathrow_complete,
             self.pr2mgrs_lambda,
             self.lambda_logger,
@@ -769,12 +762,12 @@ class HlsStack(core.Stack):
             self.mgrs_logger,
             self.landsat_pathrow_status,
             self.sentinel_logger,
-            self.process_sentinel_errors_by_date,
             self.update_sentinel_failure,
             self.retrieve_landsat,
             self.process_landsat_day,
             self.check_landsat_pathrow_complete,
-            self.check_landsat_mgrs_incompletes,
+            self.landsat_incomplete_step_function_trigger.execute_step_function,
+            self.sentinel_errors_step_function_trigger.execute_step_function,
         ]
         for lambda_function in lambdas:
             lambda_function.function.add_to_role_policy(

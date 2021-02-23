@@ -7,8 +7,10 @@ from aws_cdk import (
     aws_events_targets,
     aws_lambda_event_sources,
     aws_sns,
+    aws_lambda,
 )
 from hlsconstructs.lambdafunc import Lambda
+from typing import Dict, List
 
 
 class StepFunctionTrigger(core.Construct):
@@ -18,28 +20,27 @@ class StepFunctionTrigger(core.Construct):
         id: str,
         state_machine: str,
         code_file: str,
+        timeout: int,
+        lambda_name: str = "ExecuteStepFunction",
+        layers: List[aws_lambda.LayerVersion] = None,
         input_bucket: aws_s3.Bucket = None,
         input_sns: aws_sns.Topic = None,
-        days_prior: str = None,
+        env_vars: Dict[str, str] = None,
         cron_str: str = None,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
-        if days_prior:
-            env = {
-                "STATE_MACHINE": state_machine,
-                "DAYS_PRIOR": days_prior
-            }
-        else:
-            env = {
-                "STATE_MACHINE": state_machine
-            }
+        env = {
+            "STATE_MACHINE": state_machine,
+        }
+        if env_vars:
+            env.update(env_vars)
 
         self.execute_step_function = Lambda(
             self,
-            "ExecuteStepFunction",
+            lambda_name,
             code_file=code_file,
-            timeout=90,
+            timeout=timeout,
             env=env
         )
 
