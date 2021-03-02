@@ -45,6 +45,7 @@ HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN = os.getenv(
 if HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN is None:
     raise Exception("HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN Env Var must be set")
 
+LANDSAT_SNS_TOPIC = os.getenv("HLS_LANDSAT_SNS_TOPIC",)
 LANDSAT_OUTPUT_BUCKET = os.getenv("HLS_LANDSAT_OUTPUT_BUCKET",)
 LANDSAT_INTERMEDIATE_OUTPUT_BUCKET = f"{STACKNAME}-landsat-intermediate-output"
 
@@ -310,22 +311,6 @@ class HlsStack(core.Stack):
             layers=[self.hls_lambda_layer],
         )
 
-        self.retrieve_landsat = Lambda(
-            self,
-            "RetrieveLandsat",
-            package_code_dir="usgs_landsat",
-            timeout=900,
-            cron_str=LANDSAT_RETRIEVE_CRON,
-            env={
-                "HLS_SECRETS": self.rds.secret.secret_arn,
-                "HLS_DB_NAME": self.rds.database.database_name,
-                "HLS_DB_ARN": self.rds.arn,
-                "USERNAME": USGS_USERNAME,
-                "PASSWORD": USGS_PASSWORD,
-            },
-            layers=[self.hls_lambda_layer],
-        )
-
         self.get_random_wait = Lambda(
             self,
             "GetRandomWait",
@@ -440,6 +425,19 @@ class HlsStack(core.Stack):
             input_bucket=self.sentinel_input_bucket,
         )
 
+        self.landsat_sns_topic = aws_sns.Topic.from_topic_arn(
+            self, "LandsatSNSTopc", topic_arn=LANDSAT_SNS_TOPIC
+        )
+
+        self.landsat_step_function_trigger = StepFunctionTrigger(
+            self,
+            "LandsatStepFunctionTrigger",
+            state_machine=self.landsat_step_function.state_machine.ref,
+            code_file="execute_landsat_step_function.py",
+            timeout=180,
+            input_sns=self.landsat_sns_topic,
+        )
+
         self.landsat_incomplete_step_function_trigger = StepFunctionTrigger(
             self,
             "LandsatIncompleteStepFunctionTrigger",
@@ -455,21 +453,6 @@ class HlsStack(core.Stack):
                 "HLS_DB_ARN": self.rds.arn,
                 "DAYS_PRIOR": LANDSAT_DAYS_PRIOR,
             },
-        )
-
-        self.process_landsat_day = Lambda(
-            self,
-            "ProcessLandsatDay",
-            code_file="process_landsat_day.py",
-            cron_str=LANDSAT_PROCESS_CRON,
-            env={
-                "HLS_SECRETS": self.rds.secret.secret_arn,
-                "HLS_DB_NAME": self.rds.database.database_name,
-                "HLS_DB_ARN": self.rds.arn,
-                "STATE_MACHINE": self.landsat_step_function.state_machine.ref
-            },
-            timeout=900,
-            layers=[self.hls_lambda_layer],
         )
 
         self.sentinel_errors_step_function_trigger = StepFunctionTrigger(
@@ -501,20 +484,6 @@ class HlsStack(core.Stack):
             "LandsatStepFunctionAlarm",
             state_machine=self.landsat_step_function.state_machine.ref,
             root_name="Landsat",
-        )
-
-        self.retrieve_landsat.function.metric_errors().create_alarm(
-            self,
-            "RetrieveLandsatAlarm",
-            threshold=1,
-            evaluation_periods=1,
-        )
-
-        self.process_landsat_day.function.metric_errors().create_alarm(
-            self,
-            "ProcessLandsatDayAlarm",
-            threshold=1,
-            evaluation_periods=1,
         )
 
         # Cross construct permissions
@@ -660,12 +629,7 @@ class HlsStack(core.Stack):
                 actions=["sts:AssumeRole"],
             )
         )
-        self.process_landsat_day.function.add_to_role_policy(
-            aws_iam.PolicyStatement(
-                resources=[self.landsat_step_function.state_machine.ref],
-                actions=["states:StartExecution"]
-            )
-        )
+
         # Add policies for Lambda to listen for bucket events and trigger step
         # function
         cw_events_full = aws_iam.ManagedPolicy.from_managed_policy_arn(
@@ -763,8 +727,6 @@ class HlsStack(core.Stack):
             self.landsat_pathrow_status,
             self.sentinel_logger,
             self.update_sentinel_failure,
-            self.retrieve_landsat,
-            self.process_landsat_day,
             self.check_landsat_pathrow_complete,
             self.landsat_incomplete_step_function_trigger.execute_step_function,
             self.sentinel_errors_step_function_trigger.execute_step_function,
