@@ -436,6 +436,7 @@ class HlsStack(core.Stack):
             code_file="execute_landsat_step_function.py",
             timeout=180,
             input_sns=self.landsat_sns_topic,
+            layers=[self.hls_lambda_layer],
         )
 
         self.landsat_incomplete_step_function_trigger = StepFunctionTrigger(
