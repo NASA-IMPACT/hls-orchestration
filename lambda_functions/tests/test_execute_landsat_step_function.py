@@ -14,38 +14,27 @@ def test_handler(client):
         "sensor": "C",
         "satellite": "08",
         "processingCorrectionLevel": "L1GT",
-        "path": "127",
-        "row": "010",
-        "acquisitionYear": "2020",
-        "acquisitionMonth": "05",
-        "acquisitionDay": "27",
-        "processingYear": "2020",
-        "processingMonth": "05",
-        "processingDay": "27",
-        "collectionNumber": "01",
+        "path": "197",
+        "row": "119",
+        "acquisitionYear": "2021",
+        "acquisitionMonth": "02",
+        "acquisitionDay": "01",
+        "processingYear": "2021",
+        "processingMonth": "03",
+        "processingDay": "02",
+        "collectionNumber": "02",
         "collectionCategory": "RT",
-        "scene": "LC08_L1GT_127010_20200527_20200527_01_RT",
-        "date": "2020-05-27",
+        "scene":"LC08_L1GT_197119_20210201_20210302_02_RT",
+        "date": "2021-02-01",
         "scheme": "s3",
         "bucket": "usgs-landsat",
-        "prefix": "collection02/level-1/standard/oli-tirs/LC08_L1GT_127010_20200527_20200527_01_RT",
+        "prefix": "collection02/level-1/standard/oli-tirs/2021/197/119/LC08_L1GT_197119_20210201_20210302_02_RT"
     }
     expected_input = json.dumps(scene_meta)
     start_execution_response = {"executionArn": "arn", "startDate": 10}
-
     message = {
-        "Records": [
-            {
-                "s3": {
-                    "bucket": {
-                        "name": "usgs-landsat"
-                    },
-                    "object": {
-                        "key": "collection02/level-1/standard/oli-tirs/LC08_L1GT_127010_20200527_20200527_01_RT/index.html"
-                    }
-                }
-            }
-        ]
+        "landsat_product_id": "LC08_L1GT_197119_20210201_20210302_02_RT",
+        "s3_location": "s3://usgs-landsat/collection02/level-1/standard/oli-tirs/2021/197/119/LC08_L1GT_197119_20210201_20210302_02_RT/"
     }
     message = json.dumps(message)
     event = {
@@ -70,19 +59,9 @@ def test_handler(client):
 def test_handler_non_RT(client):
     """Test handler."""
     message = {
-        "Records": [
-            {
-                "s3": {
-                    "bucket": {
-                        "name": "usgs-landsat"
-                    },
-                    "object": {
-                        "key":
-                        "collection02/level-1/standard/oli-tirs/LC08_L1GT_127010_20200527_20200527_01_T1/index.html"
-                    }
-                }
-            }
-        ]
+        "landsat_product_id": "LC08_L1GT_197119_20210201_20210302_02_T2",
+        "s3_location":
+        "s3://usgs-landsat/collection02/level-1/standard/oli-tirs/2021/197/119/LC08_L1GT_197119_20210201_20210302_02_T2/"
     }
     message = json.dumps(message)
     event = {
