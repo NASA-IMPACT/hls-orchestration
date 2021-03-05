@@ -75,3 +75,26 @@ def test_handler_non_RT(client):
     }
     handler(event, {})
     client.return_value.start_execution.assert_not_called()
+
+
+@patch(
+    "lambda_functions.execute_landsat_step_function.boto3.client"
+)
+def test_handler_non_08(client):
+    """Test handler."""
+    message = {
+        "landsat_product_id": "LE07_L1GT_184023_20210302_20210303_02_RT",
+        "s3_location": "s3://usgs-landsat/collection02/level-1/standard/etm/2021/184/023/LE07_L1GT_184023_20210302_20210303_02_RT"
+    }
+    message = json.dumps(message)
+    event = {
+        "Records": [
+            {
+                "Sns": {
+                    "Message": message
+                }
+            }
+        ]
+    }
+    handler(event, {})
+    client.return_value.start_execution.assert_not_called()

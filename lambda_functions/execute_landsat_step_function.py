@@ -27,7 +27,7 @@ def handler(event: Dict, context: Dict):
     scene_meta["prefix"] = url_components.path.strip("/")
     print(scene_meta)
     # Skip unless real-time (RT) collection
-    if scene_meta["collectionCategory"] == "RT":
+    if scene_meta["collectionCategory"] == "RT" and scene_meta["satellite"] == "08":
         try:
             input = json.dumps(scene_meta)
             step_functions.start_execution(
