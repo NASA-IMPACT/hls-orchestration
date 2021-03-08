@@ -258,6 +258,18 @@ class HlsStack(core.Stack):
             layers=[self.hls_lambda_layer],
         )
 
+        self.landsat_logger = Lambda(
+            self,
+            "LandsatLogger",
+            code_file="landsat_logger.py",
+            env={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
+            },
+            timeout=120,
+        )
+
         self.landsat_pathrow_status = Lambda(
             self,
             "LandsatPathrowStatus",
@@ -390,6 +402,7 @@ class HlsStack(core.Stack):
             lambda_logger=self.lambda_logger.function.function_arn,
             landsat_mgrs_logger=self.landsat_mgrs_logger.function.function_arn,
             landsat_ac_logger=self.landsat_ac_logger.function.function_arn,
+            landsat_logger=self.landsat_logger.function.function_arn,
             landsat_pathrow_status=self.landsat_pathrow_status.function.function_arn,
             pr2mgrs=self.pr2mgrs_lambda.function.function_arn,
             mgrs_logger=self.mgrs_logger.function.function_arn,
@@ -548,6 +561,7 @@ class HlsStack(core.Stack):
             self.check_landsat_tiling_exit_code,
             self.check_exit_code,
             self.get_random_wait,
+            self.landsat_logger,
         ]
         self.addLambdaInvokePolicies(
             self.landsat_step_function,
@@ -731,6 +745,7 @@ class HlsStack(core.Stack):
             self.check_landsat_pathrow_complete,
             self.landsat_incomplete_step_function_trigger.execute_step_function,
             self.sentinel_errors_step_function_trigger.execute_step_function,
+            self.landsat_logger,
         ]
         for lambda_function in lambdas:
             lambda_function.function.add_to_role_policy(
