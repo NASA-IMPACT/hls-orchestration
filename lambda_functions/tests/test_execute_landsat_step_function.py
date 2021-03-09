@@ -13,7 +13,7 @@ def test_handler(client):
     scene_meta = {
         "sensor": "C",
         "satellite": "08",
-        "processingCorrectionLevel": "L1GT",
+        "processingCorrectionLevel": "L1TP",
         "path": "197",
         "row": "119",
         "acquisitionYear": "2021",
@@ -24,17 +24,17 @@ def test_handler(client):
         "processingDay": "02",
         "collectionNumber": "02",
         "collectionCategory": "RT",
-        "scene":"LC08_L1GT_197119_20210201_20210302_02_RT",
+        "scene":"LC08_L1TP_197119_20210201_20210302_02_RT",
         "date": "2021-02-01",
         "scheme": "s3",
         "bucket": "usgs-landsat",
-        "prefix": "collection02/level-1/standard/oli-tirs/2021/197/119/LC08_L1GT_197119_20210201_20210302_02_RT"
+        "prefix": "collection02/level-1/standard/oli-tirs/2021/197/119/LC08_L1TP_197119_20210201_20210302_02_RT"
     }
     expected_input = json.dumps(scene_meta)
     start_execution_response = {"executionArn": "arn", "startDate": 10}
     message = {
-        "landsat_product_id": "LC08_L1GT_197119_20210201_20210302_02_RT",
-        "s3_location": "s3://usgs-landsat/collection02/level-1/standard/oli-tirs/2021/197/119/LC08_L1GT_197119_20210201_20210302_02_RT/"
+        "landsat_product_id": "LC08_L1TP_197119_20210201_20210302_02_RT",
+        "s3_location": "s3://usgs-landsat/collection02/level-1/standard/oli-tirs/2021/197/119/LC08_L1TP_197119_20210201_20210302_02_RT/"
     }
     message = json.dumps(message)
     event = {
@@ -59,9 +59,9 @@ def test_handler(client):
 def test_handler_non_RT(client):
     """Test handler."""
     message = {
-        "landsat_product_id": "LC08_L1GT_197119_20210201_20210302_02_T2",
+        "landsat_product_id": "LC08_L1TP_197119_20210201_20210302_02_T2",
         "s3_location":
-        "s3://usgs-landsat/collection02/level-1/standard/oli-tirs/2021/197/119/LC08_L1GT_197119_20210201_20210302_02_T2/"
+        "s3://usgs-landsat/collection02/level-1/standard/oli-tirs/2021/197/119/LC08_L1TP_197119_20210201_20210302_02_T2/"
     }
     message = json.dumps(message)
     event = {
@@ -83,8 +83,8 @@ def test_handler_non_RT(client):
 def test_handler_non_08(client):
     """Test handler."""
     message = {
-        "landsat_product_id": "LE07_L1GT_184023_20210302_20210303_02_RT",
-        "s3_location": "s3://usgs-landsat/collection02/level-1/standard/etm/2021/184/023/LE07_L1GT_184023_20210302_20210303_02_RT"
+        "landsat_product_id": "LE07_L1TP_184023_20210302_20210303_02_RT",
+        "s3_location": "s3://usgs-landsat/collection02/level-1/standard/etm/2021/184/023/LE07_L1TP_184023_20210302_20210303_02_RT"
     }
     message = json.dumps(message)
     event = {
