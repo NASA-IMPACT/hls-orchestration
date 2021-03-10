@@ -7,8 +7,6 @@ from datetime import datetime, timezone, timedelta
 db_credentials_secrets_store_arn = os.getenv("HLS_SECRETS")
 database_name = os.getenv("HLS_DB_NAME")
 db_cluster_arn = os.getenv("HLS_DB_ARN")
-job_id = os.getenv("JOB_ID")
-table_name = os.getenv("TABLE_NAME")
 
 rds_client = boto3.client("rds-data")
 cw_client = boto3.client("cloudwatch")
@@ -34,6 +32,7 @@ def convert_records(record):
 
 
 def put_metric(record):
+    job_id = os.getenv("JOB_ID")
     exit_code = record["exit_code"]
     cw_client.put_metric_data(
         Namespace="hls",
@@ -49,6 +48,7 @@ def put_metric(record):
 
 
 def handler(event: Dict, context: Dict):
+    table_name = os.getenv("TABLE_NAME")
     from_statement = f" FROM {table_name} WHERE"
     query = (
         "SELECT COALESCE(jobinfo->'Container'->>'ExitCode', 'null_value')"
@@ -58,7 +58,7 @@ def handler(event: Dict, context: Dict):
         + " group by COALESCE(jobinfo->'Container'->>'ExitCode', 'null_value');"
     )
 
-    from_ts = str(datetime.now(timezone.utc) - timedelta(days=25))
+    from_ts = str(datetime.now(timezone.utc) - timedelta(hours=1))
     sql_parameters = [
         {"name": "from_ts", "value": {"stringValue": from_ts}}
     ]
