@@ -377,7 +377,7 @@ class HlsStack(core.Stack):
                 "HLS_DB_NAME": self.rds.database.database_name,
                 "HLS_DB_ARN": self.rds.arn,
                 "JOB_ID": f"{STACKNAME}_sentinel",
-                "TABLE_NAME": "granule_log",
+                "TABLE_NAME": "sentinel_granule_log",
             },
             timeout=900,
         )
