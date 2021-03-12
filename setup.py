@@ -4,12 +4,6 @@ import subprocess
 from setuptools import setup, find_packages
 import os
 
-with open("README.md") as f:
-    readme = f.read()
-
-# Install lambda layers needed for testing imports.
-subprocess.check_call([sys.executable, "-m", "pip", "install",
-                       "./layers/hls_lambda_layer/python"])
 
 # Runtime requirements.
 aws_cdk_version = "1.65.0"
@@ -37,7 +31,6 @@ aws_cdk_reqs = [
 
 inst_reqs = [
     "boto3",
-    "usgs",
 ]
 
 inst_reqs.append([f"aws_cdk.{x}=={aws_cdk_version}" for x in aws_cdk_reqs])
