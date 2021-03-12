@@ -45,9 +45,6 @@ HLS_LANDSAT_DAYS_PRIOR=4
 # Number of days to go back for Sentinel reprocessing.
 HLS_SENTINEL_DAYS_PRIOR=1
 
-# Timer for retrieving Landsat data from the USGS EE API
-HLS_LANDSAT_RETRIEVE_CRON="cron(45 5 * * ? *)"
-
 # end of allexport mode
 set +a
 
