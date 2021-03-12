@@ -17,8 +17,6 @@ Environment variables are set in `environment.sh`. Copy `environment.sh.sample` 
 $ export HLS_STACKNAME=<Name of your stack>
 $ export HLS_LAADS_TOKEN=<Token used for accessing the Laads Data>
 $ export HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN=<GCC Role for accessing output bucket>
-$ export USGS_USERNAME=<USGS API access username>
-$ export USGS_PASSWORD=<USGS API access password>
 ```
 
 ### Synth
