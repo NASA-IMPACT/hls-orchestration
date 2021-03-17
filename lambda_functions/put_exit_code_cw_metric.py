@@ -23,32 +23,25 @@ def execute_statement(sql, sql_parameters=[]):
     return response
 
 
-def convert_records(record):
-    converted = {
-        "exit_code": record[0]["stringValue"],
-        "count": record[1]["longValue"],
-    }
-    return converted
-
-
-def put_metric(record):
-    job_id = os.getenv("JOB_ID")
-    exit_code = record["exit_code"]
-    cw_client.put_metric_data(
-        Namespace="hls",
-        MetricData=[
-            {
-                "MetricName": f"{job_id}-exit_code_{exit_code}",
-                "Timestamp": datetime.now(timezone.utc),
-                "Value": record["count"],
-                "Unit": "Count",
-            },
-        ]
-    )
+# def put_metric(record, job_id, metric_namespace):
+    # exit_code = record["exit_code"]
+    # cw_client.put_metric_data(
+        # Namespace=metric_namespace,
+        # MetricData=[
+            # {
+                # "MetricName": f"{job_id}-exit_code_{exit_code}",
+                # "Timestamp": datetime.now(timezone.utc),
+                # "Value": record["count"],
+                # "Unit": "Count",
+            # },
+        # ]
+    # )
 
 
 def handler(event: Dict, context: Dict):
+    job_id = os.getenv("JOB_ID")
     table_name = os.getenv("TABLE_NAME")
+    metric_namespace = "hls"
     from_statement = f" FROM {table_name} WHERE"
     query = (
         "SELECT COALESCE(jobinfo->'Container'->>'ExitCode', 'null_value')"
@@ -62,10 +55,47 @@ def handler(event: Dict, context: Dict):
     sql_parameters = [
         {"name": "from_ts", "value": {"stringValue": from_ts}}
     ]
-    response = execute_statement(
+    query_response = execute_statement(
         query,
         sql_parameters=sql_parameters
     )
-    records = map(convert_records, response["records"])
-    for record in records:
-        put_metric(record)
+
+    updated_metrics = [
+        {
+            "MetricName": f"{job_id}-exit_code_{record[0]['stringValue']}",
+            "Timestamp": datetime.now(timezone.utc),
+            "Value": record[1]["longValue"],
+            "Unit": "Count",
+        }
+        for record in query_response["records"]
+    ]
+
+    updated_metric_names = [
+        f"{job_id}-exit_code_{record[0]['stringValue']}"
+        for record in query_response["records"]
+    ]
+
+    list_metrics_response = cw_client.list_metrics(Namespace=metric_namespace)
+
+    metric_names = [
+        metric["MetricName"] for metric in list_metrics_response["Metrics"]
+        if metric["MetricName"].startswith(job_id)
+    ]
+
+    not_updated_metric_names = list(set(metric_names) - set(updated_metric_names))
+
+    not_updated_metrics = [
+        {
+            "MetricName": metric_name,
+            "Timestamp": datetime.now(timezone.utc),
+            "Value": 0,
+            "Unit": "Count",
+        }
+        for metric_name in not_updated_metric_names
+    ]
+
+    metric_data = updated_metrics + not_updated_metrics
+    cw_client.put_metric_data(
+        Namespace=metric_namespace,
+        MetricData=metric_data
+    )
