@@ -383,7 +383,10 @@ class HlsStack(core.Stack):
         )
         self.put_metric_policy = aws_iam.PolicyStatement(
             resources=["*"],
-            actions=["cloudwatch:PutMetricData"],
+            actions=[
+                "cloudwatch:PutMetricData",
+                "cloudwatch:ListMetrics",
+            ],
         )
         self.put_landsat_task_cw_metric.function.add_to_role_policy(
             self.put_metric_policy
@@ -397,7 +400,7 @@ class HlsStack(core.Stack):
         self.put_metric_cron_rule = aws_events.Rule(
             self,
             "Rule",
-            schedule=aws_events.Schedule.expression("cron(0 0/1 * * ? *)"),
+            schedule=aws_events.Schedule.expression("cron(0/15 * * * ? *)"),
             targets=[
                 aws_events_targets.LambdaFunction(
                     self.put_landsat_task_cw_metric.function
