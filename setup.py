@@ -51,7 +51,6 @@ setup(
             "docker/hls-laads/*",
             "scripts/*",
             "cdk.json",
-            "stack/constructs/userdata.txt",
         ],
     },
     install_requires=inst_reqs,
