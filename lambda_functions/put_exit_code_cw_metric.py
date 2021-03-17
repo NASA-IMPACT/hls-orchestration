@@ -23,21 +23,6 @@ def execute_statement(sql, sql_parameters=[]):
     return response
 
 
-# def put_metric(record, job_id, metric_namespace):
-    # exit_code = record["exit_code"]
-    # cw_client.put_metric_data(
-        # Namespace=metric_namespace,
-        # MetricData=[
-            # {
-                # "MetricName": f"{job_id}-exit_code_{exit_code}",
-                # "Timestamp": datetime.now(timezone.utc),
-                # "Value": record["count"],
-                # "Unit": "Count",
-            # },
-        # ]
-    # )
-
-
 def handler(event: Dict, context: Dict):
     job_id = os.getenv("JOB_ID")
     table_name = os.getenv("TABLE_NAME")
