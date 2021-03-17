@@ -9,7 +9,6 @@ from hlsconstructs.docker_batchjob import DockerBatchJob
 from hlsconstructs.batch import Batch
 from hlsconstructs.lambdafunc import Lambda
 from hlsconstructs.batch_cron import BatchCron
-from hlsconstructs.dummy_lambda import Dummy
 from hlsconstructs.sentinel_step_function import SentinelStepFunction
 from hlsconstructs.landsat_step_function import LandsatStepFunction
 from hlsconstructs.landsat_incomplete_step_function import LandsatIncompleteStepFunction
