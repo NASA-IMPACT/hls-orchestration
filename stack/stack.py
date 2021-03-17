@@ -383,7 +383,10 @@ class HlsStack(core.Stack):
         )
         self.put_metric_policy = aws_iam.PolicyStatement(
             resources=["*"],
-            actions=["cloudwatch:PutMetricData"],
+            actions=[
+                "cloudwatch:PutMetricData",
+                "cloudwatch:ListMetrics",
+            ],
         )
         self.put_landsat_task_cw_metric.function.add_to_role_policy(
             self.put_metric_policy
