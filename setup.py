@@ -4,9 +4,6 @@ import subprocess
 from setuptools import setup, find_packages
 import os
 
-with open("README.md") as f:
-    readme = f.read()
-
 # Runtime requirements.
 aws_cdk_version = "1.65.0"
 aws_cdk_reqs = [
