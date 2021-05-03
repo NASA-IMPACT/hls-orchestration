@@ -1,2 +1,0 @@
-include cdk.json
-include stack/constructs/userdata.txt

@@ -41,7 +41,8 @@ class StepFunctionTrigger(core.Construct):
             lambda_name,
             code_file=code_file,
             timeout=timeout,
-            env=env
+            env=env,
+            layers=layers
         )
 
         if input_bucket is not None:

@@ -64,7 +64,8 @@ to_timestamp((event->>'StartedAt')::float/1000) as job_started,
 to_timestamp((event->>'StoppedAt')::float/1000) as job_stopped,
 event
 from eventlog WHERE granule(event) IS NOT NULL;
-CREATE OR REPLACE VIEW landsat_ac_granule_log AS
+DROP VIEW IF EXISTS landsat_ac_granule_log;
+CREATE VIEW landsat_ac_granule_log AS
 select id, ts,
 jobinfo->>'Status' as status,
 to_timestamp((jobinfo->>'CreatedAt')::float/1000) as job_created,
@@ -72,6 +73,24 @@ to_timestamp((jobinfo->>'StartedAt')::float/1000) as job_started,
 to_timestamp((jobinfo->>'StoppedAt')::float/1000) as job_stopped,
 jobinfo
 from landsat_ac_log WHERE jobinfo IS NOT NULL;
+DROP VIEW IF EXISTS landsat_mgrs_granule_log;
+CREATE VIEW landsat_mgrs_granule_log AS
+select id, ts,
+jobinfo->>'Status' as status,
+to_timestamp((jobinfo->>'CreatedAt')::float/1000) as job_created,
+to_timestamp((jobinfo->>'StartedAt')::float/1000) as job_started,
+to_timestamp((jobinfo->>'StoppedAt')::float/1000) as job_stopped,
+jobinfo
+from landsat_mgrs_log WHERE jobinfo IS NOT NULL;
+DROP VIEW IF EXISTS sentinel_granule_log;
+CREATE VIEW sentinel_granule_log AS
+select id, ts,
+event->>'Status' as status,
+to_timestamp((event->>'CreatedAt')::float/1000) as job_created,
+to_timestamp((event->>'StartedAt')::float/1000) as job_started,
+to_timestamp((event->>'StoppedAt')::float/1000) as job_stopped,
+event as jobinfo
+from eventlog WHERE granule(event) IS NOT NULL;
 """
 
 

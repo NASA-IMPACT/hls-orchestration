@@ -22,6 +22,7 @@ class LandsatStepFunction(core.Construct):
         lambda_logger: str,
         landsat_mgrs_logger: str,
         landsat_ac_logger: str,
+        landsat_logger: str,
         landsat_pathrow_status: str,
         pr2mgrs: str,
         mgrs_logger: str,
@@ -66,27 +67,16 @@ class LandsatStepFunction(core.Construct):
                         {
                             "Variable": "$.mgrsvalues.count",
                             "NumericGreaterThan": 0,
-                            "Next": "LogLandsatMGRS",
+                            "Next": "LogLandsat",
                         },
-                        {
-                            "Variable": "$.mgrsvalues.count",
-                            "NumericEquals": 0,
-                            "Next": "LogNoMGRS",
-                        }
                     ],
                     "Default": "Done",
                 },
-                "LogNoMGRS": {
+                "LogLandsat": {
                     "Type": "Task",
-                    "Resource": landsat_ac_logger,
+                    "Resource": landsat_logger,
                     "ResultPath": None,
-                    "Next": "Done",
-                    "Parameters": {
-                        "jobinfo": {
-                            "JobId": "mgrs_skipped",
-                        },
-                        "scene.$": "$.scene"
-                    },
+                    "Next": "LogLandsatMGRS",
                     "Retry": [
                         {
                             "ErrorEquals": ["States.ALL"],
