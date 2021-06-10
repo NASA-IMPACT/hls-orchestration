@@ -21,6 +21,8 @@ STACKNAME = os.getenv("HLS_STACKNAME", "hls")
 SENTINEL_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-sentinel:v3.0.5"
 LANDSAT_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat-c2:v3.0.5"
 LANDSAT_TILE_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat-tile:v1.5"
+LAADS_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-laads:latest"
+
 
 LAADS_BUCKET = f"{STACKNAME}-laads-bucket"
 LAADS_TOKEN = os.getenv("HLS_LAADS_TOKEN", None)
@@ -147,7 +149,7 @@ class HlsStack(core.Stack):
         self.laads_task = DockerBatchJob(
             self,
             "LaadsTask",
-            dockerdir="hls-laads",
+            dockeruri=LAADS_ECR_URI,
             mountpath="/var/lasrc_aux",
             timeout=259200,
             memory=10000,

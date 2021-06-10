@@ -34,14 +34,14 @@ class DockerBatchJob(core.Construct):
 
         host = aws_batch.CfnJobDefinition.VolumesHostProperty(source_path="/mnt/efs")
 
-        volume = aws_batch.CfnJobDefinition.VolumesProperty(name=f"volume", host=host,)
+        volume = aws_batch.CfnJobDefinition.VolumesProperty(name="volume", host=host,)
 
         scratch_host = aws_batch.CfnJobDefinition.VolumesHostProperty(
             source_path="/scratch"
         )
 
         scratch_volume = aws_batch.CfnJobDefinition.VolumesProperty(
-            name=f"scratch_volume", host=scratch_host
+            name="scratch_volume", host=scratch_host
         )
 
         if dockerdir is not None:
@@ -77,7 +77,7 @@ class DockerBatchJob(core.Construct):
 
         job = aws_batch.CfnJobDefinition(
             self,
-            f"BatchJob",
+            "BatchJob",
             container_properties=container_properties,
             retry_strategy=aws_batch.CfnJobDefinition.RetryStrategyProperty(attempts=1),
             timeout=aws_batch.CfnJobDefinition.TimeoutProperty(
