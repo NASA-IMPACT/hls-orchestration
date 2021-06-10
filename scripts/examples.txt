@@ -1,8 +1,0 @@
-./scripts/run_landsat_tile_debug.sh 210016,210017 2020-07-19 29VNJ 210 499980 6900000
-./scripts/run_landsat_tile_debug.sh 141044,141045 2020-03-10 45QTE 141 199980 2500020
-# Error test
-./scripts/run_landsat_tile_debug.sh 223062,223063 2020-07-14 23MKS 223 199980 9700000 
-./scripts/run_landsat_tile_debug.sh 026038,026039 2020-07-26 026 14RQV 699960 3500040
-
-./scripts/run_sentinel_granule_debug.sh S2A_MSIL1C_20200425T195901_N0209_R128_T19XEL_20200425T215220 hls-development-sentinel-input-files
-

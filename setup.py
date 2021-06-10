@@ -4,7 +4,6 @@ import subprocess
 from setuptools import setup, find_packages
 import os
 
-
 # Runtime requirements.
 aws_cdk_version = "1.65.0"
 aws_cdk_reqs = [
@@ -51,7 +50,6 @@ setup(
             "docker/hls-laads/*",
             "scripts/*",
             "cdk.json",
-            "stack/constructs/userdata.txt",
         ],
     },
     install_requires=inst_reqs,

@@ -9,7 +9,6 @@ from hlsconstructs.docker_batchjob import DockerBatchJob
 from hlsconstructs.batch import Batch
 from hlsconstructs.lambdafunc import Lambda
 from hlsconstructs.batch_cron import BatchCron
-from hlsconstructs.dummy_lambda import Dummy
 from hlsconstructs.sentinel_step_function import SentinelStepFunction
 from hlsconstructs.landsat_step_function import LandsatStepFunction
 from hlsconstructs.landsat_incomplete_step_function import LandsatIncompleteStepFunction
@@ -383,7 +382,10 @@ class HlsStack(core.Stack):
         )
         self.put_metric_policy = aws_iam.PolicyStatement(
             resources=["*"],
-            actions=["cloudwatch:PutMetricData"],
+            actions=[
+                "cloudwatch:PutMetricData",
+                "cloudwatch:ListMetrics",
+            ],
         )
         self.put_landsat_task_cw_metric.function.add_to_role_policy(
             self.put_metric_policy
@@ -397,7 +399,7 @@ class HlsStack(core.Stack):
         self.put_metric_cron_rule = aws_events.Rule(
             self,
             "Rule",
-            schedule=aws_events.Schedule.expression("cron(0 0/1 * * ? *)"),
+            schedule=aws_events.Schedule.expression("cron(0/15 * * * ? *)"),
             targets=[
                 aws_events_targets.LambdaFunction(
                     self.put_landsat_task_cw_metric.function
