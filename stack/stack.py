@@ -16,63 +16,72 @@ from hlsconstructs.sentinel_errors_step_function import SentinelErrorsStepFuncti
 from hlsconstructs.step_function_trigger import StepFunctionTrigger
 from hlsconstructs.stepfunction_alarm import StepFunctionAlarm
 
-STACKNAME = os.getenv("HLS_STACKNAME", "hls")
+# Required env settings
+STACKNAME = os.environ["HLS_STACKNAME"]
+LAADS_TOKEN = os.environ["HLS_LAADS_TOKEN"]
+OUTPUT_BUCKET_ROLE_ARN = os.environ["HLS_OUTPUT_BUCKET_ROLE_ARN"]
+OUTPUT_BUCKET = os.environ["HLS_OUTPUT_BUCKET"]
+GIBS_OUTPUT_BUCKET = os.environ["HLS_GIBS_OUTPUT_BUCKET"]
 
-SENTINEL_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-sentinel:latest"
-LANDSAT_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat-c2:latest"
-LANDSAT_TILE_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat-tile:latest"
-LAADS_ECR_URI = "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-laads:test"
 
-LAADS_BUCKET = f"{STACKNAME}-laads-bucket"
-LAADS_TOKEN = os.getenv("HLS_LAADS_TOKEN", None)
-LAADS_CRON = os.getenv("HLS_LAADS_CRON", "cron(0 0/12 * * ? *)")
-LANDSAT_RETRIEVE_CRON = os.getenv(
-    "HLS_LANDSAT_RETRIEVE_CRON", "cron(45 5 * * ? *)"
+# Optional env settings
+# Images
+SENTINEL_ECR_URI = os.environ.get(
+    "HLS_SENTINEL_ECR_URI",
+    "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-sentinel:latest",
 )
-LANDSAT_PROCESS_CRON = "cron(30 19 * * ? *)"
-LANDSAT_INCOMPLETE_CRON = "cron(0 12 * * ? *)"
-SENTINEL_ERRORS_CRON = "cron(0 20 * * ? *)"
-LAADS_BUCKET_BOOTSTRAP = "hls-development-laads-bucket"
-if LAADS_TOKEN is None:
-    raise Exception("HLS_LAADS_TOKEN Env Var must be set")
+LANDSAT_ECR_URI = os.environ.get(
+    "HLS_LANDSAT_ECR_URI",
+    "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat-c2:latest",
+)
+LANDSAT_TILE_ECR_URI = os.environ.get(
+    "HLS_LANDSAT_TILE_ECR_URI",
+    "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat-tile:latest",
+)
+LAADS_ECR_URI = os.environ.get(
+    "HLS_LAADS_ECR_URI",
+    "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-laads:test",
+)
 
+# Cron settings
+LAADS_CRON = os.environ.get("HLS_LAADS_CRON", "cron(0 0/12 * * ? *)")
+LANDSAT_INCOMPLETE_CRON = os.environ.get(
+    "HLS_LANDSAT_INCOMPLETE_CRON",
+    "cron(0 12 * * ? *)"
+)
+SENTINEL_ERRORS_CRON = os.environ.get(
+    "HLS_SENTINEL_ERRORS_CRON",
+    "cron(0 20 * * ? *)"
+)
+LANDSAT_DAYS_PRIOR = os.getenv("HLS_LANDSAT_DAYS_PRIOR", 4)
+SENTINEL_DAYS_PRIOR = os.getenv("HLS_SENTINEL_DAYS_PRIOR", 1)
 
+SSH_KEYNAME = os.getenv("HLS_SSH_KEYNAME", "hls-mount")
+
+# Stack named resources
 SENTINEL_INPUT_BUCKET = f"{STACKNAME}-sentinel-input-files"
-SENTINEL_OUTPUT_BUCKET = os.getenv("HLS_SENTINEL_OUTPUT_BUCKET")
-HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN = os.getenv(
-    "HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN", None
-)
-if HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN is None:
-    raise Exception("HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN Env Var must be set")
-
-LANDSAT_SNS_TOPIC = os.getenv("HLS_LANDSAT_SNS_TOPIC",)
-LANDSAT_OUTPUT_BUCKET = os.getenv("HLS_LANDSAT_OUTPUT_BUCKET",)
+LAADS_BUCKET = f"{STACKNAME}-laads-bucket"
 LANDSAT_INTERMEDIATE_OUTPUT_BUCKET = f"{STACKNAME}-landsat-intermediate-output"
-
 GIBS_INTERMEDIATE_OUTPUT_BUCKET = f"{STACKNAME}-gibs-intermediate-output"
-GIBS_OUTPUT_BUCKET = os.getenv("HLS_GIBS_OUTPUT_BUCKET")
-SSH_KEYNAME = os.getenv("HLS_SSH_KEYNAME")
-USGS_USERNAME = os.getenv("USGS_USERNAME")
-USGS_PASSWORD = os.getenv("USGS_PASSWORD")
-LANDSAT_DAYS_PRIOR = os.getenv("HLS_LANDSAT_DAYS_PRIOR")
-SENTINEL_DAYS_PRIOR = os.getenv("HLS_SENTINEL_DAYS_PRIOR")
-try:
-    # MAXV_CPUS = int(os.getenv("HLS_MAXV_CPUS"))
-    MAXV_CPUS = 1200
-except ValueError:
-    MAXV_CPUS = 200
+LANDSAT_SNS_TOPIC = os.getenv("HLS_LANDSAT_SNS_TOPIC",)
 
-HLS_REPLACE_EXISTING = os.getenv("HLS_REPLACE_EXISTING", None)
-if os.getenv("HLS_REPLACE_EXISTING") == "true":
+try:
+    MAXV_CPUS = int(os.getenv("HLS_MAXV_CPUS", 1200))
+except ValueError:
+    MAXV_CPUS = 1200
+
+if os.getenv("HLS_REPLACE_EXISTING", "true") == "true":
     REPLACE_EXISTING = True
 else:
     REPLACE_EXISTING = False
 
-HLS_USE_CLOUD_WATCH = os.getenv("HLS_USE_CLOUD_WATCH", None)
-if os.getenv("HLS_USE_CLOUD_WATCH") == "true":
+if os.getenv("HLS_USE_CLOUD_WATCH", None) == "true":
     USE_CLOUD_WATCH = True
 else:
     USE_CLOUD_WATCH = False
+
+# Common resurces
+LAADS_BUCKET_BOOTSTRAP = "hls-development-laads-bucket"
 
 
 class HlsStack(core.Stack):
@@ -84,11 +93,11 @@ class HlsStack(core.Stack):
         self.laads_bucket = S3(self, "LaadsBucket", bucket_name=LAADS_BUCKET)
 
         self.sentinel_output_bucket = aws_s3.Bucket.from_bucket_name(
-            self, "sentinel_output_bucket", SENTINEL_OUTPUT_BUCKET
+            self, "sentinel_output_bucket", OUTPUT_BUCKET
         )
 
         self.landsat_output_bucket = aws_s3.Bucket.from_bucket_name(
-            self, "landsat_output_bucket", LANDSAT_OUTPUT_BUCKET
+            self, "landsat_output_bucket", OUTPUT_BUCKET
         )
 
         # Must be created as part of the stack due to trigger requirements
@@ -433,14 +442,14 @@ class HlsStack(core.Stack):
             "SentinelStateMachine",
             check_twin_granule=self.check_twin_granule.function.function_arn,
             laads_available_function=self.laads_available.function.function_arn,
-            outputbucket=SENTINEL_OUTPUT_BUCKET,
+            outputbucket=OUTPUT_BUCKET,
             inputbucket=SENTINEL_INPUT_BUCKET,
             sentinel_job_definition=self.sentinel_task.job.ref,
             jobqueue=self.batch.sentinel_jobqueue.ref,
             lambda_logger=self.lambda_logger.function.function_arn,
             sentinel_logger=self.sentinel_logger.function.function_arn,
             check_exit_code=self.check_exit_code.function.function_arn,
-            outputbucket_role_arn=HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN,
+            outputbucket_role_arn=OUTPUT_BUCKET_ROLE_ARN,
             replace_existing=REPLACE_EXISTING,
             gibs_outputbucket=GIBS_OUTPUT_BUCKET,
         )
@@ -448,13 +457,13 @@ class HlsStack(core.Stack):
         self.sentinel_errors_step_function = SentinelErrorsStepFunction(
             self,
             "SentinelErrorsStateMachine",
-            outputbucket=SENTINEL_OUTPUT_BUCKET,
+            outputbucket=OUTPUT_BUCKET,
             inputbucket=SENTINEL_INPUT_BUCKET,
             sentinel_job_definition=self.sentinel_task.job.ref,
             jobqueue=self.batch.sentinel_jobqueue.ref,
             lambda_logger=self.lambda_logger.function.function_arn,
             update_sentinel_failure=self.update_sentinel_failure.function.function_arn,
-            outputbucket_role_arn=HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN,
+            outputbucket_role_arn=OUTPUT_BUCKET_ROLE_ARN,
             gibs_intermediate_output_bucket=GIBS_INTERMEDIATE_OUTPUT_BUCKET,
             gibs_outputbucket=GIBS_OUTPUT_BUCKET,
             get_random_wait=self.get_random_wait.function.function_arn,
@@ -464,8 +473,8 @@ class HlsStack(core.Stack):
             self,
             "LandsatStateMachine",
             laads_available_function=self.laads_available.function.function_arn,
-            outputbucket=LANDSAT_OUTPUT_BUCKET,
-            outputbucket_role_arn=HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN,
+            outputbucket=OUTPUT_BUCKET,
+            outputbucket_role_arn=OUTPUT_BUCKET_ROLE_ARN,
             intermediate_output_bucket=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
             ac_job_definition=self.landsat_task.job.ref,
             tile_job_definition=self.landsat_tile_task.job.ref,
@@ -488,8 +497,8 @@ class HlsStack(core.Stack):
         self.landsat_incomplete_step_function = LandsatIncompleteStepFunction(
             self,
             "LandsatIncompleteStateMachine",
-            outputbucket=LANDSAT_OUTPUT_BUCKET,
-            outputbucket_role_arn=HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN,
+            outputbucket=OUTPUT_BUCKET,
+            outputbucket_role_arn=OUTPUT_BUCKET_ROLE_ARN,
             tilejobqueue=self.batch.landsattile_jobqueue.ref,
             tile_job_definition=self.landsat_tile_task.job.ref,
             intermediate_output_bucket=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
@@ -712,7 +721,7 @@ class HlsStack(core.Stack):
         )
         self.batch.ecs_instance_role.add_to_policy(
             aws_iam.PolicyStatement(
-                resources=[HLS_SENTINEL_OUTPUT_BUCKET_ROLE_ARN],
+                resources=[OUTPUT_BUCKET_ROLE_ARN],
                 actions=["sts:AssumeRole"],
             )
         )
