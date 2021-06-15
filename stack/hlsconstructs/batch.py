@@ -131,15 +131,6 @@ class Batch(core.Construct):
         launch_template_data = aws_ec2.CfnLaunchTemplate.LaunchTemplateDataProperty(
             user_data=core.Fn.base64(user_data_str),
             key_name=ssh_keyname,
-            # block_device_mappings=[{
-                # "device_name": "/dev/xvda",
-                # "no_device": "/dev/xvda",
-                # "ebs": {
-                    # "encrypted": False,
-                    # "volumeSize": 100,
-                    # "volumeType": "gp2",
-                # }
-            # }],
         )
 
         launch_template = aws_ec2.CfnLaunchTemplate(
