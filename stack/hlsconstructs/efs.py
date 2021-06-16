@@ -24,7 +24,7 @@ class Efs(core.Construct):
         )
 
         self.filesystem = aws_efs.CfnFileSystem(
-            self, f"Efs", lifecycle_policies=None
+            self, "Efs", lifecycle_policies=None
         )
 
         mount_targets = []

@@ -11,15 +11,15 @@ set -a
 # Name of the stack being created
 : ${HLS_STACKNAME:=hls}
 
+# Required env settings
+# LAADS DAAC Token
+HLS_LAADS_TOKEN="<your token>"
 
-# Schedule to use for updating Laads data
-HLS_LAADS_CRON="cron(0 0/12 * * ? *)"
+# Bucket used for processing output
+HLS_OUTPUT_BUCKET=hls-global
 
-# Bucket used for Sentinel output
-HLS_SENTINEL_OUTPUT_BUCKET=hls-global
-
-# Bucket used for Landsat output
-HLS_LANDSAT_OUTPUT_BUCKET=hls-global
+# Role for copying to output bucket
+HLS_OUTPUT_BUCKET_ROLE_ARN=arn:aws:iam::611670965994:role/gcc-S3Test
 
 # Landsat SNS topic
 HLS_LANDSAT_SNS_TOPIC=arn:aws:sns:us-west-2:673253540267:public-c2-notify
@@ -27,8 +27,38 @@ HLS_LANDSAT_SNS_TOPIC=arn:aws:sns:us-west-2:673253540267:public-c2-notify
 # Bucket for merged GIBS tile output.
 HLS_GIBS_OUTPUT_BUCKET=hls-browse-imagery
 
+
+# Optional env settings
+# Image for Sentinel processing
+HLS_SENTINEL_ECR_URI="018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-sentinel:latest"
+
+# Image for Landsat AC processing
+HLS_LANDSAT_ECR_URI="018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat-c2:latest"
+
+# Image for Landsat tile processing
+HLS_LANDSAT_TILE_ECR_URI="018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat-c2:latest"
+
+# Image for LAADS processing
+HLS_LAADS_ECR_URI="018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-laads:latest"
+
+# Schedule for updating Laads data
+HLS_LAADS_CRON="cron(0 0/12 * * ? *)"
+
+# Schedule to process incomplete Landsat tiles
+HLS_LANDSAT_INCOMPLETE_CRON="cron(0 12 * * ? *)"
+
+# Schedule to reprocess Setinel errors.
+HLS_SENTINEL_ERRORS_CRON="cron(0 20 * * ? *)"
+
+# Number of days to go back for Landsat reprocessing.
+HLS_LANDSAT_DAYS_PRIOR=4
+
+# Number of days to go back for Sentinel reprocessing.
+HLS_SENTINEL_DAYS_PRIOR=1
+
+
 # Max vcpus for Batch compute environment
-HLS_MAXV_CPUS=1000
+HLS_MAXV_CPUS=1200
 
 # Replace existing output in S3 buckets.
 HLS_REPLACE_EXISTING=true
@@ -37,13 +67,7 @@ HLS_REPLACE_EXISTING=true
 HLS_SSH_KEYNAME=hls-mount
 
 # Use Cloudwatch metrics for containers
-HLS_USE_CLOUD_WATCH=true
-
-# Number of days to go back for Landsat reprocessing.
-HLS_LANDSAT_DAYS_PRIOR=4
-
-# Number of days to go back for Sentinel reprocessing.
-HLS_SENTINEL_DAYS_PRIOR=1
+# HLS_USE_CLOUD_WATCH=true
 
 # end of allexport mode
 set +a
