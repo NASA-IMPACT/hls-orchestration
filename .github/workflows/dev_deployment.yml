@@ -1,0 +1,57 @@
+name: dev deployment
+
+on:
+  pull_request:
+    branches: [ci_deployment]
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-20.04
+    env:
+      AWS_DEFAULT_REGION: us-west-2
+    strategy:
+      matrix:
+        python: [3.8]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install Tox
+        run: pip install tox
+      - name: Run Tox test environment
+        # Run tox using the version of Python in `PATH`
+        run: tox -e py
+      
+  dev-deployment:
+    strategy:
+      matrix:
+        python: [3.8]
+    runs-on: ubuntu-20.04
+    if: github.event_name == 'pull_request'
+    needs: [unit-tests]
+    environment:
+      name: dev
+    env:
+      HLS_STACKNAME: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      HLS_OUTPUT_BUCKET_ROLE_ARN: ${{ secret.HLS_OUTPUT_BUCKET_ROLE_ARN }}
+      HLS_OUTPUT_BUCKET: ${{ secret.HLS_OUTPUT_BUCKET }}
+      HLS_LAADS_TOKEN: ${{ secret.HLS_LAADS_TOKEN }}
+      HLS_GIBS_OUTPUT_BUCKET: ${{ secret.HLS_GIBS_OUTPUT_BUCKET }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install Tox
+        run: pip install tox
+      - name: Configure awscli
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+      - name: Deploy with tox
+        run: tox -e dev -r -- diff
