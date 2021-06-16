@@ -2,9 +2,7 @@ name: dev deployment
 
 on:
   pull_request:
-    branches: [ci_deployment]
-  push:
-    branches: [ci_deployment]
+    branches: [dev]
   workflow_dispatch:
 
 jobs:
@@ -59,4 +57,4 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-west-2
       - name: Deploy with tox
-        run: tox -e dev -r -- diff
+        run: tox -e dev -r -- deploy

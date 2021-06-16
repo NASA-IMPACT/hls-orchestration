@@ -77,7 +77,7 @@ if os.getenv("HLS_REPLACE_EXISTING", "true") == "true":
 else:
     REPLACE_EXISTING = False
 
-if os.getenv("HLS_USE_CLOUD_WATCH", None) == "true":
+if os.getenv("HLS_USE_CLOUD_WATCH", "true") == "true":
     USE_CLOUD_WATCH = True
 else:
     USE_CLOUD_WATCH = False
