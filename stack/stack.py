@@ -53,17 +53,19 @@ SENTINEL_ERRORS_CRON = os.environ.get(
     "HLS_SENTINEL_ERRORS_CRON",
     "cron(0 20 * * ? *)"
 )
-LANDSAT_DAYS_PRIOR = os.getenv("HLS_LANDSAT_DAYS_PRIOR", 4)
-SENTINEL_DAYS_PRIOR = os.getenv("HLS_SENTINEL_DAYS_PRIOR", 1)
+LANDSAT_DAYS_PRIOR = os.environ.get("HLS_LANDSAT_DAYS_PRIOR", "4")
+SENTINEL_DAYS_PRIOR = os.environ.get("HLS_SENTINEL_DAYS_PRIOR", "1")
 
-SSH_KEYNAME = os.getenv("HLS_SSH_KEYNAME", "hls-mount")
+SSH_KEYNAME = os.environ.get("HLS_SSH_KEYNAME", "hls-mount")
+LANDSAT_SNS_TOPIC = os.environ.get(
+    "HLS_LANDSAT_SNS_TOPIC", "arn:aws:sns:us-west-2:673253540267:public-c2-notify"
+)
 
 # Stack named resources
 SENTINEL_INPUT_BUCKET = f"{STACKNAME}-sentinel-input-files"
 LAADS_BUCKET = f"{STACKNAME}-laads-bucket"
 LANDSAT_INTERMEDIATE_OUTPUT_BUCKET = f"{STACKNAME}-landsat-intermediate-output"
 GIBS_INTERMEDIATE_OUTPUT_BUCKET = f"{STACKNAME}-gibs-intermediate-output"
-LANDSAT_SNS_TOPIC = os.getenv("HLS_LANDSAT_SNS_TOPIC",)
 
 try:
     MAXV_CPUS = int(os.getenv("HLS_MAXV_CPUS", 1200))

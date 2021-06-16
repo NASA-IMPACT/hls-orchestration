@@ -36,11 +36,14 @@ jobs:
     environment:
       name: dev
     env:
-      HLS_STACKNAME: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      HLS_STACKNAME: ${{ secrets.HLS_STACKNAME }}
       HLS_OUTPUT_BUCKET_ROLE_ARN: ${{ secrets.HLS_OUTPUT_BUCKET_ROLE_ARN }}
       HLS_OUTPUT_BUCKET: ${{ secrets.HLS_OUTPUT_BUCKET }}
       HLS_LAADS_TOKEN: ${{ secrets.HLS_LAADS_TOKEN }}
       HLS_GIBS_OUTPUT_BUCKET: ${{ secrets.HLS_GIBS_OUTPUT_BUCKET }}
+      AWS-ACCESS-KEY-ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS-SECRET-ACCESS-KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-west-2
     steps:
       - uses: actions/checkout@v2
       - name: Setup Python
