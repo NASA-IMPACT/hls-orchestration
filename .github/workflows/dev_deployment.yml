@@ -3,6 +3,7 @@ name: dev deployment
 on:
   pull_request:
     branches: [ci_deployment]
+  workflow_dispatch:
 
 jobs:
   unit-tests:
