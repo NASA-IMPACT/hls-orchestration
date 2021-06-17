@@ -24,7 +24,6 @@ jobs:
       - name: Run Tox test environment
         # Run tox using the version of Python in `PATH`
         run: tox -e py
-      
   dev-deployment:
     strategy:
       matrix:
@@ -48,7 +47,7 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
-      - name: Install Tox
+      - name: Install tox
         run: pip install tox
       - name: Configure awscli
         uses: aws-actions/configure-aws-credentials@v1
@@ -58,3 +57,10 @@ jobs:
           aws-region: us-west-2
       - name: Deploy with tox
         run: tox -e dev -r -- deploy
+      - name: Run DB setup
+        run: |
+          setupdb=$(aws cloudformation describe-stacks --stack-name \
+          hls-development --query \
+          "Stacks[0].Outputs[?OutputKey=='setupdbexport'].OutputValue" \
+          --output=text)
+          aws lambda invoke --function-name=$setupdb response.json
