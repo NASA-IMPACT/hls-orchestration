@@ -24,6 +24,7 @@ class Batch(core.Construct):
         ssh_keyname: str,
         efs: aws_efs.CfnFileSystem = None,
         use_cw: bool = True,
+        image_id=None,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)

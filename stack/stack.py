@@ -1,6 +1,7 @@
 import os
 import json
-from aws_cdk import core, aws_stepfunctions, aws_iam, aws_s3, aws_sns, aws_lambda, aws_events, aws_events_targets
+from aws_cdk import (core, aws_stepfunctions, aws_iam, aws_s3, aws_sns,
+                     aws_lambda, aws_events, aws_events_targets, aws_ssm)
 from hlsconstructs.network import Network
 from hlsconstructs.s3 import S3
 from hlsconstructs.efs import Efs
@@ -82,6 +83,11 @@ if os.getenv("HLS_USE_CLOUD_WATCH", "true") == "true":
 else:
     USE_CLOUD_WATCH = False
 
+if os.getenv("GCC", None) == "true":
+    GCC = True
+else:
+    GCC = False
+
 # Common resurces
 LAADS_BUCKET_BOOTSTRAP = "hls-development-laads-bucket"
 
@@ -89,8 +95,22 @@ LAADS_BUCKET_BOOTSTRAP = "hls-development-laads-bucket"
 class HlsStack(core.Stack):
     def __init__(self, scope: core.Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
+        if GCC:
+            vpcid = os.environ["HLS_GCC_VPCID"]
+            image_id = aws_ssm.StringParameter.from_string_parameter_attributes(
+                self, "gcc_ami", parameter_name="/gcc/amis/aml2-ecs"
+            ).string_value
+            from permission_boundary import PermissionBoundaryAspect
+            self.node.apply_aspect(
+                PermissionBoundaryAspect(
+                    f'arn:aws:iam::{core.Aws.ACCOUNT_ID}:policy/gcc-tenantOperatorBoundary'
+                )
+            )
+        else:
+            vpcid = None
+            image_id = None
 
-        self.network = Network(self, "Network")
+        self.network = Network(self, "Network", vpcid=vpcid)
 
         self.laads_bucket = S3(self, "LaadsBucket", bucket_name=LAADS_BUCKET)
 
@@ -154,6 +174,7 @@ class HlsStack(core.Stack):
             instance_types=["r5d.2xlarge"],
             ssh_keyname=SSH_KEYNAME,
             use_cw=USE_CLOUD_WATCH,
+            image_id=image_id,
         )
 
         self.laads_task = DockerBatchJob(
