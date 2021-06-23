@@ -27,38 +27,38 @@ GIBS_OUTPUT_BUCKET = os.environ["HLS_GIBS_OUTPUT_BUCKET"]
 
 # Optional env settings
 # Images
-SENTINEL_ECR_URI = os.environ.get(
+SENTINEL_ECR_URI = os.getenv(
     "HLS_SENTINEL_ECR_URI",
     "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-sentinel:latest",
 )
-LANDSAT_ECR_URI = os.environ.get(
+LANDSAT_ECR_URI = os.getenv(
     "HLS_LANDSAT_ECR_URI",
     "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat-c2:latest",
 )
-LANDSAT_TILE_ECR_URI = os.environ.get(
+LANDSAT_TILE_ECR_URI = os.getenv(
     "HLS_LANDSAT_TILE_ECR_URI",
     "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat-tile:latest",
 )
-LAADS_ECR_URI = os.environ.get(
+LAADS_ECR_URI = os.getenv(
     "HLS_LAADS_ECR_URI",
-    "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-laads:test",
+    "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-laads:latest",
 )
 
 # Cron settings
-LAADS_CRON = os.environ.get("HLS_LAADS_CRON", "cron(0 0/12 * * ? *)")
-LANDSAT_INCOMPLETE_CRON = os.environ.get(
+LAADS_CRON = os.getenv("HLS_LAADS_CRON", "cron(0 0/12 * * ? *)")
+LANDSAT_INCOMPLETE_CRON = os.getenv(
     "HLS_LANDSAT_INCOMPLETE_CRON",
     "cron(0 12 * * ? *)"
 )
-SENTINEL_ERRORS_CRON = os.environ.get(
+SENTINEL_ERRORS_CRON = os.getenv(
     "HLS_SENTINEL_ERRORS_CRON",
     "cron(0 20 * * ? *)"
 )
-LANDSAT_DAYS_PRIOR = os.environ.get("HLS_LANDSAT_DAYS_PRIOR", "4")
-SENTINEL_DAYS_PRIOR = os.environ.get("HLS_SENTINEL_DAYS_PRIOR", "1")
+LANDSAT_DAYS_PRIOR = os.getenv("HLS_LANDSAT_DAYS_PRIOR", "4")
+SENTINEL_DAYS_PRIOR = os.getenv("HLS_SENTINEL_DAYS_PRIOR", "1")
 
-SSH_KEYNAME = os.environ.get("HLS_SSH_KEYNAME", "hls-mount")
-LANDSAT_SNS_TOPIC = os.environ.get(
+SSH_KEYNAME = os.getenv("HLS_SSH_KEYNAME", "hls-mount")
+LANDSAT_SNS_TOPIC = os.getenv(
     "HLS_LANDSAT_SNS_TOPIC", "arn:aws:sns:us-west-2:673253540267:public-c2-notify"
 )
 
