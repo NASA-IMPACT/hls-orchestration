@@ -32,10 +32,21 @@ $ source ./environment.sh && tox -e dev -r -- diff
 ```
 
 ### Deploy
-Deploys current created stack.
+Deploy current version of stack.
 ```
 $ source ./environment.sh && tox -e dev -r -- deploy
 ```
+
+The repository is configured to create automatic deployments to the `hls-development` stack when PRs are merged into the `dev` branch.  This deployment uses [Github Actions Environments](https://docs.github.com/en/actions/reference/environments) to manage the environment configuration rather than the `environment.sh`.
+
+Deployments to GCC have restrictions over creating VPCs and the types of AMIs which can be utilized. To deploy to GCC your shell will require the following environment settings.
+```
+export GCC=true
+export AWS_DEFAULT_REGION=us-west-2
+export HLS_GCC_ACCOUNT=<The GCC account id>
+export HLS_GCC_VPCID=<The vpc id provided by GCC administrators>
+```
+
 
 ### Setup Logging Database
 After `deploy` is run and the stack is created run
