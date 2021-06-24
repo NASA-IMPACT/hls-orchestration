@@ -102,10 +102,6 @@ else:
 LAADS_BUCKET_BOOTSTRAP = "hls-development-laads-bucket"
 
 
-print(LANDSAT_INCOMPLETE_CRON)
-print(type(LANDSAT_INCOMPLETE_CRON))
-
-
 class HlsStack(core.Stack):
     def __init__(self, scope: core.Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
