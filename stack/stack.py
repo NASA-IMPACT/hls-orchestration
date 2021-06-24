@@ -25,40 +25,47 @@ OUTPUT_BUCKET = os.environ["HLS_OUTPUT_BUCKET"]
 GIBS_OUTPUT_BUCKET = os.environ["HLS_GIBS_OUTPUT_BUCKET"]
 
 
+def getenv(key, default):
+    value = getenv(key, default)
+    if len(value) == 0 or value is None:
+        value = default
+    return value
+
+
 # Optional env settings
 # Images
-SENTINEL_ECR_URI = os.getenv(
+SENTINEL_ECR_URI = getenv(
     "HLS_SENTINEL_ECR_URI",
     "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-sentinel:latest",
 )
-LANDSAT_ECR_URI = os.getenv(
+LANDSAT_ECR_URI = getenv(
     "HLS_LANDSAT_ECR_URI",
     "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat-c2:latest",
 )
-LANDSAT_TILE_ECR_URI = os.getenv(
+LANDSAT_TILE_ECR_URI = getenv(
     "HLS_LANDSAT_TILE_ECR_URI",
     "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-landsat-tile:latest",
 )
-LAADS_ECR_URI = os.getenv(
+LAADS_ECR_URI = getenv(
     "HLS_LAADS_ECR_URI",
     "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-laads:latest",
 )
 
 # Cron settings
-LAADS_CRON = os.getenv("HLS_LAADS_CRON", "cron(0 0/12 * * ? *)")
-LANDSAT_INCOMPLETE_CRON = os.getenv(
+LAADS_CRON = getenv("HLS_LAADS_CRON", "cron(0 0/12 * * ? *)")
+LANDSAT_INCOMPLETE_CRON = getenv(
     "HLS_LANDSAT_INCOMPLETE_CRON",
     "cron(0 12 * * ? *)"
 )
-SENTINEL_ERRORS_CRON = os.getenv(
+SENTINEL_ERRORS_CRON = getenv(
     "HLS_SENTINEL_ERRORS_CRON",
     "cron(0 20 * * ? *)"
 )
-LANDSAT_DAYS_PRIOR = os.getenv("HLS_LANDSAT_DAYS_PRIOR", "4")
-SENTINEL_DAYS_PRIOR = os.getenv("HLS_SENTINEL_DAYS_PRIOR", "1")
+LANDSAT_DAYS_PRIOR = getenv("HLS_LANDSAT_DAYS_PRIOR", "4")
+SENTINEL_DAYS_PRIOR = getenv("HLS_SENTINEL_DAYS_PRIOR", "1")
 
-SSH_KEYNAME = os.getenv("HLS_SSH_KEYNAME", "hls-mount")
-LANDSAT_SNS_TOPIC = os.getenv(
+SSH_KEYNAME = getenv("HLS_SSH_KEYNAME", "hls-mount")
+LANDSAT_SNS_TOPIC = getenv(
     "HLS_LANDSAT_SNS_TOPIC", "arn:aws:sns:us-west-2:673253540267:public-c2-notify"
 )
 
@@ -69,21 +76,21 @@ LANDSAT_INTERMEDIATE_OUTPUT_BUCKET = f"{STACKNAME}-landsat-intermediate-output"
 GIBS_INTERMEDIATE_OUTPUT_BUCKET = f"{STACKNAME}-gibs-intermediate-output"
 
 try:
-    MAXV_CPUS = int(os.getenv("HLS_MAXV_CPUS", 1200))
+    MAXV_CPUS = int(getenv("HLS_MAXV_CPUS", 1200))
 except ValueError:
     MAXV_CPUS = 1200
 
-if os.getenv("HLS_REPLACE_EXISTING", "true") == "true":
+if getenv("HLS_REPLACE_EXISTING", "true") == "true":
     REPLACE_EXISTING = True
 else:
     REPLACE_EXISTING = False
 
-if os.getenv("HLS_USE_CLOUD_WATCH", "true") == "true":
+if getenv("HLS_USE_CLOUD_WATCH", "true") == "true":
     USE_CLOUD_WATCH = True
 else:
     USE_CLOUD_WATCH = False
 
-if os.getenv("GCC", None) == "true":
+if getenv("GCC", None) == "true":
     GCC = True
 else:
     GCC = False

@@ -55,10 +55,6 @@ jobs:
       HLS_SSH_KEYNAME: ${{ secrets.HLS_SSH_KEYNAME }}
 
     steps:
-      - name: Check null environment
-        run: |
-          echo "Wat"
-          echo "$HLS_LANDSAT_DAYS_PRIOR"
       - uses: actions/checkout@v2
       - name: Setup Python
         uses: actions/setup-python@v2
