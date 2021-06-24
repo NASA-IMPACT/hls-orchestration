@@ -27,8 +27,11 @@ GIBS_OUTPUT_BUCKET = os.environ["HLS_GIBS_OUTPUT_BUCKET"]
 
 def getenv(key, default):
     value = os.getenv(key, default)
-    if len(value) == 0 or value is None:
+    if value is None:
         value = default
+    elif type(value) == str:
+        if len(value) == 0:
+            value = default
     return value
 
 
