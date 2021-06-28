@@ -24,6 +24,12 @@ runcmd:
 - mkdir -p "$scratch_directory"
 - mount -t "$scratch_fs" "$mdadm_device" "$scratch_directory"
 - fi
+- dd if=/dev/zero of=$scratch_directory/swapfile bs=128M count=128
+- chmod 600 $scratch_directory/swapfile
+- mkswap $scratch_directory/swapfile
+- swapon $scratch_directory/swapfile
+- echo "$scratch_directory/swapfile swap swap defaults 0 0" >> /etc/fstab
+
 
 --==MYBOUNDARY==
 Content-Type: text/cloud-boothook; charset="us-ascii"
@@ -34,6 +40,9 @@ cloud-init-per once install_amazon-efs-utils yum install -y amazon-efs-utils
 
 # Create /efs folder
 cloud-init-per once mkdir_efs mkdir /mnt/efs
+
+# Create a 16GB swapfile (128M * 128)
+cloud-init-per once create_swap
 
 # Mount /efs
 cloud-init-per once mount_efs echo -e '{}:/ /mnt/efs efs defaults,_netdev 0 0' >> /etc/fstab
@@ -47,5 +56,3 @@ echo ECS_IMAGE_PULL_BEHAVIOR=always >> /etc/ecs/ecs.config
 yum install -y https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm
 /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c 'ssm:{}' -s
 --==MYBOUNDARY==--
-
-
