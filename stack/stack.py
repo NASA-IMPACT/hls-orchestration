@@ -182,7 +182,6 @@ class HlsStack(core.Stack):
             efs=self.efs.filesystem,
             maxv_cpus=MAXV_CPUS,
             instance_types=[
-                "r5d.xlarge",
                 "r5d.2xlarge"
                 "r5d.4xlarge"
                 "r5d.8xlarge"
