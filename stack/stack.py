@@ -181,13 +181,7 @@ class HlsStack(core.Stack):
             network=self.network,
             efs=self.efs.filesystem,
             maxv_cpus=MAXV_CPUS,
-            instance_types=[
-                "r5d.2xlarge"
-                "r5d.4xlarge"
-                "r5d.8xlarge"
-                "r5d.12xlarge"
-                "r5d.16xlarge"
-            ],
+            instance_types=["r5d"],
             ssh_keyname=SSH_KEYNAME,
             use_cw=USE_CLOUD_WATCH,
             image_id=image_id,
