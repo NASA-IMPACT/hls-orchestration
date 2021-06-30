@@ -1,3 +1,4 @@
+"""Select failed Sentinel processing jobs and re-process them in blocks"""
 import os
 import boto3
 import json
@@ -37,10 +38,9 @@ def convert_records(record):
     return converted
 
 
-def execute_step_function(error_chunk, submit_errors, job_stopped):
+def execute_step_function(error_chunk, submit_errors):
     input = json.dumps({
         "errors": error_chunk,
-        "fromdate": job_stopped,
     })
     try:
         step_function_client.start_execution(
@@ -53,19 +53,18 @@ def execute_step_function(error_chunk, submit_errors, job_stopped):
 
 
 def handler(event, context):
-    date_delta = int(os.getenv("DAYS_PRIOR"))
-    event_time = datetime.strptime(event["time"], '%Y-%m-%dT%H:%M:%SZ')
-    fromdate = (event_time - timedelta(days=date_delta)).strftime('%d/%m/%Y')
+    retry_limit = int(os.getenv("RETRY_LIMIT"))
+    #  Using the view ensures we are only using records which have jobinfo
     q = (
-        "SELECT id, granule, job_stopped from granule_log WHERE"
-        + " (event->'Container'->>'ExitCode' = '1'"
-        + " or event->'Container'->>'ExitCode' is NULL)"
-        + " AND DATE(job_stopped) = TO_DATE(:fromdate::text,'DD/MM/YYYY');"
+        "SELECT id, granule from sentinel_granule_log WHERE"
+        + " (jobinfo->'Container'->>'ExitCode' = '1'"
+        + " or jobinfo->'Container'->>'ExitCode' is NULL)"
+        + " AND run_count < :retry_limit::integer;"
     )
     response = execute_statement(
         q,
         sql_parameters=[
-            {"name": "fromdate", "value": {"stringValue": fromdate}},
+            {"name": "retry_limit", "value": {"longValue": retry_limit}},
         ]
     )
     records = map(convert_records, response["records"])
@@ -74,7 +73,7 @@ def handler(event, context):
     submission_errors = []
 
     for error_chunk in error_chunks:
-        execute_step_function(error_chunk, submission_errors, fromdate)
+        execute_step_function(error_chunk, submission_errors)
 
     if len(submission_errors) > 0:
         raise NameError("A step function execution error occurred")

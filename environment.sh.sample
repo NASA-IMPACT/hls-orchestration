@@ -50,12 +50,11 @@ HLS_LANDSAT_INCOMPLETE_CRON="cron(0 12 * * ? *)"
 # Schedule to reprocess Setinel errors.
 HLS_SENTINEL_ERRORS_CRON="cron(0 20 * * ? *)"
 
-# Number of days to go back for Landsat reprocessing.
+# Number of days to go back for Landsat incomplete reprocessing.
 HLS_LANDSAT_DAYS_PRIOR=4
 
-# Number of days to go back for Sentinel reprocessing.
-HLS_SENTINEL_DAYS_PRIOR=1
-
+# Maximum retries to reprocess a failed Sentinel granule.
+HLS_SENTINEL_RETRY_LIMIT=3
 
 # Max vcpus for Batch compute environment
 HLS_MAXV_CPUS=1200

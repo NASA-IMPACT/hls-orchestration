@@ -65,8 +65,7 @@ SENTINEL_ERRORS_CRON = getenv(
     "cron(0 20 * * ? *)"
 )
 LANDSAT_DAYS_PRIOR = getenv("HLS_LANDSAT_DAYS_PRIOR", "4")
-SENTINEL_DAYS_PRIOR = getenv("HLS_SENTINEL_DAYS_PRIOR", "1")
-
+SENTINEL_RETRY_LIMIT = getenv("HLS_SENTINEL_RETRY_LIMIT", "3")
 SSH_KEYNAME = getenv("HLS_SSH_KEYNAME", "hls-mount")
 LANDSAT_SNS_TOPIC = getenv(
     "HLS_LANDSAT_SNS_TOPIC", "arn:aws:sns:us-west-2:673253540267:public-c2-notify"
@@ -347,7 +346,7 @@ class HlsStack(core.Stack):
                 "HLS_DB_NAME": self.rds.database.database_name,
                 "HLS_DB_ARN": self.rds.arn,
             },
-            timeout=120,
+            timeout=800,
             layers=[self.hls_lambda_layer],
 
         )
@@ -361,7 +360,7 @@ class HlsStack(core.Stack):
                 "HLS_DB_NAME": self.rds.database.database_name,
                 "HLS_DB_ARN": self.rds.arn,
             },
-            timeout=120,
+            timeout=800,
             layers=[self.hls_lambda_layer],
         )
 
@@ -584,7 +583,7 @@ class HlsStack(core.Stack):
             self,
             "SentinelErrorsStepFunctionTrigger",
             state_machine=self.sentinel_errors_step_function.state_machine.ref,
-            code_file="process_sentinel_errors_by_date.py",
+            code_file="process_sentinel_errors.py",
             timeout=900,
             lambda_name="ProcessSentinelErrors",
             cron_str=SENTINEL_ERRORS_CRON,
@@ -592,7 +591,7 @@ class HlsStack(core.Stack):
                 "HLS_SECRETS": self.rds.secret.secret_arn,
                 "HLS_DB_NAME": self.rds.database.database_name,
                 "HLS_DB_ARN": self.rds.arn,
-                "DAYS_PRIOR": SENTINEL_DAYS_PRIOR,
+                "RETRY_LIMIT": SENTINEL_RETRY_LIMIT,
             },
         )
 
