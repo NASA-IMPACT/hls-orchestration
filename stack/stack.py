@@ -163,18 +163,6 @@ class HlsStack(core.Stack):
             timeout=300,
         )
 
-        self.lambda_logger = Lambda(
-            self,
-            "LambdaLogger",
-            code_file="logger.py",
-            env={
-                "HLS_SECRETS": self.rds.secret.secret_arn,
-                "HLS_DB_NAME": self.rds.database.database_name,
-                "HLS_DB_ARN": self.rds.arn,
-            },
-            timeout=30,
-        )
-
         self.batch = Batch(
             self,
             "Batch",
@@ -654,7 +642,6 @@ class HlsStack(core.Stack):
         sentinel_lambdas = [
             self.check_twin_granule,
             self.laads_available,
-            self.lambda_logger,
             self.sentinel_ac_logger,
             self.sentinel_logger,
             self.check_exit_code,
@@ -676,7 +663,6 @@ class HlsStack(core.Stack):
         self.landsat_step_function.steps_role.add_to_policy(self.batch_jobqueue_policy)
         landsat_lambdas = [
             self.laads_available,
-            self.lambda_logger,
             self.landsat_mgrs_logger,
             self.pr2mgrs_lambda,
             self.landsat_ac_logger,
@@ -695,7 +681,6 @@ class HlsStack(core.Stack):
         landsat_incomplete_lambdas = [
             self.check_landsat_pathrow_complete,
             self.pr2mgrs_lambda,
-            self.lambda_logger,
             self.mgrs_logger,
             self.get_random_wait,
         ]
@@ -858,7 +843,6 @@ class HlsStack(core.Stack):
 
     def addRDSpolicy(self):
         lambdas = [
-            self.lambda_logger,
             self.rds_bootstrap,
             self.landsat_mgrs_logger,
             self.landsat_ac_logger,
