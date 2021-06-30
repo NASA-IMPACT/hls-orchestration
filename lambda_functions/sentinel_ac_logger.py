@@ -39,11 +39,12 @@ def handler(event, context):
     )(parsed_info)
     q = (
         "UPDATE sentinel_log SET (jobinfo, run_count) ="
-        + " (:jobinfo::jsonb, run_count = run_count + 1)"
+        + " (:jobinfo::jsonb, run_count + 1)"
         + " WHERE granule = :granule::text"
     )
     sql_parameters = [
         {"name": "jobinfo", "value": {"stringValue": jobinfostring}},
+        {"name": "granule", "value": {"stringValue": event["granule"]}},
     ]
     execute_statement(
         q,
