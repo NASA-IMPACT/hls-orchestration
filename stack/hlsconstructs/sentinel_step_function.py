@@ -18,7 +18,6 @@ class SentinelStepFunction(core.Construct):
         inputbucket: str,
         sentinel_job_definition: str,
         jobqueue: str,
-        lambda_logger: str,
         sentinel_ac_logger: str,
         sentinel_logger: str,
         check_exit_code: str,
@@ -48,7 +47,6 @@ class SentinelStepFunction(core.Construct):
                     "ResultPath": "$",
                     "Next": "LogSentinel",
                     "Retry": [retry],
-                    "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "LogError",}],
                 },
                 "LogSentinel": {
                     "Type": "Task",
@@ -56,7 +54,6 @@ class SentinelStepFunction(core.Construct):
                     "ResultPath": "$",
                     "Next": "CheckLaads",
                     "Retry": [retry],
-                    "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "LogError",}],
                 },
                 "CheckLaads": {
                     "Type": "Task",
@@ -64,7 +61,6 @@ class SentinelStepFunction(core.Construct):
                     "ResultPath": "$",
                     "Next": "LaadsAvailable",
                     "Retry": [retry],
-                    "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "LogError",}],
                 },
                 "LaadsAvailable": {
                     "Type": "Choice",
@@ -145,13 +141,6 @@ class SentinelStepFunction(core.Construct):
                         }
                     ],
                     "Default": "Done",
-                },
-                "LogError": {
-                    "Type": "Task",
-                    "Resource": lambda_logger,
-                    "ResultPath": "$",
-                    "Next": "Error",
-                    "Retry": [retry],
                 },
                 "Done": {"Type": "Succeed"},
                 "Error": {"Type": "Fail"},

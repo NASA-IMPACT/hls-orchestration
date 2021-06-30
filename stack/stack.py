@@ -491,7 +491,6 @@ class HlsStack(core.Stack):
             inputbucket=SENTINEL_INPUT_BUCKET,
             sentinel_job_definition=self.sentinel_task.job.ref,
             jobqueue=self.batch.sentinel_jobqueue.ref,
-            lambda_logger=self.lambda_logger.function.function_arn,
             sentinel_ac_logger=self.sentinel_ac_logger.function.function_arn,
             sentinel_logger=self.sentinel_logger.function.function_arn,
             check_exit_code=self.check_exit_code.function.function_arn,
