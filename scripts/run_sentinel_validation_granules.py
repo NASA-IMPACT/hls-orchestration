@@ -9,6 +9,8 @@ input_bucket = 'hls-sentinel-validation-scenes'
 bucket = s3.Bucket(input_bucket)
 jobqueue = os.getenv("HLSSTACK_SENTINELJOBQUEUEEXPORT")
 jobdefinition = os.getenv("HLSSTACK_SENTINELJOBDEFINITION")
+#  Short running granule
+#  S2B_MSIL1C_20200806T173909_N0209_R098_T13TFN_20200806T195018
 
 
 def submit_job(granule_id):

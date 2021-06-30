@@ -1,8 +1,6 @@
+"""Update sentinel_log with new granule when it firsts enters the system."""
 import os
 import boto3
-import json
-from operator import itemgetter
-from hls_lambda_layer.hls_batch_utils import parse_jobinfo
 
 db_credentials_secrets_store_arn = os.getenv("HLS_SECRETS")
 database_name = os.getenv("HLS_DB_NAME")
@@ -22,15 +20,24 @@ def execute_statement(sql, sql_parameters=[]):
 
 
 def handler(event, context):
-    parsed_info = parse_jobinfo("jobinfo", event)
-    jobinfo, jobinfostring, exitcode = itemgetter(
-        "jobinfo", "jobinfostring", "exitcode"
-    )(parsed_info)
-    q = "INSERT INTO eventlog (event) VALUES (:event::jsonb);"
-    execute_statement(
-        q,
-        sql_parameters=[{"name": "event", "value": {"stringValue": jobinfostring}}],
-    )
+    """
+    Update sentinel_log with new granule when it firsts enters the system.
 
-    print(f"Exit Code is {exitcode}")
-    return exitcode
+    Parameters:
+    event (dict) Event source of the lambda trigger
+
+    """
+    #  Initial run_count is 0 before processing
+    sql_parameters = [
+        {"name": "granule", "value": {"stringValue": event["granule"]}},
+        {"name": "run_count", "value": {"longValue": 0}},
+    ]
+    sql = (
+        "INSERT INTO sentinel_log (granule, run_count) VALUES"
+        + "(:granule::varchar, :run_count::integer)"
+    )
+    execute_statement(
+        sql,
+        sql_parameters=sql_parameters,
+    )
+    return event

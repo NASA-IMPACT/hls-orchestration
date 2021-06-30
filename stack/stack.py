@@ -181,7 +181,7 @@ class HlsStack(core.Stack):
             network=self.network,
             efs=self.efs.filesystem,
             maxv_cpus=MAXV_CPUS,
-            instance_types=["r5d.2xlarge"],
+            instance_types=["r5d"],
             ssh_keyname=SSH_KEYNAME,
             use_cw=USE_CLOUD_WATCH,
             image_id=image_id,
@@ -348,6 +348,18 @@ class HlsStack(core.Stack):
                 "HLS_DB_ARN": self.rds.arn,
             },
             timeout=120,
+        )
+
+        self.sentinel_ac_logger = Lambda(
+            self,
+            "SentinelACLogger",
+            code_file="sentinel_ac_logger.py",
+            env={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
+            },
+            timeout=120,
             layers=[self.hls_lambda_layer],
 
         )
@@ -480,6 +492,7 @@ class HlsStack(core.Stack):
             sentinel_job_definition=self.sentinel_task.job.ref,
             jobqueue=self.batch.sentinel_jobqueue.ref,
             lambda_logger=self.lambda_logger.function.function_arn,
+            sentinel_ac_logger=self.sentinel_ac_logger.function.function_arn,
             sentinel_logger=self.sentinel_logger.function.function_arn,
             check_exit_code=self.check_exit_code.function.function_arn,
             outputbucket_role_arn=OUTPUT_BUCKET_ROLE_ARN,
@@ -646,6 +659,7 @@ class HlsStack(core.Stack):
             self.check_twin_granule,
             self.laads_available,
             self.lambda_logger,
+            self.sentinel_ac_logger,
             self.sentinel_logger,
             self.check_exit_code,
         ]
@@ -854,6 +868,7 @@ class HlsStack(core.Stack):
             self.landsat_ac_logger,
             self.mgrs_logger,
             self.landsat_pathrow_status,
+            self.sentinel_ac_logger,
             self.sentinel_logger,
             self.update_sentinel_failure,
             self.check_landsat_pathrow_complete,
