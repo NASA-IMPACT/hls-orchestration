@@ -47,26 +47,6 @@ CREATE TABLE IF NOT EXISTS landsat_ac_log (
 ALTER TABLE landsat_ac_log ADD COLUMN IF NOT EXISTS scene_id VARCHAR(100);
 ALTER TABLE landsat_ac_log ALTER COLUMN jobid DROP NOT NULL;
 
-DROP VIEW IF EXISTS landsat_ac_granule_log;
-CREATE VIEW landsat_ac_granule_log AS
-select id, ts,
-jobinfo->>'Status' as status,
-to_timestamp((jobinfo->>'CreatedAt')::float/1000) as job_created,
-to_timestamp((jobinfo->>'StartedAt')::float/1000) as job_started,
-to_timestamp((jobinfo->>'StoppedAt')::float/1000) as job_stopped,
-jobinfo
-from landsat_ac_log WHERE jobinfo IS NOT NULL;
-
-DROP VIEW IF EXISTS landsat_mgrs_granule_log;
-CREATE VIEW landsat_mgrs_granule_log AS
-select id, ts,
-jobinfo->>'Status' as status,
-to_timestamp((jobinfo->>'CreatedAt')::float/1000) as job_created,
-to_timestamp((jobinfo->>'StartedAt')::float/1000) as job_started,
-to_timestamp((jobinfo->>'StoppedAt')::float/1000) as job_stopped,
-jobinfo
-from landsat_mgrs_log WHERE jobinfo IS NOT NULL;
-
 DO $$
 BEGIN
   IF EXISTS(SELECT *
@@ -101,7 +81,30 @@ jobinfo
 from sentinel_log WHERE jobinfo IS NOT NULL;
 
 DROP VIEW IF EXISTS granule_log;
-DROP FUNCTION IF EXISTS granule(IN event jsonb, OUT granule text)
+DROP FUNCTION IF EXISTS granule(IN event jsonb, OUT granule text);
+
+ALTER TABLE landsat_ac_log ADD COLUMN IF NOT EXISTS run_count INTEGER;
+ALTER TABLE landsat_mgrs_log ADD COLUMN IF NOT EXISTS run_count INTEGER;
+
+DROP VIEW IF EXISTS landsat_ac_granule_log;
+CREATE VIEW landsat_ac_granule_log AS
+select id, ts, run_count,
+jobinfo->>'Status' as status,
+to_timestamp((jobinfo->>'CreatedAt')::float/1000) as job_created,
+to_timestamp((jobinfo->>'StartedAt')::float/1000) as job_started,
+to_timestamp((jobinfo->>'StoppedAt')::float/1000) as job_stopped,
+jobinfo
+from landsat_ac_log WHERE jobinfo IS NOT NULL;
+
+DROP VIEW IF EXISTS landsat_mgrs_granule_log;
+CREATE VIEW landsat_mgrs_granule_log AS
+select id, ts, run_count,
+jobinfo->>'Status' as status,
+to_timestamp((jobinfo->>'CreatedAt')::float/1000) as job_created,
+to_timestamp((jobinfo->>'StartedAt')::float/1000) as job_started,
+to_timestamp((jobinfo->>'StoppedAt')::float/1000) as job_stopped,
+jobinfo
+from landsat_mgrs_log WHERE jobinfo IS NOT NULL;
 """
 
 

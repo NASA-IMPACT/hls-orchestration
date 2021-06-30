@@ -24,17 +24,11 @@ def test_handler(client):
     client.execute_statement.return_value = {}
     expected = handler(event, {})
     args, kwargs = client.execute_statement.call_args
-    q = (
-        "UPDATE landsat_mgrs_log SET jobinfo = :jobinfo::jsonb"
-        + " WHERE path = :path::varchar(3) AND"
-        + " mgrs = :mgrs::varchar(5) AND acquisition = :acquisition::date;"
-    )
     path = {"name": "path", "value": {"stringValue": "210"}}
     acquisition = {"name": "acquisition", "value": {"stringValue": "2020-07-19"}}
     mgrs = {"name": "mgrs", "value": {"stringValue": "29VMJ"}}
     jobinfo = {"name": "jobinfo", "value": {"stringValue":
                                             json.dumps(event["tilejobinfo"])}}
-    assert q == kwargs["sql"]
     assert path in kwargs["parameters"]
     assert mgrs in kwargs["parameters"]
     assert acquisition in kwargs["parameters"]
@@ -56,20 +50,8 @@ def test_handler_error(client):
     client.execute_statement.return_value = {}
     expected = handler(event, {})
     args, kwargs = client.execute_statement.call_args
-    q = (
-        "UPDATE landsat_mgrs_log SET jobinfo = :jobinfo::jsonb"
-        + " WHERE path = :path::varchar(3) AND"
-        + " mgrs = :mgrs::varchar(5) AND acquisition = :acquisition::date;"
-    )
-    path = {"name": "path", "value": {"stringValue": "210"}}
-    acquisition = {"name": "acquisition", "value": {"stringValue": "2020-07-19"}}
-    mgrs = {"name": "mgrs", "value": {"stringValue": "29VMJ"}}
     cause = json.loads(event["tilejobinfo"]["Cause"])
     jobinfo = {"name": "jobinfo", "value": {"stringValue": json.dumps(cause)}}
-    assert q == kwargs["sql"]
-    assert path in kwargs["parameters"]
-    assert mgrs in kwargs["parameters"]
-    assert acquisition in kwargs["parameters"]
     assert jobinfo in kwargs["parameters"]
     assert expected == 1
 
@@ -88,20 +70,8 @@ def test_handler_error_no_exit_code(client):
     client.execute_statement.return_value = {}
     expected = handler(event, {})
     args, kwargs = client.execute_statement.call_args
-    q = (
-        "UPDATE landsat_mgrs_log SET jobinfo = :jobinfo::jsonb"
-        + " WHERE path = :path::varchar(3) AND"
-        + " mgrs = :mgrs::varchar(5) AND acquisition = :acquisition::date;"
-    )
-    path = {"name": "path", "value": {"stringValue": "210"}}
-    acquisition = {"name": "acquisition", "value": {"stringValue": "2020-07-19"}}
-    mgrs = {"name": "mgrs", "value": {"stringValue": "29VMJ"}}
     cause = json.loads(event["tilejobinfo"]["Cause"])
     jobinfo = {"name": "jobinfo", "value": {"stringValue": json.dumps(cause)}}
-    assert q == kwargs["sql"]
-    assert path in kwargs["parameters"]
-    assert mgrs in kwargs["parameters"]
-    assert acquisition in kwargs["parameters"]
     assert jobinfo in kwargs["parameters"]
     assert expected == "nocode"
 
@@ -120,14 +90,6 @@ def test_handler_error_non_json(client):
     client.execute_statement.return_value = {}
     expected = handler(event, {})
     args, kwargs = client.execute_statement.call_args
-    q = (
-        "UPDATE landsat_mgrs_log SET jobinfo = :jobinfo::jsonb"
-        + " WHERE path = :path::varchar(3) AND"
-        + " mgrs = :mgrs::varchar(5) AND acquisition = :acquisition::date;"
-    )
-    path = {"name": "path", "value": {"stringValue": "210"}}
-    acquisition = {"name": "acquisition", "value": {"stringValue": "2020-07-19"}}
-    mgrs = {"name": "mgrs", "value": {"stringValue": "29VMJ"}}
     jobinfo_value = {
         "cause": event["tilejobinfo"]["Cause"]
     }
@@ -138,9 +100,5 @@ def test_handler_error_non_json(client):
             "stringValue": json.dumps(jobinfo_value)
         }
     }
-    assert q == kwargs["sql"]
-    assert path in kwargs["parameters"]
-    assert mgrs in kwargs["parameters"]
-    assert acquisition in kwargs["parameters"]
     assert jobinfo in kwargs["parameters"]
     assert expected == "nocode"
