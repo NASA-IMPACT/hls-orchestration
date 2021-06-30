@@ -545,7 +545,6 @@ class HlsStack(core.Stack):
             tilejobqueue=self.batch.landsattile_jobqueue.ref,
             tile_job_definition=self.landsat_tile_task.job.ref,
             intermediate_output_bucket=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
-            lambda_logger=self.lambda_logger.function.function_arn,
             check_mgrs_pathrow_complete=self.check_landsat_pathrow_complete.function.function_arn,
             pr2mgrs=self.pr2mgrs_lambda.function.function_arn,
             mgrs_logger=self.mgrs_logger.function.function_arn,

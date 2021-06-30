@@ -18,17 +18,18 @@ class LandsatIncompleteStepFunction(core.Construct):
         tile_job_definition: str,
         pr2mgrs: str,
         mgrs_logger: str,
-        lambda_logger: str,
         check_mgrs_pathrow_complete: str,
         get_random_wait: str,
         gibs_outputbucket: str,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
-        lambda_interval = 10
-        lambda_max_attempts = 3
-        lambda_backoff_rate = 2
-
+        retry = {
+            "ErrorEquals": ["States.ALL"],
+            "IntervalSeconds": 10,
+            "MaxAttempts": 3,
+            "BackoffRate": 2,
+        }
         state_definition = {
             "Comment": "Landsat Incomplete Step Function",
             "StartAt": "ProcessIncompletes",
@@ -48,7 +49,7 @@ class LandsatIncompleteStepFunction(core.Construct):
                                 "Catch": [
                                     {
                                         "ErrorEquals": ["States.ALL"],
-                                        "Next": "LogMapError",
+                                        "Next": "SuccessState",
                                     }
                                 ],
                             },
@@ -60,7 +61,7 @@ class LandsatIncompleteStepFunction(core.Construct):
                                 "Catch": [
                                     {
                                         "ErrorEquals": ["States.ALL"],
-                                        "Next": "LogMapError",
+                                        "Next": "SuccessState",
                                     }
                                 ],
                             },
@@ -153,28 +154,7 @@ class LandsatIncompleteStepFunction(core.Construct):
                                 "Type": "Task",
                                 "Resource": mgrs_logger,
                                 "Next": "SuccessState",
-                                "Retry": [
-                                    {
-                                        "ErrorEquals": ["States.ALL"],
-                                        "IntervalSeconds": lambda_interval,
-                                        "MaxAttempts": lambda_max_attempts,
-                                        "BackoffRate": lambda_backoff_rate,
-                                    }
-                                ],
-                            },
-                            "LogMapError": {
-                                "Type": "Task",
-                                "Resource": lambda_logger,
-                                "ResultPath": "$",
-                                "Next": "SuccessState",
-                                "Retry": [
-                                    {
-                                        "ErrorEquals": ["States.ALL"],
-                                        "IntervalSeconds": lambda_interval,
-                                        "MaxAttempts": lambda_max_attempts,
-                                        "BackoffRate": lambda_backoff_rate,
-                                    }
-                                ],
+                                "Retry": [retry],
                             },
                             "SuccessState": {"Type": "Succeed"},
                         }
