@@ -16,7 +16,6 @@ class SentinelErrorsStepFunction(core.Construct):
         inputbucket: str,
         sentinel_job_definition: str,
         jobqueue: str,
-        lambda_logger: str,
         update_sentinel_failure: str,
         get_random_wait: str,
         gibs_intermediate_output_bucket: str,
@@ -24,9 +23,12 @@ class SentinelErrorsStepFunction(core.Construct):
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
-        lambda_interval = 10
-        lambda_max_attempts = 3
-        lambda_backoff_rate = 2
+        retry = {
+            "ErrorEquals": ["States.ALL"],
+            "IntervalSeconds": 10,
+            "MaxAttempts": 3,
+            "BackoffRate": 2,
+        }
 
         state_definition = {
             "Comment": "Sentinel Errors Step Function",
@@ -101,14 +103,7 @@ class SentinelErrorsStepFunction(core.Construct):
                                 "Type": "Task",
                                 "Resource": update_sentinel_failure,
                                 "Next": "SuccessState",
-                                "Retry": [
-                                    {
-                                        "ErrorEquals": ["States.ALL"],
-                                        "IntervalSeconds": lambda_interval,
-                                        "MaxAttempts": lambda_max_attempts,
-                                        "BackoffRate": lambda_backoff_rate,
-                                    }
-                                ],
+                                "Retry": [retry],
                             },
                             "SuccessState": {
                                 "Type": "Succeed"

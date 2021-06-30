@@ -18,7 +18,7 @@ class SentinelStepFunction(core.Construct):
         inputbucket: str,
         sentinel_job_definition: str,
         jobqueue: str,
-        lambda_logger: str,
+        sentinel_ac_logger: str,
         sentinel_logger: str,
         check_exit_code: str,
         replace_existing: bool,
@@ -26,9 +26,12 @@ class SentinelStepFunction(core.Construct):
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
-        lambda_interval = 10
-        lambda_max_attempts = 3
-        lambda_backoff_rate = 2
+        retry = {
+            "ErrorEquals": ["States.ALL"],
+            "IntervalSeconds": 10,
+            "MaxAttempts": 3,
+            "BackoffRate": 2,
+        }
 
         if replace_existing:
             replace = "replace"
@@ -42,31 +45,22 @@ class SentinelStepFunction(core.Construct):
                     "Type": "Task",
                     "Resource": check_twin_granule,
                     "ResultPath": "$",
+                    "Next": "LogSentinel",
+                    "Retry": [retry],
+                },
+                "LogSentinel": {
+                    "Type": "Task",
+                    "Resource": sentinel_logger,
+                    "ResultPath": "$",
                     "Next": "CheckLaads",
-                    "Retry": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": lambda_interval,
-                            "MaxAttempts": lambda_max_attempts,
-                            "BackoffRate": lambda_backoff_rate,
-                        }
-                    ],
-                    "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "LogError",}],
+                    "Retry": [retry],
                 },
                 "CheckLaads": {
                     "Type": "Task",
                     "Resource": laads_available_function,
                     "ResultPath": "$",
                     "Next": "LaadsAvailable",
-                    "Retry": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": lambda_interval,
-                            "MaxAttempts": lambda_max_attempts,
-                            "BackoffRate": lambda_backoff_rate,
-                        }
-                    ],
-                    "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "LogError",}],
+                    "Retry": [retry],
                 },
                 "LaadsAvailable": {
                     "Type": "Choice",
@@ -114,29 +108,23 @@ class SentinelStepFunction(core.Construct):
                     "Catch": [
                         {
                             "ErrorEquals": ["States.ALL"],
-                            "Next": "LogSentinel",
+                            "Next": "LogSentinelAC",
                             "ResultPath": "$.jobinfo",
                         }
                     ],
-                    "Next": "LogSentinel",
+                    "Next": "LogSentinelAC",
                 },
-                "LogSentinel": {
+                "LogSentinelAC": {
                     "Type": "Task",
-                    "Resource": sentinel_logger,
+                    "Resource": sentinel_ac_logger,
                     "Next": "CheckSentinelExitCode",
-                    "Retry": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": lambda_interval,
-                            "MaxAttempts": lambda_max_attempts,
-                            "BackoffRate": lambda_backoff_rate,
-                        }
-                    ],
+                    "Retry": [retry],
                 },
                 "CheckSentinelExitCode": {
                     "Type": "Task",
                     "Resource": check_exit_code,
                     "Next": "HadSentinelFailure",
+                    "Retry": [retry],
                 },
                 "HadSentinelFailure": {
                     "Type": "Choice",
@@ -153,20 +141,6 @@ class SentinelStepFunction(core.Construct):
                         }
                     ],
                     "Default": "Done",
-                },
-                "LogError": {
-                    "Type": "Task",
-                    "Resource": lambda_logger,
-                    "ResultPath": "$",
-                    "Next": "Error",
-                    "Retry": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": lambda_interval,
-                            "MaxAttempts": lambda_max_attempts,
-                            "BackoffRate": lambda_backoff_rate,
-                        }
-                    ],
                 },
                 "Done": {"Type": "Succeed"},
                 "Error": {"Type": "Fail"},

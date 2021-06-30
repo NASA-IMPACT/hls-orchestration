@@ -65,8 +65,7 @@ SENTINEL_ERRORS_CRON = getenv(
     "cron(0 20 * * ? *)"
 )
 LANDSAT_DAYS_PRIOR = getenv("HLS_LANDSAT_DAYS_PRIOR", "4")
-SENTINEL_DAYS_PRIOR = getenv("HLS_SENTINEL_DAYS_PRIOR", "1")
-
+SENTINEL_RETRY_LIMIT = getenv("HLS_SENTINEL_RETRY_LIMIT", "3")
 SSH_KEYNAME = getenv("HLS_SSH_KEYNAME", "hls-mount")
 LANDSAT_SNS_TOPIC = getenv(
     "HLS_LANDSAT_SNS_TOPIC", "arn:aws:sns:us-west-2:673253540267:public-c2-notify"
@@ -161,18 +160,6 @@ class HlsStack(core.Stack):
                 "HLS_DB_ARN": self.rds.arn,
             },
             timeout=300,
-        )
-
-        self.lambda_logger = Lambda(
-            self,
-            "LambdaLogger",
-            code_file="logger.py",
-            env={
-                "HLS_SECRETS": self.rds.secret.secret_arn,
-                "HLS_DB_NAME": self.rds.database.database_name,
-                "HLS_DB_ARN": self.rds.arn,
-            },
-            timeout=30,
         )
 
         self.batch = Batch(
@@ -348,6 +335,18 @@ class HlsStack(core.Stack):
                 "HLS_DB_ARN": self.rds.arn,
             },
             timeout=120,
+        )
+
+        self.sentinel_ac_logger = Lambda(
+            self,
+            "SentinelACLogger",
+            code_file="sentinel_ac_logger.py",
+            env={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
+            },
+            timeout=800,
             layers=[self.hls_lambda_layer],
 
         )
@@ -361,7 +360,7 @@ class HlsStack(core.Stack):
                 "HLS_DB_NAME": self.rds.database.database_name,
                 "HLS_DB_ARN": self.rds.arn,
             },
-            timeout=120,
+            timeout=800,
             layers=[self.hls_lambda_layer],
         )
 
@@ -479,7 +478,7 @@ class HlsStack(core.Stack):
             inputbucket=SENTINEL_INPUT_BUCKET,
             sentinel_job_definition=self.sentinel_task.job.ref,
             jobqueue=self.batch.sentinel_jobqueue.ref,
-            lambda_logger=self.lambda_logger.function.function_arn,
+            sentinel_ac_logger=self.sentinel_ac_logger.function.function_arn,
             sentinel_logger=self.sentinel_logger.function.function_arn,
             check_exit_code=self.check_exit_code.function.function_arn,
             outputbucket_role_arn=OUTPUT_BUCKET_ROLE_ARN,
@@ -494,7 +493,6 @@ class HlsStack(core.Stack):
             inputbucket=SENTINEL_INPUT_BUCKET,
             sentinel_job_definition=self.sentinel_task.job.ref,
             jobqueue=self.batch.sentinel_jobqueue.ref,
-            lambda_logger=self.lambda_logger.function.function_arn,
             update_sentinel_failure=self.update_sentinel_failure.function.function_arn,
             outputbucket_role_arn=OUTPUT_BUCKET_ROLE_ARN,
             gibs_intermediate_output_bucket=GIBS_INTERMEDIATE_OUTPUT_BUCKET,
@@ -513,7 +511,6 @@ class HlsStack(core.Stack):
             tile_job_definition=self.landsat_tile_task.job.ref,
             acjobqueue=self.batch.landsatac_jobqueue.ref,
             tilejobqueue=self.batch.landsattile_jobqueue.ref,
-            lambda_logger=self.lambda_logger.function.function_arn,
             landsat_mgrs_logger=self.landsat_mgrs_logger.function.function_arn,
             landsat_ac_logger=self.landsat_ac_logger.function.function_arn,
             landsat_logger=self.landsat_logger.function.function_arn,
@@ -535,7 +532,6 @@ class HlsStack(core.Stack):
             tilejobqueue=self.batch.landsattile_jobqueue.ref,
             tile_job_definition=self.landsat_tile_task.job.ref,
             intermediate_output_bucket=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
-            lambda_logger=self.lambda_logger.function.function_arn,
             check_mgrs_pathrow_complete=self.check_landsat_pathrow_complete.function.function_arn,
             pr2mgrs=self.pr2mgrs_lambda.function.function_arn,
             mgrs_logger=self.mgrs_logger.function.function_arn,
@@ -587,7 +583,7 @@ class HlsStack(core.Stack):
             self,
             "SentinelErrorsStepFunctionTrigger",
             state_machine=self.sentinel_errors_step_function.state_machine.ref,
-            code_file="process_sentinel_errors_by_date.py",
+            code_file="process_sentinel_errors.py",
             timeout=900,
             lambda_name="ProcessSentinelErrors",
             cron_str=SENTINEL_ERRORS_CRON,
@@ -595,7 +591,7 @@ class HlsStack(core.Stack):
                 "HLS_SECRETS": self.rds.secret.secret_arn,
                 "HLS_DB_NAME": self.rds.database.database_name,
                 "HLS_DB_ARN": self.rds.arn,
-                "DAYS_PRIOR": SENTINEL_DAYS_PRIOR,
+                "RETRY_LIMIT": SENTINEL_RETRY_LIMIT,
             },
         )
 
@@ -645,7 +641,7 @@ class HlsStack(core.Stack):
         sentinel_lambdas = [
             self.check_twin_granule,
             self.laads_available,
-            self.lambda_logger,
+            self.sentinel_ac_logger,
             self.sentinel_logger,
             self.check_exit_code,
         ]
@@ -666,7 +662,6 @@ class HlsStack(core.Stack):
         self.landsat_step_function.steps_role.add_to_policy(self.batch_jobqueue_policy)
         landsat_lambdas = [
             self.laads_available,
-            self.lambda_logger,
             self.landsat_mgrs_logger,
             self.pr2mgrs_lambda,
             self.landsat_ac_logger,
@@ -685,7 +680,6 @@ class HlsStack(core.Stack):
         landsat_incomplete_lambdas = [
             self.check_landsat_pathrow_complete,
             self.pr2mgrs_lambda,
-            self.lambda_logger,
             self.mgrs_logger,
             self.get_random_wait,
         ]
@@ -848,12 +842,12 @@ class HlsStack(core.Stack):
 
     def addRDSpolicy(self):
         lambdas = [
-            self.lambda_logger,
             self.rds_bootstrap,
             self.landsat_mgrs_logger,
             self.landsat_ac_logger,
             self.mgrs_logger,
             self.landsat_pathrow_status,
+            self.sentinel_ac_logger,
             self.sentinel_logger,
             self.update_sentinel_failure,
             self.check_landsat_pathrow_complete,
