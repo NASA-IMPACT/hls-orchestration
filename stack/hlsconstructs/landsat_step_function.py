@@ -19,7 +19,6 @@ class LandsatStepFunction(core.Construct):
         tile_job_definition: str,
         acjobqueue: str,
         tilejobqueue: str,
-        lambda_logger: str,
         landsat_mgrs_logger: str,
         landsat_ac_logger: str,
         landsat_logger: str,
@@ -34,9 +33,12 @@ class LandsatStepFunction(core.Construct):
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
-        lambda_interval = 10
-        lambda_max_attempts = 3
-        lambda_backoff_rate = 2
+        retry = {
+            "ErrorEquals": ["States.ALL"],
+            "IntervalSeconds": 10,
+            "MaxAttempts": 3,
+            "BackoffRate": 2,
+        }
 
         if replace_existing:
             replace = "replace"
@@ -52,14 +54,7 @@ class LandsatStepFunction(core.Construct):
                     "Resource": pr2mgrs,
                     "ResultPath": "$.mgrsvalues",
                     "Next": "MGRSExists",
-                    "Retry": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": lambda_interval,
-                            "MaxAttempts": lambda_max_attempts,
-                            "BackoffRate": 2,
-                        }
-                    ],
+                    "Retry": [retry],
                 },
                 "MGRSExists": {
                     "Type": "Choice",
@@ -77,28 +72,14 @@ class LandsatStepFunction(core.Construct):
                     "Resource": landsat_logger,
                     "ResultPath": None,
                     "Next": "LogLandsatMGRS",
-                    "Retry": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": lambda_interval,
-                            "MaxAttempts": lambda_max_attempts,
-                            "BackoffRate": 2,
-                        }
-                    ],
+                    "Retry": [retry],
                 },
                 "LogLandsatMGRS": {
                     "Type": "Task",
                     "Resource": landsat_mgrs_logger,
                     "ResultPath": None,
                     "Next": "CheckLaads",
-                    "Retry": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": lambda_interval,
-                            "MaxAttempts": lambda_max_attempts,
-                            "BackoffRate": lambda_backoff_rate,
-                        }
-                    ],
+                    "Retry": [retry],
                 },
                 "CheckLaads": {
                     "Type": "Task",
@@ -106,15 +87,7 @@ class LandsatStepFunction(core.Construct):
                     "Parameters": {"granule.$": "$.scene", "scene_meta.$": "$"},
                     "ResultPath": "$.taskresult",
                     "Next": "LaadsAvailable",
-                    "Retry": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": lambda_interval,
-                            "MaxAttempts": lambda_max_attempts,
-                            "BackoffRate": lambda_backoff_rate,
-                        }
-                    ],
-                    "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "LogError",}],
+                    "Retry": [retry],
                 },
                 "LaadsAvailable": {
                     "Type": "Choice",
@@ -199,14 +172,7 @@ class LandsatStepFunction(core.Construct):
                     "Resource": landsat_ac_logger,
                     "ResultPath": None,
                     "Next": "ProcessMGRSGrid",
-                    "Retry": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": lambda_interval,
-                            "MaxAttempts": lambda_max_attempts,
-                            "BackoffRate": 2,
-                        }
-                    ],
+                    "Retry": [retry],
                 },
                 "ProcessMGRSGrid": {
                     "Type": "Map",
@@ -321,14 +287,7 @@ class LandsatStepFunction(core.Construct):
                                 "Type": "Task",
                                 "Resource": mgrs_logger,
                                 "Next": "SuccessState",
-                                "Retry": [
-                                    {
-                                        "ErrorEquals": ["States.ALL"],
-                                        "IntervalSeconds": lambda_interval,
-                                        "MaxAttempts": lambda_max_attempts,
-                                        "BackoffRate": lambda_backoff_rate,
-                                    }
-                                ],
+                                "Retry": [retry],
                             },
                             "SuccessState": {"Type": "Succeed"},
                         },
@@ -360,14 +319,7 @@ class LandsatStepFunction(core.Construct):
                     "Type": "Task",
                     "Resource": landsat_ac_logger,
                     "Next": "CheckAcExitCode",
-                    "Retry": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": lambda_interval,
-                            "MaxAttempts": lambda_max_attempts,
-                            "BackoffRate": lambda_backoff_rate,
-                        }
-                    ],
+                    "Retry": [retry],
                 },
                 "CheckAcExitCode": {
                     "Type": "Task",
@@ -389,20 +341,6 @@ class LandsatStepFunction(core.Construct):
                         }
                     ],
                     "Default": "Done",
-                },
-                "LogError": {
-                    "Type": "Task",
-                    "Resource": lambda_logger,
-                    "ResultPath": "$",
-                    "Next": "Error",
-                    "Retry": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": lambda_interval,
-                            "MaxAttempts": lambda_max_attempts,
-                            "BackoffRate": lambda_backoff_rate,
-                        }
-                    ],
                 },
                 "Done": {"Type": "Succeed"},
                 "Error": {"Type": "Fail"},
