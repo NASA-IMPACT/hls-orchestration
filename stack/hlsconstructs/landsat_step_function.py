@@ -16,20 +16,18 @@ class LandsatStepFunction(core.Construct):
         outputbucket_role_arn: str,
         intermediate_output_bucket: str,
         ac_job_definition: str,
-        tile_job_definition: str,
         acjobqueue: str,
-        tilejobqueue: str,
         landsat_mgrs_logger: str,
         landsat_ac_logger: str,
         landsat_logger: str,
         landsat_pathrow_status: str,
         pr2mgrs: str,
-        mgrs_logger: str,
         check_landsat_tiling_exit_code: str,
         check_landsat_ac_exit_code: str,
         get_random_wait: str,
         replace_existing: bool,
         gibs_outputbucket: str,
+        landsat_mgrs_step_function_arn: str,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -184,115 +182,33 @@ class LandsatStepFunction(core.Construct):
                     },
                     "MaxConcurrency": 0,
                     "Iterator": {
-                        "StartAt": "GetPathRowValues",
+                        "StartAt": "ProcessMGRSGrids",
                         "States": {
-                            "GetPathRowValues": {
-                                "Type": "Task",
-                                "Resource": pr2mgrs,
-                                "ResultPath": "$.mgrs_metadata",
-                                "Next": "CheckPathRowStatus",
-                            },
-                            "CheckPathRowStatus": {
-                                "Type": "Task",
-                                "Resource": landsat_pathrow_status,
-                                "ResultPath": "$.ready_for_tiling",
-                                "Next": "ReadyForTiling",
-                            },
-                            "ReadyForTiling": {
-                                "Type": "Choice",
-                                "Choices": [
-                                    {
-                                        "Variable": "$.ready_for_tiling",
-                                        "BooleanEquals": True,
-                                        "Next": "GetRandomWaitTile",
-                                    }
-                                ],
-                                "Default": "SuccessState",
-                            },
-                            "GetRandomWaitTile": {
-                                "Type": "Task",
-                                "Resource": get_random_wait,
-                                "ResultPath": "$.wait_time",
-                                "Next": "WaitForTiling",
-                            },
-                            "WaitForTiling": {
-                                "Type": "Wait",
-                                "SecondsPath": "$.wait_time",
-                                "Next": "RunLandsatTile"
-                            },
-                            "RunLandsatTile": {
-                                "Type": "Task",
-                                "Resource": "arn:aws:states:::batch:submitJob.sync",
-                                "ResultPath": "$.tilejobinfo",
-                                "Parameters": {
-                                    "JobName": "LandsatTileJob",
-                                    "JobQueue": tilejobqueue,
-                                    "JobDefinition": tile_job_definition,
-                                    "ContainerOverrides": {
-                                        "Command": ["export && landsat-tile.sh"],
-                                        "Environment": [
-                                            {
-                                                "Name":"PATHROW_LIST",
-                                                "Value.$": "$.mgrs_metadata.pathrows_string"
-                                            },
-                                            {
-                                                "Name": "INPUT_BUCKET",
-                                                "Value": intermediate_output_bucket
-                                            },
-                                            {
-                                                "Name": "OUTPUT_BUCKET",
-                                                "Value": outputbucket
-                                            },
-                                            {
-                                                "Name": "GCC_ROLE_ARN",
-                                                "Value": outputbucket_role_arn,
-                                            },
-                                            {
-                                                "Name": "DATE",
-                                                "Value.$": "$.date"
-                                            },
-                                            {
-                                                "Name": "MGRS",
-                                                "Value.$": "$.MGRS"
-                                            },
-                                            {
-                                                "Name": "LANDSAT_PATH",
-                                                "Value.$": "$.path"
-                                            },
-                                            {
-                                                "Name": "MGRS_ULX",
-                                                "Value.$": "$.mgrs_metadata.mgrs_ulx"
-                                            },
-                                            {
-                                                "Name": "MGRS_ULY",
-                                                "Value.$": "$.mgrs_metadata.mgrs_uly"
-                                            },
-                                            {
-                                                "Name": "GIBS_OUTPUT_BUCKET",
-                                                "Value": gibs_outputbucket
-                                            },
-                                        ],
+                            "ProcessMGRSGrids": {
+                                "Type":"Task",
+                                "Resource":"arn:aws:states:::states:startExecution.sync",
+                                "Parameters":{
+                                    "StateMachineArn": landsat_mgrs_step_function_arn,
+                                    "Input":{
+                                        "NeedCallback": False,
+                                        "AWS_STEP_FUNCTIONS_STARTED_BY_EXECUTION_ID.$": "$$.Execution.Id",
+                                        "MGRS.$": "$.MGRS",
+                                        "path.$": "$.path",
+                                        "date.$": "$.date",
                                     },
                                 },
-                                "Catch": [
+                                "Retry":[
                                     {
-                                        "ErrorEquals": ["States.ALL"],
-                                        "Next": "LogMGRS",
-                                        "ResultPath": "$.tilejobinfo",
+                                        "ErrorEquals":[
+                                            "StepFunctions.ExecutionLimitExceeded"
+                                        ]
                                     }
                                 ],
-                                "Next": "LogMGRS",
-                            },
-                            "LogMGRS": {
-                                "Type": "Task",
-                                "Resource": mgrs_logger,
                                 "Next": "SuccessState",
-                                "Retry": [retry],
                             },
                             "SuccessState": {"Type": "Succeed"},
                         },
-                    },
-                    "Next": "CheckExitCodes",
+                    }, "Next": "CheckExitCodes",
                 },
                 "CheckExitCodes": {
                     "Type": "Task",
@@ -351,6 +267,11 @@ class LandsatStepFunction(core.Construct):
             self,
             "StepsRole",
             assumed_by=aws_iam.ServicePrincipal("states.amazonaws.com"),
+            managed_policies=[
+                aws_iam.ManagedPolicy.from_aws_managed_policy_name(
+                    "CloudWatchEventsFullAccess"
+                ),
+            ],
         )
 
         self.state_machine = aws_stepfunctions.CfnStateMachine(
@@ -359,20 +280,49 @@ class LandsatStepFunction(core.Construct):
             definition_string=json.dumps(state_definition),
             role_arn=self.steps_role.role_arn,
         )
+
         region = core.Aws.REGION
-        acountid = core.Aws.ACCOUNT_ID
+        accountid = core.Aws.ACCOUNT_ID
+
         self.steps_role.add_to_policy(
             aws_iam.PolicyStatement(
                 resources=[
-                    f"arn:aws:events:{region}:{acountid}:rule/"
-                    "StepFunctionsGetEventsForBatchJobsRule",
+                    f"arn:aws:events:{region}:{accountid}:rule/"
+                    "StepFunctionsGetEventsForStepFunctionsExecutionRule",
                 ],
                 actions=["events:PutTargets", "events:PutRule", "events:DescribeRule"],
             )
         )
         self.steps_role.add_to_policy(
             aws_iam.PolicyStatement(
-                resources=["*",],
+                resources=[
+                    f"arn:aws:events:{region}:{accountid}:rule/"
+                    "StepFunctionsGetEventsForBatchJobsRule",
+                ],
+                actions=["events:PutTargets", "events:PutRule", "events:DescribeRule"],
+            )
+        )
+
+        self.steps_role.add_to_policy(
+            aws_iam.PolicyStatement(
+                resources=["*"],
                 actions=["batch:SubmitJob", "batch:DescribeJobs", "batch:TerminateJob"],
+            )
+        )
+        self.steps_role.add_to_policy(
+            aws_iam.PolicyStatement(
+                resources=[landsat_mgrs_step_function_arn],
+                actions=[
+                    "states:StartExecution",
+                ]
+            )
+        )
+        self.steps_role.add_to_policy(
+            aws_iam.PolicyStatement(
+                resources=["*"],
+                actions=[
+                    "states:DescribeExecution",
+                    "states:StopExecution"
+                ]
             )
         )
