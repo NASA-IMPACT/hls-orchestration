@@ -1,9 +1,10 @@
-"""Select L30 MGRS grid squares that failed or have not yet processed and re-process them in blocks"""
+"""Select failed Landsat AC processing jobs and re-process them in blocks"""
 import os
 import boto3
 import json
 from botocore.errorfactory import ClientError
 from datetime import datetime, timedelta
+from hls_lambda_layer.landsat_scene_parser import landsat_parse_scene_id
 
 
 db_credentials_secrets_store_arn = os.getenv("HLS_SECRETS")
@@ -31,18 +32,26 @@ def execute_statement(sql, sql_parameters=[]):
 
 
 def convert_records(record):
+    scene_id = record[1]["stringValue"]
+    scene_meta = landsat_parse_scene_id(scene_id)
+    acquisitionYear = scene_meta["acquisitionYear"]
+    path = scene_meta["path"]
+    row = scene_meta["row"]
+    prefix = f"collection02/level-1/standard/oli-tirs/{acquisitionYear}/{path}/{row}/{scene_id}"
     converted = {
-        "MGRS": record[0]["stringValue"],
-        "path": record[1]["stringValue"],
-        "date": record[2]["stringValue"]
+        "id": record[0]["longValue"],
+        "scene_id": scene_id,
+        "scheme": "s3",
+        "bucket": "usgs-landsat",
+        "prefix": prefix
     }
+    converted.update(scene_meta)
     return converted
 
 
-def execute_step_function(chunk, submit_errors, job_stopped):
+def execute_step_function(error_chunk, submit_errors):
     input = json.dumps({
-        "incompletes": chunk,
-        "fromdate": job_stopped,
+        "errors": error_chunk,
     })
     try:
         step_function_client.start_execution(
@@ -55,29 +64,28 @@ def execute_step_function(chunk, submit_errors, job_stopped):
 
 
 def handler(event, context):
-    date_delta = int(os.getenv("DAYS_PRIOR"))
     retry_limit = int(os.getenv("RETRY_LIMIT"))
-    event_time = datetime.strptime(event["time"], '%Y-%m-%dT%H:%M:%SZ')
-    fromdate = (event_time - timedelta(days=date_delta)).strftime('%d/%m/%Y')
+    #  Using the view ensures we are only using records which have jobinfo
     q = (
-        "SELECT mgrs, path, acquisition from landsat_mgrs_log WHERE"
-        + " (jobinfo->'Container'->>'ExitCode' IS NULL OR jobinfo->'Container'->>'ExitCode' != '0')"
-        + " AND run_count < :retry_limit::integer AND DATE(ts) <= TO_DATE(:fromdate::text,'DD/MM/YYYY');"
+        "SELECT id, scene_id from landsat_ac_granule_log WHERE"
+        + " (jobinfo->'Container'->>'ExitCode' = '1'"
+        + " or jobinfo->'Container'->>'ExitCode' is NULL)"
+        + " AND scene_id is not null AND run_count >= 1 AND"
+        + " run_count < :retry_limit::integer;"
     )
     response = execute_statement(
         q,
         sql_parameters=[
-            {"name": "fromdate", "value": {"stringValue": fromdate}},
             {"name": "retry_limit", "value": {"longValue": retry_limit}},
         ]
     )
     records = map(convert_records, response["records"])
-    incompletes = list(records)
-    incomplete_chunks = list(chunk(incompletes, 100))
+    granule_errors = list(records)
+    error_chunks = list(chunk(granule_errors, 100))
     submission_errors = []
 
-    for incomplete_chunk in incomplete_chunks:
-        execute_step_function(incomplete_chunk, submission_errors, fromdate)
+    for error_chunk in error_chunks:
+        execute_step_function(error_chunk, submission_errors)
 
     if len(submission_errors) > 0:
         raise NameError("A step function execution error occurred")

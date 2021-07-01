@@ -57,18 +57,23 @@ def test_handler(client):
     }
     client.execute_statement.return_value = {}
     handler(event, {})
-    q = "INSERT INTO landsat_mgrs_log (path, mgrs, acquisition) VALUES (:path::varchar(3), :mgrs::varchar(5), :acquisition::date) ON CONFLICT DO NOTHING;"
     path = {"name": "path", "value": {"stringValue": "127"}}
     acquisition = {"name": "acquisition", "value": {"stringValue": "2020-05-27"}}
+    sql = (
+        "INSERT INTO landsat_mgrs_log (path, mgrs, acquisition, run_count)"
+        + " VALUES (:path::varchar(3), :mgrs::varchar(5), :acquisition::date, :run_count::integer)"
+        + " ON CONFLICT DO NOTHING;"
+    )
     expected_calls = []
     for mgrs in event["mgrsvalues"]["mgrs"]:
         sql_parameters = [
             path,
             {"name": "mgrs", "value": {"stringValue": mgrs}},
             acquisition,
+            {"name": "run_count", "value": {"longValue": 0}}
         ]
         insert_call = call(
-            sql=q,
+            sql=sql,
             parameters=sql_parameters,
             database=None,
             resourceArn=None,

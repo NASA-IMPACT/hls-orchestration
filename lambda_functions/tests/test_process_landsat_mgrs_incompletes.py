@@ -12,6 +12,7 @@ event = {
 @patch("lambda_functions.process_landsat_mgrs_incompletes.step_function_client")
 @patch("lambda_functions.process_landsat_mgrs_incompletes.rds_client")
 @patch.dict(os.environ, {"DAYS_PRIOR": "4"})
+@patch.dict(os.environ, {"RETRY_LIMIT": "3"})
 def test_handler_chunking(rds_client, step_function_client):
     records = [
         [
@@ -34,3 +35,9 @@ def test_handler_chunking(rds_client, step_function_client):
         "date": "2021-01-26"
     }
     assert input["fromdate"] == "26/01/2021"
+
+    args, kwargs = rds_client.execute_statement.call_args
+    fromdate = {"name": "fromdate", "value": {"stringValue": "26/01/2021"}}
+    retry_limit = {"name": "retry_limit", "value": {"longValue": 3}}
+    assert fromdate in kwargs["parameters"]
+    assert retry_limit in kwargs["parameters"]
