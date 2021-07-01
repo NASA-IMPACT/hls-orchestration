@@ -15,6 +15,7 @@ from hlsconstructs.landsat_step_function import LandsatStepFunction
 from hlsconstructs.landsat_mgrs_step_function import LandsatMGRSStepFunction
 from hlsconstructs.landsat_incomplete_step_function import LandsatIncompleteStepFunction
 from hlsconstructs.sentinel_errors_step_function import SentinelErrorsStepFunction
+from hlsconstructs.landsat_ac_errors_step_function import LandsatACErrorsStepFunction
 from hlsconstructs.step_function_trigger import StepFunctionTrigger
 from hlsconstructs.stepfunction_alarm import StepFunctionAlarm
 
@@ -64,6 +65,10 @@ LANDSAT_INCOMPLETE_CRON = getenv(
 SENTINEL_ERRORS_CRON = getenv(
     "HLS_SENTINEL_ERRORS_CRON",
     "cron(0 20 * * ? *)"
+)
+LANDSAT_AC_ERRORS_CRON = getenv(
+    "HLS_LANDSAT_AC_ERRORS_CRON",
+    "cron(0 16 * * ? *)"
 )
 LANDSAT_DAYS_PRIOR = getenv("HLS_LANDSAT_DAYS_PRIOR", "4")
 SENTINEL_RETRY_LIMIT = getenv("HLS_SENTINEL_RETRY_LIMIT", "3")
@@ -543,16 +548,13 @@ class HlsStack(core.Stack):
         self.landsat_incomplete_step_function = LandsatIncompleteStepFunction(
             self,
             "LandsatIncompleteStateMachine",
-            outputbucket=OUTPUT_BUCKET,
-            outputbucket_role_arn=OUTPUT_BUCKET_ROLE_ARN,
-            tilejobqueue=self.batch.landsattile_jobqueue.ref,
-            tile_job_definition=self.landsat_tile_task.job.ref,
-            intermediate_output_bucket=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
-            check_mgrs_pathrow_complete=self.check_landsat_pathrow_complete.function.function_arn,
-            pr2mgrs=self.pr2mgrs_lambda.function.function_arn,
-            mgrs_logger=self.mgrs_logger.function.function_arn,
-            gibs_outputbucket=GIBS_OUTPUT_BUCKET,
-            get_random_wait=self.get_random_wait.function.function_arn,
+            landsat_mgrs_step_function_arn=self.landsat_mgrs_step_function.state_machine.ref,
+        )
+
+        self.landsat_ac_errors_step_function = LandsatACErrorsStepFunction(
+            self,
+            "LandsatACErrorsStateMachine",
+            landsat_step_function_arn=self.landsat_step_function.state_machine.ref
         )
 
         self.step_function_trigger = StepFunctionTrigger(
@@ -592,6 +594,23 @@ class HlsStack(core.Stack):
                 "HLS_DB_NAME": self.rds.database.database_name,
                 "HLS_DB_ARN": self.rds.arn,
                 "DAYS_PRIOR": LANDSAT_DAYS_PRIOR,
+                "RETRY_LIMIT": LANDSAT_RETRY_LIMIT,
+            },
+        )
+
+        self.landsat_ac_errors_step_function_trigger = StepFunctionTrigger(
+            self,
+            "LandsatACErrorsStepFunctionTrigger",
+            state_machine=self.landsat_ac_errors_step_function.state_machine.ref,
+            code_file="process_landsat_ac_errors.py",
+            timeout=900,
+            lambda_name="ProcessLandsatACErrors",
+            layers=[self.hls_lambda_layer],
+            cron_str=LANDSAT_AC_ERRORS_CRON,
+            env_vars={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
                 "RETRY_LIMIT": LANDSAT_RETRY_LIMIT,
             },
         )
@@ -887,6 +906,7 @@ class HlsStack(core.Stack):
             self.put_landsat_task_cw_metric,
             self.put_landsat_tile_task_cw_metric,
             self.put_sentintel_task_cw_metric,
+            self.landsat_ac_errors_step_function_trigger.execute_step_function,
         ]
         for lambda_function in lambdas:
             lambda_function.function.add_to_role_policy(

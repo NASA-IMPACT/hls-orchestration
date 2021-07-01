@@ -88,7 +88,7 @@ ALTER TABLE landsat_mgrs_log ADD COLUMN IF NOT EXISTS run_count INTEGER;
 
 DROP VIEW IF EXISTS landsat_ac_granule_log;
 CREATE VIEW landsat_ac_granule_log AS
-select id, ts, run_count,
+select id, ts, run_count, scene_id,
 jobinfo->>'Status' as status,
 to_timestamp((jobinfo->>'CreatedAt')::float/1000) as job_created,
 to_timestamp((jobinfo->>'StartedAt')::float/1000) as job_started,

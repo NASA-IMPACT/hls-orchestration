@@ -41,4 +41,3 @@ def test_handler_chunking(rds_client, step_function_client):
     retry_limit = {"name": "retry_limit", "value": {"longValue": 3}}
     assert fromdate in kwargs["parameters"]
     assert retry_limit in kwargs["parameters"]
-
