@@ -67,6 +67,7 @@ SENTINEL_ERRORS_CRON = getenv(
 )
 LANDSAT_DAYS_PRIOR = getenv("HLS_LANDSAT_DAYS_PRIOR", "4")
 SENTINEL_RETRY_LIMIT = getenv("HLS_SENTINEL_RETRY_LIMIT", "3")
+LANDSAT_RETRY_LIMIT = getenv("HLS_LANDSAT_RETRY_LIMIT", "3")
 SSH_KEYNAME = getenv("HLS_SSH_KEYNAME", "hls-mount")
 LANDSAT_SNS_TOPIC = getenv(
     "HLS_LANDSAT_SNS_TOPIC", "arn:aws:sns:us-west-2:673253540267:public-c2-notify"
@@ -591,6 +592,7 @@ class HlsStack(core.Stack):
                 "HLS_DB_NAME": self.rds.database.database_name,
                 "HLS_DB_ARN": self.rds.arn,
                 "DAYS_PRIOR": LANDSAT_DAYS_PRIOR,
+                "RETRY_LIMIT": LANDSAT_RETRY_LIMIT,
             },
         )
 
