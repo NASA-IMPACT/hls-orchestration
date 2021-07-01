@@ -4,6 +4,7 @@ from aws_cdk import (
     core,
 )
 import json
+from hlsconstructs.lambdafunc import Lambda
 
 
 class SentinelErrorsStepFunction(core.Construct):
@@ -16,8 +17,8 @@ class SentinelErrorsStepFunction(core.Construct):
         inputbucket: str,
         sentinel_job_definition: str,
         jobqueue: str,
-        update_sentinel_failure: str,
-        get_random_wait: str,
+        update_sentinel_failure: Lambda,
+        get_random_wait: Lambda,
         gibs_intermediate_output_bucket: str,
         gibs_outputbucket: str,
         **kwargs,
@@ -43,7 +44,7 @@ class SentinelErrorsStepFunction(core.Construct):
                         "States": {
                             "GetRandomWait": {
                                 "Type": "Task",
-                                "Resource": get_random_wait,
+                                "Resource": get_random_wait.function.function_arn,
                                 "ResultPath": "$.wait_time",
                                 "Next": "WaitForProcessSentinel",
                             },
@@ -101,7 +102,7 @@ class SentinelErrorsStepFunction(core.Construct):
                             },
                             "UpdatetSentinelFailure": {
                                 "Type": "Task",
-                                "Resource": update_sentinel_failure,
+                                "Resource": update_sentinel_failure.function.function_arn,
                                 "Next": "SuccessState",
                                 "Retry": [retry],
                             },
@@ -144,3 +145,12 @@ class SentinelErrorsStepFunction(core.Construct):
                 actions=["batch:SubmitJob", "batch:DescribeJobs", "batch:TerminateJob"],
             )
         )
+
+        # Allow the step function role to invoke all its Lambdas.
+        arguments = locals()
+        for key in arguments:
+            arg = arguments[key]
+            if type(arg) == Lambda:
+                self.steps_role.add_to_policy(
+                    arg.invoke_policy_statement
+                )

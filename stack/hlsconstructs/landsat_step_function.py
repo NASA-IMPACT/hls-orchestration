@@ -4,6 +4,7 @@ from aws_cdk import (
     core,
 )
 import json
+from hlsconstructs.lambdafunc import Lambda
 
 
 class LandsatStepFunction(core.Construct):
@@ -11,20 +12,19 @@ class LandsatStepFunction(core.Construct):
         self,
         scope: core.Construct,
         id: str,
-        laads_available_function: str,
+        laads_available: Lambda,
         outputbucket: str,
         outputbucket_role_arn: str,
         intermediate_output_bucket: str,
         ac_job_definition: str,
         acjobqueue: str,
-        landsat_mgrs_logger: str,
-        landsat_ac_logger: str,
-        landsat_logger: str,
-        landsat_pathrow_status: str,
-        pr2mgrs: str,
-        check_landsat_tiling_exit_code: str,
-        check_landsat_ac_exit_code: str,
-        get_random_wait: str,
+        landsat_mgrs_logger: Lambda,
+        landsat_ac_logger: Lambda,
+        landsat_logger: Lambda,
+        pr2mgrs: Lambda,
+        check_landsat_tiling_exit_code: Lambda,
+        check_landsat_ac_exit_code: Lambda,
+        get_random_wait: Lambda,
         replace_existing: bool,
         gibs_outputbucket: str,
         landsat_mgrs_step_function_arn: str,
@@ -49,7 +49,7 @@ class LandsatStepFunction(core.Construct):
             "States": {
                 "GetMGRSValues": {
                     "Type": "Task",
-                    "Resource": pr2mgrs,
+                    "Resource": pr2mgrs.function.function_arn,
                     "ResultPath": "$.mgrsvalues",
                     "Next": "MGRSExists",
                     "Retry": [retry],
@@ -67,21 +67,21 @@ class LandsatStepFunction(core.Construct):
                 },
                 "LogLandsat": {
                     "Type": "Task",
-                    "Resource": landsat_logger,
+                    "Resource": landsat_logger.function.function_arn,
                     "ResultPath": None,
                     "Next": "LogLandsatMGRS",
                     "Retry": [retry],
                 },
                 "LogLandsatMGRS": {
                     "Type": "Task",
-                    "Resource": landsat_mgrs_logger,
+                    "Resource": landsat_mgrs_logger.function.function_arn,
                     "ResultPath": None,
                     "Next": "CheckLaads",
                     "Retry": [retry],
                 },
                 "CheckLaads": {
                     "Type": "Task",
-                    "Resource": laads_available_function,
+                    "Resource": laads_available.function.function_arn,
                     "Parameters": {"granule.$": "$.scene", "scene_meta.$": "$"},
                     "ResultPath": "$.taskresult",
                     "Next": "LaadsAvailable",
@@ -105,7 +105,7 @@ class LandsatStepFunction(core.Construct):
                 },
                 "GetRandomWait": {
                     "Type": "Task",
-                    "Resource": get_random_wait,
+                    "Resource": get_random_wait.function.function_arn,
                     "ResultPath": "$.wait_time",
                     "Next": "WaitForAc",
                 },
@@ -167,7 +167,7 @@ class LandsatStepFunction(core.Construct):
                 },
                 "LogLandsatAc": {
                     "Type": "Task",
-                    "Resource": landsat_ac_logger,
+                    "Resource": landsat_ac_logger.function.function_arn,
                     "ResultPath": None,
                     "Next": "ProcessMGRSGrid",
                     "Retry": [retry],
@@ -212,7 +212,7 @@ class LandsatStepFunction(core.Construct):
                 },
                 "CheckExitCodes": {
                     "Type": "Task",
-                    "Resource": check_landsat_tiling_exit_code,
+                    "Resource": check_landsat_tiling_exit_code.function.function_arn,
                     "Next": "HadTilingFailure",
                 },
                 "HadTilingFailure": {
@@ -233,13 +233,13 @@ class LandsatStepFunction(core.Construct):
                 },
                 "LogLandsatAcError": {
                     "Type": "Task",
-                    "Resource": landsat_ac_logger,
+                    "Resource": landsat_ac_logger.function.function_arn,
                     "Next": "CheckAcExitCode",
                     "Retry": [retry],
                 },
                 "CheckAcExitCode": {
                     "Type": "Task",
-                    "Resource": check_landsat_ac_exit_code,
+                    "Resource": check_landsat_ac_exit_code.function.function_arn,
                     "Next": "HadAcFailure",
                 },
                 "HadAcFailure": {
@@ -326,3 +326,12 @@ class LandsatStepFunction(core.Construct):
                 ]
             )
         )
+
+        # Allow the step function role to invoke all its Lambdas.
+        arguments = locals()
+        for key in arguments:
+            arg = arguments[key]
+            if type(arg) == Lambda:
+                self.steps_role.add_to_policy(
+                    arg.invoke_policy_statement
+                )

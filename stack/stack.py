@@ -479,15 +479,15 @@ class HlsStack(core.Stack):
         self.sentinel_step_function = SentinelStepFunction(
             self,
             "SentinelStateMachine",
-            check_twin_granule=self.check_twin_granule.function.function_arn,
-            laads_available_function=self.laads_available.function.function_arn,
+            check_twin_granule=self.check_twin_granule,
+            laads_available=self.laads_available,
             outputbucket=OUTPUT_BUCKET,
             inputbucket=SENTINEL_INPUT_BUCKET,
             sentinel_job_definition=self.sentinel_task.job.ref,
             jobqueue=self.batch.sentinel_jobqueue.ref,
-            sentinel_ac_logger=self.sentinel_ac_logger.function.function_arn,
-            sentinel_logger=self.sentinel_logger.function.function_arn,
-            check_exit_code=self.check_exit_code.function.function_arn,
+            sentinel_ac_logger=self.sentinel_ac_logger,
+            sentinel_logger=self.sentinel_logger,
+            check_exit_code=self.check_exit_code,
             outputbucket_role_arn=OUTPUT_BUCKET_ROLE_ARN,
             replace_existing=REPLACE_EXISTING,
             gibs_outputbucket=GIBS_OUTPUT_BUCKET,
@@ -500,11 +500,11 @@ class HlsStack(core.Stack):
             inputbucket=SENTINEL_INPUT_BUCKET,
             sentinel_job_definition=self.sentinel_task.job.ref,
             jobqueue=self.batch.sentinel_jobqueue.ref,
-            update_sentinel_failure=self.update_sentinel_failure.function.function_arn,
+            update_sentinel_failure=self.update_sentinel_failure,
             outputbucket_role_arn=OUTPUT_BUCKET_ROLE_ARN,
             gibs_intermediate_output_bucket=GIBS_INTERMEDIATE_OUTPUT_BUCKET,
             gibs_outputbucket=GIBS_OUTPUT_BUCKET,
-            get_random_wait=self.get_random_wait.function.function_arn,
+            get_random_wait=self.get_random_wait,
         )
 
         self.landsat_mgrs_step_function = LandsatMGRSStepFunction(
@@ -515,31 +515,29 @@ class HlsStack(core.Stack):
             intermediate_output_bucket=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
             tile_job_definition=self.landsat_tile_task.job.ref,
             tilejobqueue=self.batch.landsattile_jobqueue.ref,
-            landsat_pathrow_status=self.landsat_pathrow_status.function.function_arn,
-            pr2mgrs=self.pr2mgrs_lambda.function.function_arn,
-            mgrs_logger=self.mgrs_logger.function.function_arn,
-            check_landsat_tiling_exit_code=self.check_landsat_tiling_exit_code.function.function_arn,
-            get_random_wait=self.get_random_wait.function.function_arn,
+            landsat_pathrow_status=self.landsat_pathrow_status,
+            pr2mgrs=self.pr2mgrs_lambda,
+            mgrs_logger=self.mgrs_logger,
+            get_random_wait=self.get_random_wait,
             gibs_outputbucket=GIBS_OUTPUT_BUCKET,
         )
 
         self.landsat_step_function = LandsatStepFunction(
             self,
             "LandsatStateMachine",
-            laads_available_function=self.laads_available.function.function_arn,
+            laads_available=self.laads_available,
             outputbucket=OUTPUT_BUCKET,
             outputbucket_role_arn=OUTPUT_BUCKET_ROLE_ARN,
             intermediate_output_bucket=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
             ac_job_definition=self.landsat_task.job.ref,
             acjobqueue=self.batch.landsatac_jobqueue.ref,
-            landsat_mgrs_logger=self.landsat_mgrs_logger.function.function_arn,
-            landsat_ac_logger=self.landsat_ac_logger.function.function_arn,
-            landsat_logger=self.landsat_logger.function.function_arn,
-            landsat_pathrow_status=self.landsat_pathrow_status.function.function_arn,
-            pr2mgrs=self.pr2mgrs_lambda.function.function_arn,
-            check_landsat_tiling_exit_code=self.check_landsat_tiling_exit_code.function.function_arn,
-            check_landsat_ac_exit_code=self.check_exit_code.function.function_arn,
-            get_random_wait=self.get_random_wait.function.function_arn,
+            landsat_mgrs_logger=self.landsat_mgrs_logger,
+            landsat_ac_logger=self.landsat_ac_logger,
+            landsat_logger=self.landsat_logger,
+            pr2mgrs=self.pr2mgrs_lambda,
+            check_landsat_tiling_exit_code=self.check_landsat_tiling_exit_code,
+            check_landsat_ac_exit_code=self.check_exit_code,
+            get_random_wait=self.get_random_wait,
             gibs_outputbucket=GIBS_OUTPUT_BUCKET,
             replace_existing=REPLACE_EXISTING,
             landsat_mgrs_step_function_arn=self.landsat_mgrs_step_function.state_machine.ref,
@@ -647,6 +645,9 @@ class HlsStack(core.Stack):
         )
 
         # Cross construct permissions
+        self.addRDSpolicy()
+
+        # Bucket policies
         self.laads_bucket_read_policy = aws_iam.PolicyStatement(
             resources=[
                 self.laads_bucket.bucket_arn,
@@ -654,92 +655,9 @@ class HlsStack(core.Stack):
             ],
             actions=["s3:Get*", "s3:List*",],
         )
-        self.batch_jobqueue_policy = aws_iam.PolicyStatement(
-            resources=[
-                self.batch.sentinel_jobqueue.ref,
-                self.batch.laads_jobqueue.ref,
-                self.batch.landsatac_jobqueue.ref,
-                self.batch.landsattile_jobqueue.ref,
-            ],
-            actions=["batch:SubmitJob", "batch:DescribeJobs", "batch:TerminateJob"],
-        )
         self.laads_cron.function.add_to_role_policy(self.laads_bucket_read_policy)
         self.laads_available.function.add_to_role_policy(self.laads_bucket_read_policy)
-        self.laads_cron.function.add_to_role_policy(self.batch_jobqueue_policy)
-        self.laads_cron.function.add_to_role_policy(
-            aws_iam.PolicyStatement(
-                resources=[self.laads_task.job.ref],
-                actions=["batch:SubmitJob", "batch:DescribeJobs", "batch:TerminateJob"],
-            )
-        )
 
-        self.sentinel_step_function.steps_role.add_to_policy(self.batch_jobqueue_policy)
-        sentinel_lambdas = [
-            self.check_twin_granule,
-            self.laads_available,
-            self.sentinel_ac_logger,
-            self.sentinel_logger,
-            self.check_exit_code,
-        ]
-        self.addLambdaInvokePolicies(
-            self.sentinel_step_function,
-            sentinel_lambdas,
-        )
-
-        sentinel_errors_lambdas = [
-            self.update_sentinel_failure,
-            self.get_random_wait
-        ]
-        self.addLambdaInvokePolicies(
-            self.sentinel_errors_step_function,
-            sentinel_errors_lambdas,
-        )
-
-        self.landsat_mgrs_step_function.steps_role.add_to_policy(self.batch_jobqueue_policy)
-        landsat_lambdas = [
-            self.laads_available,
-            self.landsat_mgrs_logger,
-            self.pr2mgrs_lambda,
-            self.landsat_ac_logger,
-            self.landsat_pathrow_status,
-            self.mgrs_logger,
-            self.check_landsat_tiling_exit_code,
-            self.check_exit_code,
-            self.get_random_wait,
-            self.landsat_logger,
-        ]
-        self.addLambdaInvokePolicies(
-            self.landsat_step_function,
-            landsat_lambdas
-        )
-
-        self.landsat_step_function.steps_role.add_to_policy(self.batch_jobqueue_policy)
-        landsat_mgrs_lambdas = [
-            self.pr2mgrs_lambda,
-            self.landsat_pathrow_status,
-            self.mgrs_logger,
-            self.check_landsat_tiling_exit_code,
-            self.get_random_wait,
-        ]
-        self.addLambdaInvokePolicies(
-            self.landsat_mgrs_step_function,
-            landsat_mgrs_lambdas
-        )
-
-        landsat_incomplete_lambdas = [
-            self.check_landsat_pathrow_complete,
-            self.pr2mgrs_lambda,
-            self.mgrs_logger,
-            self.get_random_wait,
-        ]
-        self.addLambdaInvokePolicies(
-            self.landsat_incomplete_step_function,
-            landsat_incomplete_lambdas
-        )
-
-        self.addRDSpolicy()
-
-        # Bucket policies
         self.sentinel_input_bucket_policy = aws_iam.PolicyStatement(
             resources=[
                 self.sentinel_input_bucket.bucket_arn,
@@ -795,6 +713,7 @@ class HlsStack(core.Stack):
                 actions=["s3:Get*", "s3:List*",],
             )
         )
+        # Cross account role assumption for GCC bucket
         self.batch.ecs_instance_role.add_to_policy(
             aws_iam.PolicyStatement(
                 resources=[OUTPUT_BUCKET_ROLE_ARN],
@@ -882,12 +801,6 @@ class HlsStack(core.Stack):
             export_name=f"{STACKNAME}-gibsintermediateoutput",
             value=self.gibs_intermediate_output_bucket.bucket_name,
         )
-
-    def addLambdaInvokePolicies(self, stepfunction, lambdas):
-        for lambda_function in lambdas:
-            stepfunction.steps_role.add_to_policy(
-                lambda_function.invoke_policy_statement
-            )
 
     def addRDSpolicy(self):
         lambdas = [
