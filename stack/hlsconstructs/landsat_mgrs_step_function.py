@@ -4,6 +4,7 @@ from aws_cdk import (
     core,
 )
 import json
+from hlsconstructs.lambdafunc import Lambda
 
 
 class LandsatMGRSStepFunction(core.Construct):
@@ -16,11 +17,10 @@ class LandsatMGRSStepFunction(core.Construct):
         intermediate_output_bucket: str,
         tile_job_definition: str,
         tilejobqueue: str,
-        landsat_pathrow_status: str,
-        pr2mgrs: str,
-        mgrs_logger: str,
-        check_landsat_tiling_exit_code: str,
-        get_random_wait: str,
+        landsat_pathrow_status: Lambda,
+        pr2mgrs: Lambda,
+        mgrs_logger: Lambda,
+        get_random_wait: Lambda,
         gibs_outputbucket: str,
         **kwargs,
     ) -> None:
@@ -36,13 +36,13 @@ class LandsatMGRSStepFunction(core.Construct):
             "States": {
                 "GetPathRowValues": {
                     "Type": "Task",
-                    "Resource": pr2mgrs,
+                    "Resource": pr2mgrs.function.function_arn,
                     "ResultPath": "$.mgrs_metadata",
                     "Next": "CheckPathRowStatus",
                 },
                 "CheckPathRowStatus": {
                     "Type": "Task",
-                    "Resource": landsat_pathrow_status,
+                    "Resource": landsat_pathrow_status.function.function_arn,
                     "ResultPath": "$.ready_for_tiling",
                     "Next": "ReadyForTiling",
                 },
@@ -59,7 +59,7 @@ class LandsatMGRSStepFunction(core.Construct):
                 },
                 "GetRandomWaitTile": {
                     "Type": "Task",
-                    "Resource": get_random_wait,
+                    "Resource": get_random_wait.function.function_arn,
                     "ResultPath": "$.wait_time",
                     "Next": "WaitForTiling",
                 },
@@ -133,7 +133,7 @@ class LandsatMGRSStepFunction(core.Construct):
                 },
                 "LogMGRS": {
                     "Type": "Task",
-                    "Resource": mgrs_logger,
+                    "Resource": mgrs_logger.function.function_arn,
                     "Next": "Done",
                     "Retry": [retry],
                 },
@@ -171,3 +171,12 @@ class LandsatMGRSStepFunction(core.Construct):
                 actions=["batch:SubmitJob", "batch:DescribeJobs", "batch:TerminateJob"],
             )
         )
+
+        # Allow the step function role to invoke all its Lambdas.
+        arguments = locals()
+        for key in arguments:
+            arg = arguments[key]
+            if type(arg) == Lambda:
+                self.steps_role.add_to_policy(
+                    arg.invoke_policy_statement
+                )
