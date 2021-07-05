@@ -1,3 +1,4 @@
+"""Lambda function for omnipotent setup and modification of HLS logging database"""
 import os
 import boto3
 import json
@@ -21,11 +22,7 @@ def execute_statement(sql, sql_parameters=[]):
 
 
 ddl = """
-CREATE TABLE IF NOT EXISTS eventlog (
-    id bigserial primary key,
-    ts timestamptz default now() not null,
-    event jsonb
-);
+
 CREATE TABLE IF NOT EXISTS landsat_mgrs_log (
     id bigserial primary key,
     ts timestamptz default now() not null,
@@ -35,6 +32,7 @@ CREATE TABLE IF NOT EXISTS landsat_mgrs_log (
     jobinfo jsonb,
     constraint no_dupe_mgrs unique(path, mgrs, acquisition)
 );
+
 CREATE TABLE IF NOT EXISTS landsat_ac_log (
     id bigserial primary key,
     ts timestamptz default now() not null,
@@ -45,56 +43,82 @@ CREATE TABLE IF NOT EXISTS landsat_ac_log (
     jobinfo jsonb,
     constraint no_dupe_pathrowdate unique(path, row, acquisition)
 );
+
 ALTER TABLE landsat_ac_log ADD COLUMN IF NOT EXISTS scene_id VARCHAR(100);
 ALTER TABLE landsat_ac_log ALTER COLUMN jobid DROP NOT NULL;
-CREATE OR REPLACE FUNCTION
-granule(IN event jsonb, OUT granule text)
-AS $$
-SELECT a->>'Value'
-FROM jsonb_array_elements(event->'Container'->'Environment') a
-WHERE a->>'Name'='GRANULE_LIST'
-$$ LANGUAGE SQL IMMUTABLE STRICT;
-CREATE OR REPLACE VIEW granule_log AS
-select id, ts,
-granule(event),
-event->>'Status' as status,
-event->>'JobId' as jobid,
-to_timestamp((event->>'CreatedAt')::float/1000) as job_created,
-to_timestamp((event->>'StartedAt')::float/1000) as job_started,
-to_timestamp((event->>'StoppedAt')::float/1000) as job_stopped,
-event
-from eventlog WHERE granule(event) IS NOT NULL;
+
+DO $$
+BEGIN
+  IF EXISTS(SELECT *
+    FROM information_schema.columns
+    WHERE table_name='eventlog' and column_name='event')
+  THEN
+      ALTER TABLE eventlog RENAME COLUMN event TO jobinfo;
+  END IF;
+END $$;
+
+ALTER TABLE IF EXISTS eventlog RENAME TO sentinel_log;
+
+CREATE TABLE IF NOT EXISTS sentinel_log (
+    id bigserial primary key,
+    ts timestamptz default now() not null,
+    jobinfo jsonb,
+    granule varchar,
+    run_count integer
+);
+
+ALTER TABLE sentinel_log ADD COLUMN IF NOT EXISTS granule VARCHAR;
+ALTER TABLE sentinel_log ADD COLUMN IF NOT EXISTS run_count INTEGER;
+
+DROP VIEW IF EXISTS sentinel_granule_log;
+CREATE VIEW sentinel_granule_log AS
+select id, ts, granule, run_count,
+jobinfo->>'Status' as status,
+to_timestamp((jobinfo->>'CreatedAt')::float/1000) as job_created,
+to_timestamp((jobinfo->>'StartedAt')::float/1000) as job_started,
+to_timestamp((jobinfo->>'StoppedAt')::float/1000) as job_stopped,
+jobinfo
+from sentinel_log WHERE jobinfo IS NOT NULL;
+
+DROP VIEW IF EXISTS granule_log;
+DROP FUNCTION IF EXISTS granule(IN event jsonb, OUT granule text);
+
+ALTER TABLE landsat_ac_log ADD COLUMN IF NOT EXISTS run_count INTEGER;
+ALTER TABLE landsat_mgrs_log ADD COLUMN IF NOT EXISTS run_count INTEGER;
+
 DROP VIEW IF EXISTS landsat_ac_granule_log;
 CREATE VIEW landsat_ac_granule_log AS
-select id, ts,
+select id, ts, run_count, scene_id,
 jobinfo->>'Status' as status,
 to_timestamp((jobinfo->>'CreatedAt')::float/1000) as job_created,
 to_timestamp((jobinfo->>'StartedAt')::float/1000) as job_started,
 to_timestamp((jobinfo->>'StoppedAt')::float/1000) as job_stopped,
 jobinfo
 from landsat_ac_log WHERE jobinfo IS NOT NULL;
+
 DROP VIEW IF EXISTS landsat_mgrs_granule_log;
 CREATE VIEW landsat_mgrs_granule_log AS
-select id, ts,
+select id, ts, run_count,
 jobinfo->>'Status' as status,
 to_timestamp((jobinfo->>'CreatedAt')::float/1000) as job_created,
 to_timestamp((jobinfo->>'StartedAt')::float/1000) as job_started,
 to_timestamp((jobinfo->>'StoppedAt')::float/1000) as job_stopped,
 jobinfo
 from landsat_mgrs_log WHERE jobinfo IS NOT NULL;
-DROP VIEW IF EXISTS sentinel_granule_log;
-CREATE VIEW sentinel_granule_log AS
-select id, ts,
-event->>'Status' as status,
-to_timestamp((event->>'CreatedAt')::float/1000) as job_created,
-to_timestamp((event->>'StartedAt')::float/1000) as job_started,
-to_timestamp((event->>'StoppedAt')::float/1000) as job_stopped,
-event as jobinfo
-from eventlog WHERE granule(event) IS NOT NULL;
 """
 
 
 def handler(event, context):
+    """
+    Run omnipotent set up PSQL for HLS logging database.
+
+    Parameters:
+    event (dict) Lambda trigger event source
+
+    Returns:
+    event (dict) Lambda trigger event source
+
+    """
     print(event)
     print(context)
     execute_statement(ddl)

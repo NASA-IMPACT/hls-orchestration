@@ -1,3 +1,4 @@
+"""Update landsat_mgrs_log with intersecting MGRS grid values when a landsat granule enter the system"""
 import os
 import boto3
 import json
@@ -21,14 +22,29 @@ def execute_statement(sql, sql_parameters=[]):
 
 
 def handler(event, context):
-    q = "INSERT INTO landsat_mgrs_log (path, mgrs, acquisition) VALUES (:path::varchar(3), :mgrs::varchar(5), :acquisition::date) ON CONFLICT DO NOTHING;"
+    """
+    Update landsat_mgrs_log with new intersecting MGRS values.
+
+    Parameters:
+    event (dict) Event source from step function input.
+
+    Returns:
+    event (dict)
+
+    """
+    sql = (
+        "INSERT INTO landsat_mgrs_log (path, mgrs, acquisition, run_count)"
+        + " VALUES (:path::varchar(3), :mgrs::varchar(5), :acquisition::date, :run_count::integer)"
+        + " ON CONFLICT DO NOTHING;"
+    )
     for mgrs_grid in event["mgrsvalues"]["mgrs"]:
         execute_statement(
-            q,
+            sql,
             sql_parameters=[
                 {"name": "path", "value": {"stringValue": event["path"]}},
                 {"name": "mgrs", "value": {"stringValue": mgrs_grid}},
                 {"name": "acquisition", "value": {"stringValue": event["date"]}},
+                {"name": "run_count", "value": {"longValue": 0}}
             ],
         )
     return event

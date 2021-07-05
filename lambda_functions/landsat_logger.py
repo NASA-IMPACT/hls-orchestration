@@ -1,3 +1,4 @@
+"""Update landsat_ac_log with new granule when it firsts enters the system."""
 import os
 import boto3
 from operator import itemgetter
@@ -20,15 +21,24 @@ def execute_statement(sql, sql_parameters=[]):
 
 
 def handler(event, context):
+    """
+    Update landsat_ac_log with new granule when it firsts enters the system.
+
+    Parameters:
+    event (dict) Event source from step function input.
+
+    """
     sql_parameters = [
         {"name": "path", "value": {"stringValue": event["path"]}},
         {"name": "row", "value": {"stringValue": event["row"]}},
         {"name": "scene_id", "value": {"stringValue": event["scene"]}},
         {"name": "acquisition", "value": {"stringValue": event["date"]}},
+        {"name": "run_count", "value": {"longValue": 0}},
     ]
     sql = (
-        "INSERT INTO landsat_ac_log (path, row, scene_id, acquisition) VALUES"
-        + "(:path::varchar(3), :row::varchar(3), :scene_id::varchar(200), :acquisition::date)"
+        "INSERT INTO landsat_ac_log (path, row, scene_id, acquisition, run_count) VALUES"
+        + "(:path::varchar(3), :row::varchar(3),"
+        + " :scene_id::varchar(200), :acquisition::date, :run_count::integer)"
         + " ON CONFLICT ON CONSTRAINT no_dupe_pathrowdate"
         + " DO NOTHING"
     )

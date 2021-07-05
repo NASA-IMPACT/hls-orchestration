@@ -4,6 +4,7 @@ from aws_cdk import (
     core,
 )
 import json
+from hlsconstructs.lambdafunc import Lambda
 
 
 class SentinelStepFunction(core.Construct):
@@ -11,24 +12,27 @@ class SentinelStepFunction(core.Construct):
         self,
         scope: core.Construct,
         id: str,
-        check_twin_granule: str,
-        laads_available_function: str,
+        check_twin_granule: Lambda,
+        laads_available: Lambda,
         outputbucket: str,
         outputbucket_role_arn: str,
         inputbucket: str,
         sentinel_job_definition: str,
         jobqueue: str,
-        lambda_logger: str,
-        sentinel_logger: str,
-        check_exit_code: str,
+        sentinel_ac_logger: Lambda,
+        sentinel_logger: Lambda,
+        check_exit_code: Lambda,
         replace_existing: bool,
         gibs_outputbucket: str,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
-        lambda_interval = 10
-        lambda_max_attempts = 3
-        lambda_backoff_rate = 2
+        retry = {
+            "ErrorEquals": ["States.ALL"],
+            "IntervalSeconds": 10,
+            "MaxAttempts": 3,
+            "BackoffRate": 2,
+        }
 
         if replace_existing:
             replace = "replace"
@@ -40,33 +44,24 @@ class SentinelStepFunction(core.Construct):
             "States": {
                 "CheckGranule": {
                     "Type": "Task",
-                    "Resource": check_twin_granule,
+                    "Resource": check_twin_granule.function.function_arn,
+                    "ResultPath": "$",
+                    "Next": "LogSentinel",
+                    "Retry": [retry],
+                },
+                "LogSentinel": {
+                    "Type": "Task",
+                    "Resource": sentinel_logger.function.function_arn,
                     "ResultPath": "$",
                     "Next": "CheckLaads",
-                    "Retry": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": lambda_interval,
-                            "MaxAttempts": lambda_max_attempts,
-                            "BackoffRate": lambda_backoff_rate,
-                        }
-                    ],
-                    "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "LogError",}],
+                    "Retry": [retry],
                 },
                 "CheckLaads": {
                     "Type": "Task",
-                    "Resource": laads_available_function,
+                    "Resource": laads_available.function.function_arn,
                     "ResultPath": "$",
                     "Next": "LaadsAvailable",
-                    "Retry": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": lambda_interval,
-                            "MaxAttempts": lambda_max_attempts,
-                            "BackoffRate": lambda_backoff_rate,
-                        }
-                    ],
-                    "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "LogError",}],
+                    "Retry": [retry],
                 },
                 "LaadsAvailable": {
                     "Type": "Choice",
@@ -114,29 +109,23 @@ class SentinelStepFunction(core.Construct):
                     "Catch": [
                         {
                             "ErrorEquals": ["States.ALL"],
-                            "Next": "LogSentinel",
+                            "Next": "LogSentinelAC",
                             "ResultPath": "$.jobinfo",
                         }
                     ],
-                    "Next": "LogSentinel",
+                    "Next": "LogSentinelAC",
                 },
-                "LogSentinel": {
+                "LogSentinelAC": {
                     "Type": "Task",
-                    "Resource": sentinel_logger,
+                    "Resource": sentinel_ac_logger.function.function_arn,
                     "Next": "CheckSentinelExitCode",
-                    "Retry": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": lambda_interval,
-                            "MaxAttempts": lambda_max_attempts,
-                            "BackoffRate": lambda_backoff_rate,
-                        }
-                    ],
+                    "Retry": [retry],
                 },
                 "CheckSentinelExitCode": {
                     "Type": "Task",
-                    "Resource": check_exit_code,
+                    "Resource": check_exit_code.function.function_arn,
                     "Next": "HadSentinelFailure",
+                    "Retry": [retry],
                 },
                 "HadSentinelFailure": {
                     "Type": "Choice",
@@ -153,20 +142,6 @@ class SentinelStepFunction(core.Construct):
                         }
                     ],
                     "Default": "Done",
-                },
-                "LogError": {
-                    "Type": "Task",
-                    "Resource": lambda_logger,
-                    "ResultPath": "$",
-                    "Next": "Error",
-                    "Retry": [
-                        {
-                            "ErrorEquals": ["States.ALL"],
-                            "IntervalSeconds": lambda_interval,
-                            "MaxAttempts": lambda_max_attempts,
-                            "BackoffRate": lambda_backoff_rate,
-                        }
-                    ],
                 },
                 "Done": {"Type": "Succeed"},
                 "Error": {"Type": "Fail"},
@@ -203,3 +178,12 @@ class SentinelStepFunction(core.Construct):
                 actions=["batch:SubmitJob", "batch:DescribeJobs", "batch:TerminateJob"],
             )
         )
+
+        # Allow the step function role to invoke all its Lambdas.
+        arguments = locals()
+        for key in arguments:
+            arg = arguments[key]
+            if type(arg) == Lambda:
+                self.steps_role.add_to_policy(
+                    arg.invoke_policy_statement
+                )

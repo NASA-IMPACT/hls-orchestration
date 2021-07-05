@@ -1,4 +1,4 @@
-from aws_cdk import core, aws_events, aws_lambda, aws_events_targets
+from aws_cdk import core, aws_events, aws_lambda, aws_events_targets, aws_iam
 from typing import Dict
 from hlsconstructs.lambdafunc import Lambda
 from hlsconstructs.docker_batchjob import DockerBatchJob
@@ -53,3 +53,16 @@ class BatchCron(Lambda):
         )
 
         self.rule.add_target(aws_events_targets.LambdaFunction(self.function))
+
+        self.function.add_to_role_policy(
+            aws_iam.PolicyStatement(
+                resources=[jobdef],
+                actions=["batch:SubmitJob", "batch:DescribeJobs", "batch:TerminateJob"],
+            )
+        )
+        self.function.add_to_role_policy(
+            aws_iam.PolicyStatement(
+                resources=[queue],
+                actions=["batch:SubmitJob", "batch:DescribeJobs", "batch:TerminateJob"],
+            )
+        )

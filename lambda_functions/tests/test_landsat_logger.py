@@ -31,3 +31,11 @@ def test_handler(client):
         }
     }
     assert scene_id in kwargs["parameters"]
+    # Initial run_count should be 0.
+    run_count = {
+        "name": "run_count",
+        "value": {
+            "longValue": 0
+        }
+    }
+    assert run_count in kwargs["parameters"]

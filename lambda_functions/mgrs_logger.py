@@ -28,14 +28,15 @@ def handler(event, context):
         "jobinfo", "jobinfostring", "exitcode"
     )(parsed_info)
 
-    q = (
-        "UPDATE landsat_mgrs_log SET jobinfo = :jobinfo::jsonb"
+    sql = (
+        "UPDATE landsat_mgrs_log SET (jobinfo, run_count) ="
+        + " (:jobinfo::jsonb, run_count +1)"
         + " WHERE path = :path::varchar(3) AND"
         + " mgrs = :mgrs::varchar(5) AND acquisition = :acquisition::date;"
     )
 
     execute_statement(
-        q,
+        sql,
         sql_parameters=[
             {"name": "mgrs", "value": {"stringValue": event["MGRS"]}},
             {"name": "path", "value": {"stringValue": event["path"]}},

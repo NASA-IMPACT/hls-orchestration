@@ -24,6 +24,7 @@ class Batch(core.Construct):
         ssh_keyname: str,
         efs: aws_efs.CfnFileSystem = None,
         use_cw: bool = True,
+        image_id=None,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -131,15 +132,6 @@ class Batch(core.Construct):
         launch_template_data = aws_ec2.CfnLaunchTemplate.LaunchTemplateDataProperty(
             user_data=core.Fn.base64(user_data_str),
             key_name=ssh_keyname,
-            # block_device_mappings=[{
-                # "device_name": "/dev/xvda",
-                # "no_device": "/dev/xvda",
-                # "ebs": {
-                    # "encrypted": False,
-                    # "volumeSize": 100,
-                    # "volumeType": "gp2",
-                # }
-            # }],
         )
 
         launch_template = aws_ec2.CfnLaunchTemplate(

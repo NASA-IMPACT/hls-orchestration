@@ -1,3 +1,4 @@
+"""Update landsat_ac_log table with results of landsat ac batch job."""
 import os
 import boto3
 import json
@@ -23,13 +24,23 @@ def execute_statement(sql, sql_parameters=[]):
 
 
 def handler(event, context):
+    """
+    Update landsat_ac_log table with results of landsat ac batch job.
+
+    Parameters:
+    event (dict) Event source of Step Function SubmitJob result
+
+    Returns:
+    exitcode (int) The exit code of the logged job result
+
+    """
     parsed_info = parse_jobinfo("jobinfo", event)
     jobinfo, jobinfostring, exitcode, jobid = itemgetter(
         "jobinfo", "jobinfostring", "exitcode", "jobid"
     )(parsed_info)
     q = (
-        "UPDATE landsat_ac_log SET (jobid, jobinfo) ="
-        + " (:jobid::text, :jobinfo::jsonb)"
+        "UPDATE landsat_ac_log SET (jobid, jobinfo, run_count) ="
+        + " (:jobid::text, :jobinfo::jsonb, run_count + 1)"
         + " WHERE scene_id = :scene::text"
     )
     sql_parameters = [

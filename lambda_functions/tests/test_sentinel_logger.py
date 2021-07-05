@@ -2,62 +2,29 @@ import pytest
 import json
 from unittest.mock import patch
 from lambda_functions.sentinel_logger import handler
-from hls_lambda_layer.batch_test_events import (
-    batch_failed_event,
-    batch_succeeded_event,
-    batch_failed_event_string_cause
-)
-
-
-@patch("lambda_functions.sentinel_logger.rds_client")
-def test_handler_keyError(client):
-    """Test handler."""
-    event = {
-        "jobinfo": batch_failed_event
-    }
-    cause = json.loads(event["jobinfo"]["Cause"])
-    jobinfo = {"name": "event", "value": {"stringValue": json.dumps(cause)}}
-    client.execute_statement.return_value = {}
-    output = handler(event, {})
-    args, kwargs = client.execute_statement.call_args
-    assert jobinfo in kwargs["parameters"]
-    assert output == 1
 
 
 @patch("lambda_functions.sentinel_logger.rds_client")
 def test_handler(client):
     """Test handler."""
     event = {
-        "jobinfo": batch_succeeded_event
+        "granule": "S2A_MSIL1C_20200708T232851_N0209_R044_T58LEP_20200709T005119",
     }
     client.execute_statement.return_value = {}
-    output = handler(event, {})
+    handler(event, {})
     args, kwargs = client.execute_statement.call_args
-    jobinfo = {"name": "event", "value": {"stringValue":
-                                          json.dumps(event["jobinfo"])}}
-    assert jobinfo in kwargs["parameters"]
-    assert output == 0
-
-
-@patch("lambda_functions.sentinel_logger.rds_client")
-def test_handler_valueError(client):
-    """Test handler."""
-    event = {
-        "jobinfo": batch_failed_event_string_cause
-    }
-
-    jobinfo_value = {
-        "cause": event["jobinfo"]["Cause"]
-    }
-
-    jobinfo = {
-        "name": "event",
+    granule = {
+        "name": "granule",
         "value": {
-            "stringValue": json.dumps(jobinfo_value)
+            "stringValue": event["granule"]
         }
     }
-    client.execute_statement.return_value = {}
-    output = handler(event, {})
-    args, kwargs = client.execute_statement.call_args
-    assert jobinfo in kwargs["parameters"]
-    assert output == "nocode"
+    assert granule in kwargs["parameters"]
+    # Initial run_count should be 0.
+    run_count = {
+        "name": "run_count",
+        "value": {
+            "longValue": 0
+        }
+    }
+    assert run_count in kwargs["parameters"]

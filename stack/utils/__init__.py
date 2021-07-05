@@ -12,4 +12,4 @@ def aws_env(env: Dict):
 def align(code_doc: str):
     code_split = code_doc.split("\n")
     spaces = code_split.pop()
-    return "\n".join([l.replace(spaces, "", 1) for l in code_split])
+    return "\n".join([line.replace(spaces, "", 1) for line in code_split])

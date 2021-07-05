@@ -15,9 +15,9 @@ class S3(core.Construct):
         # check if bucket already exists
         try:
             boto3.client("s3").head_bucket(Bucket=bucket_name)
-            bucket = aws_s3.Bucket.from_bucket_name(self, f"bucket", bucket_name)
+            bucket = aws_s3.Bucket.from_bucket_name(self, "bucket", bucket_name)
         except botocore.exceptions.ClientError:
-            bucket = aws_s3.Bucket(self, f"bucket", bucket_name=bucket_name)
+            bucket = aws_s3.Bucket(self, "bucket", bucket_name=bucket_name)
 
         self.bucket = bucket
         self.bucket_name = bucket.bucket_name
