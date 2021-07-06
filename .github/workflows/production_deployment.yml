@@ -69,7 +69,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-west-2
       - name: Deploy with tox
-        run: tox -e dev -r -- deploy
+        run: tox -e dev -r -- deploy --require-approval never
       - name: Run DB setup
         env:
           HLS_STACKNAME: ${{ secrets.HLS_STACKNAME }}
