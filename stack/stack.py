@@ -661,7 +661,7 @@ class HlsStack(core.Stack):
         self.laads_available.function.add_to_role_policy(self.laads_bucket_read_policy)
 
         if DOWNLOADER_FUNCTION_ARN:
-            self.check_twin_granule.function.add_to_role_policy(
+            self.sentinel_input_bucket.add_to_resource_policy(
                 aws_iam.PolicyStatement(
                     resources=[
                         self.sentinel_input_bucket.bucket_arn,
