@@ -53,6 +53,7 @@ jobs:
       HLS_MAXV_CPUS: ${{ secrets.HLS_MAXV_CPUS }}
       HLS_REPLACE_EXISTING: ${{ secrets.HLS_REPLACE_EXISTING }}
       HLS_SSH_KEYNAME: ${{ secrets.HLS_SSH_KEYNAME }}
+      HLS_DOWNLOADER_FUNCTION_ARN: ${{ secrets.HLS_DOWNLOADER_FUNCTION_ARN }}
 
     steps:
       - uses: actions/checkout@v2
