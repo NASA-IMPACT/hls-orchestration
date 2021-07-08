@@ -78,6 +78,8 @@ LANDSAT_SNS_TOPIC = getenv(
     "HLS_LANDSAT_SNS_TOPIC", "arn:aws:sns:us-west-2:673253540267:public-c2-notify"
 )
 
+DOWNLOADER_FUNCTION_ARN = getenv("HLS_DOWNLOADER_FUNCTION_ARN", None)
+
 # Stack named resources
 SENTINEL_INPUT_BUCKET = f"{STACKNAME}-sentinel-input-files"
 LAADS_BUCKET = f"{STACKNAME}-laads-bucket"
@@ -657,6 +659,18 @@ class HlsStack(core.Stack):
         )
         self.laads_cron.function.add_to_role_policy(self.laads_bucket_read_policy)
         self.laads_available.function.add_to_role_policy(self.laads_bucket_read_policy)
+
+        if DOWNLOADER_FUNCTION_ARN:
+            self.sentinel_input_bucket.add_to_resource_policy(
+                aws_iam.PolicyStatement(
+                    resources=[
+                        self.sentinel_input_bucket.bucket_arn,
+                        f"{self.sentinel_input_bucket.bucket_arn}/*",
+                    ],
+                    actions=["s3:PutObject*", "s3:Abort*"],
+                    principals=[aws_iam.ArnPrincipal(DOWNLOADER_FUNCTION_ARN)]
+                )
+            )
 
         self.sentinel_input_bucket_policy = aws_iam.PolicyStatement(
             resources=[
