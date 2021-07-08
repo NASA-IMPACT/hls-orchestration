@@ -667,7 +667,7 @@ class HlsStack(core.Stack):
                         self.sentinel_input_bucket.bucket_arn,
                         f"{self.sentinel_input_bucket.bucket_arn}/*",
                     ],
-                    actions=["s3:PutObject", "s3:PutObjectAcl"],
+                    actions=["s3:PutObject", "s3:Abort"],
                     principals=[aws_iam.ArnPrincipal(DOWNLOADER_FUNCTION_ARN)]
                 )
             )
