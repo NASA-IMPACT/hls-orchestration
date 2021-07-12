@@ -27,9 +27,12 @@ def handler(event, context):
     jobinfo, jobinfostring, exitcode = itemgetter(
         "jobinfo", "jobinfostring", "exitcode"
     )(parsed_info)
-    q = "UPDATE sentinel_log SET jobinfo = (:jobinfo::jsonb) WHERE id = :id"
+    sql = (
+        "UPDATE sentinel_log SET (jobinfo, run_count) ="
+        + " (:jobinfo::jsonb, run_count + 1) WHERE id = :id"
+    )
     execute_statement(
-        q,
+        sql,
         sql_parameters=[
             {
                 "name": "jobinfo", "value": {"stringValue": jobinfostring}
