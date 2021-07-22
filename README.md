@@ -45,6 +45,7 @@ export GCC=true
 export AWS_DEFAULT_REGION=us-west-2
 export HLS_GCC_ACCOUNT=<The GCC account id>
 export HLS_GCC_VPCID=<The vpc id provided by GCC administrators>
+export HLS_GCC_BOUNDARY_ARN=<The boundary policy arn>
 ```
 
 

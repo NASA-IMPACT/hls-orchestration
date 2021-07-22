@@ -115,14 +115,13 @@ class HlsStack(core.Stack):
         super().__init__(scope, id, **kwargs)
         if GCC:
             vpcid = os.environ["HLS_GCC_VPCID"]
+            boundary_arn = os.environ["HLS_GCC_BOUNDARY_ARN"]
             image_id = aws_ssm.StringParameter.from_string_parameter_attributes(
                 self, "gcc_ami", parameter_name="/gcc/amis/aml2-ecs"
             ).string_value
             from permission_boundary import PermissionBoundaryAspect
             self.node.apply_aspect(
-                PermissionBoundaryAspect(
-                    f'arn:aws:iam::{core.Aws.ACCOUNT_ID}:policy/gcc-tenantOperatorBoundary'
-                )
+                PermissionBoundaryAspect(boundary_arn)
             )
         else:
             vpcid = None
