@@ -71,6 +71,12 @@ HLS_SSH_KEYNAME=hls-mount
 # Sentinel serverless downloader function role arn.
 HLS_DOWNLOADER_FUNCTION_ARN=something
 
+# GCC Specific environment settings.
+GCC=false
+HLS_GCC_ACCOUNT=account_id
+AWS_DEFAULT_REGION=region_for_account
+HLS_GCC_VPCID=vpcid
+HLS_GCC_BOUNDARY_ARN=boudary_policy_arn
 # Use Cloudwatch metrics for containers
 # HLS_USE_CLOUD_WATCH=true
 
