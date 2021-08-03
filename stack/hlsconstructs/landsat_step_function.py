@@ -204,6 +204,7 @@ class LandsatStepFunction(core.Construct):
                                         ]
                                     }
                                 ],
+                                "OutputPath": "$.Output",
                                 "Next": "SuccessState",
                             },
                             "SuccessState": {"Type": "Succeed"},
