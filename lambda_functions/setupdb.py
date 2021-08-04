@@ -105,6 +105,8 @@ to_timestamp((jobinfo->>'StartedAt')::float/1000) as job_started,
 to_timestamp((jobinfo->>'StoppedAt')::float/1000) as job_stopped,
 jobinfo
 from landsat_mgrs_log WHERE jobinfo IS NOT NULL;
+
+ALTER TABLE sentinel_log ADD COLUMN IF NOT EXISTS historic BOOLEAN;
 """
 
 

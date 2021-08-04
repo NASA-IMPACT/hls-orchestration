@@ -32,9 +32,17 @@ def handler(event, context):
         {"name": "granule", "value": {"stringValue": event["granule"]}},
         {"name": "run_count", "value": {"longValue": 0}},
     ]
+    historic = os.getenv("HISTORIC")
+    if historic == "historic":
+        historic_value = True
+    else:
+        historic_value = False
+    historic_parameter = {"name": "historic", "value": historic_value}
+    sql_parameters.append(historic_parameter)
+
     sql = (
-        "INSERT INTO sentinel_log (granule, run_count) VALUES"
-        + "(:granule::varchar, :run_count::integer)"
+        "INSERT INTO sentinel_log (granule, run_count, historic) VALUES"
+        + "(:granule::varchar, :run_count::integer, :historic::boolean)"
     )
     execute_statement(
         sql,
