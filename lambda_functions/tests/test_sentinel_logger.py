@@ -33,7 +33,7 @@ def test_handler(client):
 
 @patch.dict(os.environ, {"HISTORIC": "historic"})
 @patch("lambda_functions.sentinel_logger.rds_client")
-def test_handler_not_historic(client):
+def test_handler_historic(client):
     """Test handler."""
     event = {
         "granule": "S2A_MSIL1C_20200708T232851_N0209_R044_T58LEP_20200709T005119",
@@ -41,12 +41,6 @@ def test_handler_not_historic(client):
     client.execute_statement.return_value = {}
     handler(event, {})
     args, kwargs = client.execute_statement.call_args
-    granule = {
-        "name": "granule",
-        "value": {
-            "stringValue": event["granule"]
-        }
-    }
-    assert granule in kwargs["parameters"]
+
     historic = {"name": "historic", "value": True}
     assert historic in kwargs["parameters"]
