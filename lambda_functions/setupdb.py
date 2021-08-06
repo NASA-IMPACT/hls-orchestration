@@ -107,6 +107,8 @@ jobinfo
 from landsat_mgrs_log WHERE jobinfo IS NOT NULL;
 
 ALTER TABLE sentinel_log ADD COLUMN IF NOT EXISTS historic BOOLEAN;
+ALTER TABLE landsat_ac_log ADD COLUMN IF NOT EXISTS historic BOOLEAN;
+ALTER TABLE landsat_mgrs_log ADD COLUMN IF NOT EXISTS historic BOOLEAN;
 """
 
 
