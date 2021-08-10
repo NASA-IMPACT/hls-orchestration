@@ -24,7 +24,9 @@ STACKNAME = os.environ["HLS_STACKNAME"]
 LAADS_TOKEN = os.environ["HLS_LAADS_TOKEN"]
 OUTPUT_BUCKET_ROLE_ARN = os.environ["HLS_OUTPUT_BUCKET_ROLE_ARN"]
 OUTPUT_BUCKET = os.environ["HLS_OUTPUT_BUCKET"]
+OUTPUT_BUCKET_HISTORIC = os.environ["HLS_OUTPUT_BUCKET_HISTORIC"]
 GIBS_OUTPUT_BUCKET = os.environ["HLS_GIBS_OUTPUT_BUCKET"]
+GIBS_OUTPUT_BUCKET_HISTORIC = os.environ["HLS_GIBS_OUTPUT_BUCKET_HISTORIC"]
 
 
 def getenv(key, default):
@@ -82,6 +84,7 @@ DOWNLOADER_FUNCTION_ARN = getenv("HLS_DOWNLOADER_FUNCTION_ARN", None)
 
 # Stack named resources
 SENTINEL_INPUT_BUCKET = f"{STACKNAME}-sentinel-input-files"
+SENTINEL_INPUT_BUCKET_HISTORIC = f"{STACKNAME}-sentinel-input-files-historic"
 LAADS_BUCKET = f"{STACKNAME}-laads-bucket"
 LANDSAT_INTERMEDIATE_OUTPUT_BUCKET = f"{STACKNAME}-landsat-intermediate-output"
 GIBS_INTERMEDIATE_OUTPUT_BUCKET = f"{STACKNAME}-gibs-intermediate-output"
@@ -142,6 +145,10 @@ class HlsStack(core.Stack):
         # Must be created as part of the stack due to trigger requirements
         self.sentinel_input_bucket = aws_s3.Bucket(
             self, "SentinelInputBucket", bucket_name=SENTINEL_INPUT_BUCKET
+        )
+
+        self.sentinel_input_bucket_historic = aws_s3.Bucket(
+            self, "SentinelInputBucketHistoric", bucket_name=SENTINEL_INPUT_BUCKET_HISTORIC
         )
 
         self.landsat_intermediate_output_bucket = aws_s3.Bucket(
@@ -257,6 +264,14 @@ class HlsStack(core.Stack):
             timeout=120,
         )
 
+        self.check_twin_granule_historic = Lambda(
+            self,
+            "CheckGranuleHistoric",
+            code_file="twin_granule.py",
+            env={"SENTINEL_INPUT_BUCKET": SENTINEL_INPUT_BUCKET_HISTORIC},
+            timeout=120,
+        )
+
         self.landsat_mgrs_logger = Lambda(
             self,
             "LandsatMGRSLogger",
@@ -341,6 +356,19 @@ class HlsStack(core.Stack):
                 "HLS_SECRETS": self.rds.secret.secret_arn,
                 "HLS_DB_NAME": self.rds.database.database_name,
                 "HLS_DB_ARN": self.rds.arn,
+            },
+            timeout=120,
+        )
+
+        self.sentinel_logger_historic = Lambda(
+            self,
+            "SentinelLoggerHistoric",
+            code_file="sentinel_logger.py",
+            env={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
+                "HISTORIC": "historic",
             },
             timeout=120,
         )
@@ -494,6 +522,23 @@ class HlsStack(core.Stack):
             gibs_outputbucket=GIBS_OUTPUT_BUCKET,
         )
 
+        self.sentinel_step_function_historic = SentinelStepFunction(
+            self,
+            "SentinelHistoricStateMachine",
+            check_twin_granule=self.check_twin_granule_historic,
+            laads_available=self.laads_available,
+            outputbucket=OUTPUT_BUCKET_HISTORIC,
+            inputbucket=SENTINEL_INPUT_BUCKET_HISTORIC,
+            sentinel_job_definition=self.sentinel_task.job.ref,
+            jobqueue=self.batch.sentinel_historic_jobqueue.ref,
+            sentinel_ac_logger=self.sentinel_ac_logger,
+            sentinel_logger=self.sentinel_logger_historic,
+            check_exit_code=self.check_exit_code,
+            outputbucket_role_arn=OUTPUT_BUCKET_ROLE_ARN,
+            replace_existing=REPLACE_EXISTING,
+            gibs_outputbucket=GIBS_OUTPUT_BUCKET_HISTORIC,
+        )
+
         self.sentinel_errors_step_function = SentinelErrorsStepFunction(
             self,
             "SentinelErrorsStateMachine",
@@ -563,6 +608,15 @@ class HlsStack(core.Stack):
             code_file="execute_step_function.py",
             timeout=180,
             input_bucket=self.sentinel_input_bucket,
+        )
+
+        self.step_function_trigger_historic = StepFunctionTrigger(
+            self,
+            "SentinelStepFunctionTriggerHistoric",
+            state_machine=self.sentinel_step_function_historic.sentinel_state_machine.ref,
+            code_file="execute_step_function.py",
+            timeout=180,
+            input_bucket=self.sentinel_input_bucket_historic,
         )
 
         self.landsat_sns_topic = aws_sns.Topic.from_topic_arn(
@@ -684,6 +738,21 @@ class HlsStack(core.Stack):
         self.sentinel_task.role.add_to_policy(
             self.sentinel_input_bucket_policy
         )
+
+        self.sentinel_input_bucket_historic_policy = aws_iam.PolicyStatement(
+            resources=[
+                self.sentinel_input_bucket_historic.bucket_arn,
+                f"{self.sentinel_input_bucket_historic.bucket_arn}/*",
+            ],
+            actions=["s3:Get*", "s3:List*",],
+        )
+        self.check_twin_granule_historic.function.add_to_role_policy(
+            self.sentinel_input_bucket_historic_policy
+        )
+        self.sentinel_task.role.add_to_policy(
+            self.sentinel_input_bucket_historic_policy
+        )
+
         self.laads_task.role.add_to_policy(
             aws_iam.PolicyStatement(
                 resources=[
@@ -824,6 +893,7 @@ class HlsStack(core.Stack):
             self.landsat_pathrow_status,
             self.sentinel_ac_logger,
             self.sentinel_logger,
+            self.sentinel_logger_historic,
             self.update_sentinel_failure,
             self.check_landsat_pathrow_complete,
             self.landsat_incomplete_step_function_trigger.execute_step_function,

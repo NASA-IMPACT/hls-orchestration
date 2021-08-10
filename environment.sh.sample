@@ -17,6 +17,8 @@ HLS_LAADS_TOKEN="<your token>"
 
 # Bucket used for processing output
 HLS_OUTPUT_BUCKET=hls-global
+HLS_OUTPUT_BUCKET_HISTORIC=hls-gobal-historic
+
 
 # Role for copying to output bucket
 HLS_OUTPUT_BUCKET_ROLE_ARN=arn:aws:iam::611670965994:role/gcc-S3Test
@@ -26,6 +28,7 @@ HLS_LANDSAT_SNS_TOPIC=arn:aws:sns:us-west-2:673253540267:public-c2-notify
 
 # Bucket for merged GIBS tile output.
 HLS_GIBS_OUTPUT_BUCKET=hls-browse-imagery
+HLS_GIBS_OUTPUT_BUCKET_HISTORIC=hls-browse-imagery-historic
 
 
 # Optional env settings
