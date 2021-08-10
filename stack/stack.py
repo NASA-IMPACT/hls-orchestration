@@ -692,6 +692,13 @@ class HlsStack(core.Stack):
             root_name="Sentinel",
         )
 
+        self.sentinel_step_function_historic_alarm = StepFunctionAlarm(
+            self,
+            "SentinelStepFunctioniHistoricAlarm",
+            state_machine=self.sentinel_step_function_historic.sentinel_state_machine.ref,
+            root_name="SentinelHistoric",
+        )
+
         self.landsat_step_function_alarm = StepFunctionAlarm(
             self,
             "LandsatStepFunctionAlarm",
