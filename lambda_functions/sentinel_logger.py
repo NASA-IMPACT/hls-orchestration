@@ -37,7 +37,7 @@ def handler(event, context):
         historic_value = True
     else:
         historic_value = False
-    historic_parameter = {"name": "historic", "value": historic_value}
+    historic_parameter = {"name": "historic", "value": {"booleanValue": historic_value}}
     sql_parameters.append(historic_parameter)
 
     sql = (

@@ -61,7 +61,7 @@ def test_handler(client):
     handler(event, {})
     path = {"name": "path", "value": {"stringValue": "127"}}
     acquisition = {"name": "acquisition", "value": {"stringValue": "2020-05-27"}}
-    historic = {"name": "historic", "value": True}
+    historic = {"name": "historic", "value": {"booleanValue": True}}
     sql = (
         "INSERT INTO landsat_mgrs_log (path, mgrs, acquisition, run_count, historic)"
         + " VALUES (:path::varchar(3), :mgrs::varchar(5), :acquisition::date,"

@@ -42,5 +42,10 @@ def test_handler_historic(client):
     handler(event, {})
     args, kwargs = client.execute_statement.call_args
 
-    historic = {"name": "historic", "value": True}
+    historic = {
+        "name": "historic",
+        "value": {
+            "booleanValue": True
+        }
+    }
     assert historic in kwargs["parameters"]
