@@ -57,20 +57,29 @@ def execute_step_function(chunk, submit_errors, job_stopped):
 def handler(event, context):
     date_delta = int(os.getenv("DAYS_PRIOR"))
     retry_limit = int(os.getenv("RETRY_LIMIT"))
+    historic = os.getenv("HISTORIC")
     event_time = datetime.strptime(event["time"], '%Y-%m-%dT%H:%M:%SZ')
     fromdate = (event_time - timedelta(days=date_delta)).strftime('%d/%m/%Y')
-    q = (
+
+    if historic == "historic":
+        historic_value = True
+    else:
+        historic_value = False
+
+    sql = (
         "SELECT mgrs, path, acquisition from landsat_mgrs_log WHERE"
-        + " (jobinfo->'Container'->>'ExitCode' IS NULL OR jobinfo->'Container'->>'ExitCode' != '0')"
-        + " AND run_count < :retry_limit::integer AND DATE(ts) <= TO_DATE(:fromdate::text,'DD/MM/YYYY');"
+        + " (jobinfo->'Container'->>'ExitCode' IS NULL OR"
+        + " jobinfo->'Container'->>'ExitCode' != '0')"
+        + " AND run_count < :retry_limit::integer AND DATE(ts)"
+        + " <= TO_DATE(:fromdate::text,'DD/MM/YYYY')"
+        + " AND historic == :historic_value::boolean;"
     )
-    response = execute_statement(
-        q,
-        sql_parameters=[
-            {"name": "fromdate", "value": {"stringValue": fromdate}},
-            {"name": "retry_limit", "value": {"longValue": retry_limit}},
-        ]
-    )
+    sql_parameters = [
+        {"name": "fromdate", "value": {"stringValue": fromdate}},
+        {"name": "retry_limit", "value": {"longValue": retry_limit}},
+        {"name": "historic_value", "value": {"booleanValue": historic_value}},
+    ]
+    response = execute_statement(sql, sql_parameters=sql_parameters)
     records = map(convert_records, response["records"])
     incompletes = list(records)
     incomplete_chunks = list(chunk(incompletes, 100))
