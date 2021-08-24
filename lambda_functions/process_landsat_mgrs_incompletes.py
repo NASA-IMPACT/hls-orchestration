@@ -55,30 +55,40 @@ def execute_step_function(chunk, submit_errors, job_stopped):
 
 
 def handler(event, context):
-    date_delta = int(os.getenv("DAYS_PRIOR"))
+    date_delta = os.getenv("DAYS_PRIOR")
+    hour_delta = os.getenv("HOURS_PRIOR")
     retry_limit = int(os.getenv("RETRY_LIMIT"))
     historic = os.getenv("HISTORIC")
     event_time = datetime.strptime(event["time"], '%Y-%m-%dT%H:%M:%SZ')
-    fromdate = (event_time - timedelta(days=date_delta)).strftime('%d/%m/%Y')
 
     if historic == "historic":
         historic_value = True
     else:
         historic_value = False
 
-    sql = (
+    q = (
         "SELECT mgrs, path, acquisition from landsat_mgrs_log WHERE"
         + " (jobinfo->'Container'->>'ExitCode' IS NULL OR"
         + " jobinfo->'Container'->>'ExitCode' != '0')"
-        + " AND run_count < :retry_limit::integer AND DATE(ts)"
-        + " <= TO_DATE(:fromdate::text,'DD/MM/YYYY')"
-        + " AND historic == :historic_value::boolean;"
+        + " AND run_count < :retry_limit::integer"
+        + " AND historic = :historic_value::boolean"
     )
     sql_parameters = [
-        {"name": "fromdate", "value": {"stringValue": fromdate}},
         {"name": "retry_limit", "value": {"longValue": retry_limit}},
         {"name": "historic_value", "value": {"booleanValue": historic_value}},
     ]
+
+    if hour_delta:
+        delta = (event_time - timedelta(hours=int(hour_delta))).strftime("%d-%m-%Y %H:%M:%S")
+        delta_query = " AND ts <= TO_TIMESTAMP(:delta::text,'DD-MM-YYYY HH:MI:SS');"
+    else:
+        delta = (event_time - timedelta(days=int(date_delta))).strftime("%d/%m/%Y")
+        delta_query = " AND DATE(ts) <= TO_DATE(:delta::text,'DD/MM/YYYY');"
+
+    sql = q + delta_query
+    print(sql)
+    sql_parameters.append({"name": "delta", "value": {"stringValue": delta}})
+
     response = execute_statement(sql, sql_parameters=sql_parameters)
     records = map(convert_records, response["records"])
     incompletes = list(records)
@@ -86,7 +96,7 @@ def handler(event, context):
     submission_errors = []
 
     for incomplete_chunk in incomplete_chunks:
-        execute_step_function(incomplete_chunk, submission_errors, fromdate)
+        execute_step_function(incomplete_chunk, submission_errors, delta)
 
     if len(submission_errors) > 0:
         raise NameError("A step function execution error occurred")

@@ -65,6 +65,10 @@ LANDSAT_INCOMPLETE_CRON = getenv(
     "HLS_LANDSAT_INCOMPLETE_CRON",
     "cron(0 12 * * ? *)"
 )
+LANDSAT_HISTORIC_INCOMPLETE_CRON = getenv(
+    "HLS_LANDSAT_HISTORIC_INCOMPLETE_CRON",
+    "cron(0 0/6 * * ? *)"
+)
 SENTINEL_ERRORS_CRON = getenv(
     "HLS_SENTINEL_ERRORS_CRON",
     "cron(0 20 * * ? *)"
@@ -74,7 +78,7 @@ LANDSAT_AC_ERRORS_CRON = getenv(
     "cron(0 16 * * ? *)"
 )
 LANDSAT_DAYS_PRIOR = getenv("HLS_LANDSAT_DAYS_PRIOR", "4")
-LANDSAT_HISTORIC_DAYS_PRIOR = getenv("HLS_LANDSAT_HISTORIC_DAYS_PRIOR", "2")
+LANDSAT_HISTORIC_HOURS_PRIOR = getenv("HLS_LANDSAT_HISTORIC_HOURS_PRIOR", "2")
 SENTINEL_RETRY_LIMIT = getenv("HLS_SENTINEL_RETRY_LIMIT", "3")
 LANDSAT_RETRY_LIMIT = getenv("HLS_LANDSAT_RETRY_LIMIT", "3")
 SSH_KEYNAME = getenv("HLS_SSH_KEYNAME", "hls-mount")
@@ -660,6 +664,12 @@ class HlsStack(core.Stack):
             landsat_mgrs_step_function_arn=self.landsat_mgrs_step_function.state_machine.ref,
         )
 
+        self.landsat_historic_incomplete_step_function = LandsatIncompleteStepFunction(
+            self,
+            "LandsatHistoricIncompleteStateMachine",
+            landsat_mgrs_step_function_arn=self.landsat_mgrs_step_function_historic.state_machine.ref,
+        )
+
         self.landsat_ac_errors_step_function = LandsatACErrorsStepFunction(
             self,
             "LandsatACErrorsStateMachine",
@@ -715,25 +725,6 @@ class HlsStack(core.Stack):
             },
         )
 
-        self.landsat_historic_incomplete_step_function_trigger = StepFunctionTrigger(
-            self,
-            "LandsatHistoricIncompleteStepFunctionTrigger",
-            state_machine=self.landsat_incomplete_step_function.state_machine.ref,
-            code_file="process_landsat_mgrs_incompletes.py",
-            timeout=900,
-            lambda_name="ProcessLandsatMgrsIncompletes",
-            layers=[self.hls_lambda_layer],
-            cron_str=LANDSAT_INCOMPLETE_CRON,
-            env_vars={
-                "HLS_SECRETS": self.rds.secret.secret_arn,
-                "HLS_DB_NAME": self.rds.database.database_name,
-                "HLS_DB_ARN": self.rds.arn,
-                "DAYS_PRIOR": LANDSAT_DAYS_PRIOR,
-                "RETRY_LIMIT": LANDSAT_RETRY_LIMIT,
-                "HISTORIC": "historic",
-            },
-        )
-
         self.landsat_incomplete_step_function_trigger = StepFunctionTrigger(
             self,
             "LandsatIncompleteStepFunctionTrigger",
@@ -749,6 +740,25 @@ class HlsStack(core.Stack):
                 "HLS_DB_ARN": self.rds.arn,
                 "DAYS_PRIOR": LANDSAT_DAYS_PRIOR,
                 "RETRY_LIMIT": LANDSAT_RETRY_LIMIT,
+            },
+        )
+
+        self.landsat_historic_incomplete_step_function_trigger = StepFunctionTrigger(
+            self,
+            "LandsatHistoricIncompleteStepFunctionTrigger",
+            state_machine=self.landsat_historic_incomplete_step_function.state_machine.ref,
+            code_file="process_landsat_mgrs_incompletes.py",
+            timeout=900,
+            lambda_name="ProcessLandsatMgrsIncompletes",
+            layers=[self.hls_lambda_layer],
+            cron_str=LANDSAT_HISTORIC_INCOMPLETE_CRON,
+            env_vars={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
+                "HOURS_PRIOR": LANDSAT_HISTORIC_HOURS_PRIOR,
+                "RETRY_LIMIT": LANDSAT_RETRY_LIMIT,
+                "HISTORIC": "historic",
             },
         )
 
@@ -1006,6 +1016,7 @@ class HlsStack(core.Stack):
             self.update_sentinel_failure,
             self.check_landsat_pathrow_complete,
             self.landsat_incomplete_step_function_trigger.execute_step_function,
+            self.landsat_historic_incomplete_step_function_trigger.execute_step_function,
             self.sentinel_errors_step_function_trigger.execute_step_function,
             self.landsat_logger,
             self.landsat_logger_historic,
