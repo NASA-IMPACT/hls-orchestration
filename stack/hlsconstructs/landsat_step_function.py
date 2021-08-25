@@ -13,8 +13,6 @@ class LandsatStepFunction(core.Construct):
         scope: core.Construct,
         id: str,
         laads_available: Lambda,
-        outputbucket: str,
-        outputbucket_role_arn: str,
         intermediate_output_bucket: str,
         ac_job_definition: str,
         acjobqueue: str,
@@ -26,7 +24,6 @@ class LandsatStepFunction(core.Construct):
         check_landsat_ac_exit_code: Lambda,
         get_random_wait: Lambda,
         replace_existing: bool,
-        gibs_outputbucket: str,
         landsat_mgrs_step_function_arn: str,
         **kwargs,
     ) -> None:

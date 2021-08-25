@@ -170,7 +170,17 @@ class Batch(core.Construct):
         sentinel_jobqueue = aws_batch.CfnJobQueue(
             self,
             "SentinelJobQueue",
-            priority=1,
+            priority=6,
+            compute_environment_order=[
+                aws_batch.CfnJobQueue.ComputeEnvironmentOrderProperty(
+                    compute_environment=compute_environment.ref, order=1
+                )
+            ],
+        )
+        sentinel_historic_jobqueue = aws_batch.CfnJobQueue(
+            self,
+            "SentinelHistoricJobQueue",
+            priority=3,
             compute_environment_order=[
                 aws_batch.CfnJobQueue.ComputeEnvironmentOrderProperty(
                     compute_environment=compute_environment.ref, order=1
@@ -180,6 +190,16 @@ class Batch(core.Construct):
         landsatac_jobqueue = aws_batch.CfnJobQueue(
             self,
             "LandsatAcJobQueue",
+            priority=5,
+            compute_environment_order=[
+                aws_batch.CfnJobQueue.ComputeEnvironmentOrderProperty(
+                    compute_environment=compute_environment.ref, order=1
+                )
+            ],
+        )
+        landsatac_historic_jobqueue = aws_batch.CfnJobQueue(
+            self,
+            "LandsatHistoricAcJobQueue",
             priority=2,
             compute_environment_order=[
                 aws_batch.CfnJobQueue.ComputeEnvironmentOrderProperty(
@@ -190,7 +210,17 @@ class Batch(core.Construct):
         landsattile_jobqueue = aws_batch.CfnJobQueue(
             self,
             "LandsatTileJobQueue",
-            priority=3,
+            priority=4,
+            compute_environment_order=[
+                aws_batch.CfnJobQueue.ComputeEnvironmentOrderProperty(
+                    compute_environment=compute_environment.ref, order=1
+                )
+            ],
+        )
+        landsattile_historic_jobqueue = aws_batch.CfnJobQueue(
+            self,
+            "LandsatHistoricTileJobQueue",
+            priority=1,
             compute_environment_order=[
                 aws_batch.CfnJobQueue.ComputeEnvironmentOrderProperty(
                     compute_environment=compute_environment.ref, order=1
@@ -210,6 +240,9 @@ class Batch(core.Construct):
 
         self.compute_environment = compute_environment
         self.sentinel_jobqueue = sentinel_jobqueue
+        self.sentinel_historic_jobqueue = sentinel_historic_jobqueue
         self.landsatac_jobqueue = landsatac_jobqueue
+        self.landsatac_historic_jobqueue = landsatac_historic_jobqueue
         self.landsattile_jobqueue = landsattile_jobqueue
+        self.landsattile_historic_jobqueue = landsattile_historic_jobqueue
         self.laads_jobqueue = laads_jobqueue

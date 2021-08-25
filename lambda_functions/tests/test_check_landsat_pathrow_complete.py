@@ -48,4 +48,4 @@ def test_handler_none(client):
     }
     client.execute_statement.return_value = return_value
     actual = handler(event, {})
-    assert actual is None
+    assert actual == ""
