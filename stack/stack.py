@@ -13,6 +13,7 @@ from hlsconstructs.batch_cron import BatchCron
 from hlsconstructs.sentinel_step_function import SentinelStepFunction
 from hlsconstructs.landsat_step_function import LandsatStepFunction
 from hlsconstructs.landsat_mgrs_step_function import LandsatMGRSStepFunction
+from hlsconstructs.landsat_mgrs_partials_step_function import LandsatMGRSPartialsStepFunction
 from hlsconstructs.landsat_incomplete_step_function import LandsatIncompleteStepFunction
 from hlsconstructs.sentinel_errors_step_function import SentinelErrorsStepFunction
 from hlsconstructs.landsat_ac_errors_step_function import LandsatACErrorsStepFunction
@@ -607,6 +608,21 @@ class HlsStack(core.Stack):
             gibs_outputbucket=GIBS_OUTPUT_BUCKET,
         )
 
+        self.landsat_mgrs_partials_step_function = LandsatMGRSPartialsStepFunction(
+            self,
+            "LandsatMGRSPartialsStateMachine",
+            outputbucket=OUTPUT_BUCKET,
+            outputbucket_role_arn=OUTPUT_BUCKET_ROLE_ARN,
+            intermediate_output_bucket=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
+            tile_job_definition=self.landsat_tile_task.job.ref,
+            tilejobqueue=self.batch.landsattile_jobqueue.ref,
+            check_landsat_pathrow_complete=self.check_landsat_pathrow_complete,
+            pr2mgrs=self.pr2mgrs_lambda,
+            mgrs_logger=self.mgrs_logger,
+            get_random_wait=self.get_random_wait,
+            gibs_outputbucket=GIBS_OUTPUT_BUCKET,
+        )
+
         self.landsat_mgrs_step_function_historic = LandsatMGRSStepFunction(
             self,
             "LandsatMGRSStateMachineHistoric",
@@ -616,6 +632,21 @@ class HlsStack(core.Stack):
             tile_job_definition=self.landsat_tile_task.job.ref,
             tilejobqueue=self.batch.landsattile_historic_jobqueue.ref,
             landsat_pathrow_status=self.landsat_pathrow_status,
+            pr2mgrs=self.pr2mgrs_lambda,
+            mgrs_logger=self.mgrs_logger,
+            get_random_wait=self.get_random_wait,
+            gibs_outputbucket=GIBS_OUTPUT_BUCKET_HISTORIC,
+        )
+
+        self.landsat_mgrs_partials_step_function_historic = LandsatMGRSPartialsStepFunction(
+            self,
+            "LandsatMGRSPartialsStateMachineHistoric",
+            outputbucket=OUTPUT_BUCKET_HISTORIC,
+            outputbucket_role_arn=OUTPUT_BUCKET_ROLE_ARN,
+            intermediate_output_bucket=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
+            tile_job_definition=self.landsat_tile_task.job.ref,
+            tilejobqueue=self.batch.landsattile_historic_jobqueue.ref,
+            check_landsat_pathrow_complete=self.check_landsat_pathrow_complete,
             pr2mgrs=self.pr2mgrs_lambda,
             mgrs_logger=self.mgrs_logger,
             get_random_wait=self.get_random_wait,
@@ -661,13 +692,13 @@ class HlsStack(core.Stack):
         self.landsat_incomplete_step_function = LandsatIncompleteStepFunction(
             self,
             "LandsatIncompleteStateMachine",
-            landsat_mgrs_step_function_arn=self.landsat_mgrs_step_function.state_machine.ref,
+            landsat_mgrs_step_function_arn=self.landsat_mgrs_partials_step_function.state_machine.ref,
         )
 
         self.landsat_historic_incomplete_step_function = LandsatIncompleteStepFunction(
             self,
             "LandsatHistoricIncompleteStateMachine",
-            landsat_mgrs_step_function_arn=self.landsat_mgrs_step_function_historic.state_machine.ref,
+            landsat_mgrs_step_function_arn=self.landsat_mgrs_partials_step_function_historic.state_machine.ref,
         )
 
         self.landsat_ac_errors_step_function = LandsatACErrorsStepFunction(
