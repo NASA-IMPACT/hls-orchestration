@@ -57,7 +57,7 @@ class LandsatMGRSPartialsStepFunction(core.Construct):
                             "Next": "GetRandomWaitTile",
                         }
                     ],
-                    "Default": "Done",
+                    "Default": "LogMGRS",
                 },
                 "GetRandomWaitTile": {
                     "Type": "Task",

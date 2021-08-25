@@ -23,26 +23,36 @@ def execute_statement(sql, sql_parameters=[]):
 
 
 def handler(event, context):
-    parsed_info = parse_jobinfo("tilejobinfo", event)
-    jobinfo, jobinfostring, exitcode = itemgetter(
-        "jobinfo", "jobinfostring", "exitcode"
-    )(parsed_info)
+    sql_parameters = [
+        {"name": "mgrs", "value": {"stringValue": event["MGRS"]}},
+        {"name": "path", "value": {"stringValue": event["path"]}},
+        {"name": "acquisition", "value": {"stringValue": event["date"]}},
+    ]
+    try:
+        parsed_info = parse_jobinfo("tilejobinfo", event)
+        jobinfo, jobinfostring, exitcode = itemgetter(
+            "jobinfo", "jobinfostring", "exitcode"
+        )(parsed_info)
+        q = (
+            "UPDATE landsat_mgrs_log SET (jobinfo, run_count) ="
+            + " (:jobinfo::jsonb, run_count +1)"
+        )
+        sql_parameters.append(
+            {"name": "jobinfo", "value": {"stringValue": jobinfostring}}
+        )
+    except KeyError:
+        q = "UPDATE landsat_mgrs_log SET run_count = run_count +1"
+        exitcode = "nocode"
 
     sql = (
-        "UPDATE landsat_mgrs_log SET (jobinfo, run_count) ="
-        + " (:jobinfo::jsonb, run_count +1)"
+        q
         + " WHERE path = :path::varchar(3) AND"
         + " mgrs = :mgrs::varchar(5) AND acquisition = :acquisition::date;"
     )
-
+    print(sql)
     execute_statement(
         sql,
-        sql_parameters=[
-            {"name": "mgrs", "value": {"stringValue": event["MGRS"]}},
-            {"name": "path", "value": {"stringValue": event["path"]}},
-            {"name": "acquisition", "value": {"stringValue": event["date"]}},
-            {"name": "jobinfo", "value": {"stringValue": jobinfostring}}
-        ],
+        sql_parameters=sql_parameters,
     )
 
     print(f"Exit Code is {exitcode}")
