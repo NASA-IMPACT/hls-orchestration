@@ -3,6 +3,7 @@ from aws_cdk import (
     aws_iam,
     core,
 )
+from hlsconstructs.lambdafunc import Lambda
 import json
 
 
@@ -12,6 +13,7 @@ class LandsatIncompleteStepFunction(core.Construct):
         scope: core.Construct,
         id: str,
         landsat_mgrs_step_function_arn: str,
+        get_random_wait: Lambda,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -24,8 +26,19 @@ class LandsatIncompleteStepFunction(core.Construct):
                     "ItemsPath": "$.incompletes",
                     "MaxConcurrency": 100,
                     "Iterator": {
-                        "StartAt": "ProcessMGRSGrids",
+                        "StartAt": "GetRandomWait",
                         "States": {
+                            "GetRandomWait": {
+                                "Type": "Task",
+                                "Resource": get_random_wait.function.function_arn,
+                                "ResultPath": "$.wait_time",
+                                "Next": "Wait",
+                            },
+                            "Wait": {
+                                "Type": "Wait",
+                                "SecondsPath": "$.wait_time",
+                                "Next": "ProcessMGRSGrids"
+                            },
                             "ProcessMGRSGrids": {
                                 "Type":"Task",
                                 "Resource":"arn:aws:states:::states:startExecution.sync",
