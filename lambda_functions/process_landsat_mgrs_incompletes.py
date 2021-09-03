@@ -80,7 +80,7 @@ def handler(event, context):
 
     if hour_delta:
         delta = (event_time - timedelta(hours=int(hour_delta))).strftime("%d-%m-%Y %H:%M:%S")
-        delta_query = " AND ts <= TO_TIMESTAMP(:delta::text,'DD-MM-YYYY HH:MI:SS');"
+        delta_query = " AND ts <= TO_TIMESTAMP(:delta::text,'DD-MM-YYYY HH24:MI:SS');"
     else:
         delta = (event_time - timedelta(days=int(date_delta))).strftime("%d/%m/%Y")
         delta_query = " AND DATE(ts) <= TO_DATE(:delta::text,'DD/MM/YYYY');"

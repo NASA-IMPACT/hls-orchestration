@@ -693,12 +693,14 @@ class HlsStack(core.Stack):
             self,
             "LandsatIncompleteStateMachine",
             landsat_mgrs_step_function_arn=self.landsat_mgrs_partials_step_function.state_machine.ref,
+            get_random_wait=self.get_random_wait,
         )
 
         self.landsat_historic_incomplete_step_function = LandsatIncompleteStepFunction(
             self,
             "LandsatHistoricIncompleteStateMachine",
             landsat_mgrs_step_function_arn=self.landsat_mgrs_partials_step_function_historic.state_machine.ref,
+            get_random_wait=self.get_random_wait,
         )
 
         self.landsat_ac_errors_step_function = LandsatACErrorsStepFunction(
