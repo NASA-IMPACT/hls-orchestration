@@ -135,3 +135,13 @@ class LandsatIncompleteStepFunction(core.Construct):
                 ]
             )
         )
+
+        # Allow the step function role to invoke all its Lambdas.
+
+        arguments = locals()
+        for key in arguments:
+            arg = arguments[key]
+            if type(arg) == Lambda:
+                self.steps_role.add_to_policy(
+                    arg.invoke_policy_statement
+                )
