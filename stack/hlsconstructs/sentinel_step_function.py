@@ -155,3 +155,5 @@ class SentinelStepFunction(BatchStepFunction):
             definition_string=json.dumps(sentinel_state_definition),
             role_arn=self.steps_role.role_arn,
         )
+
+        self.addLambdasToRole(locals())

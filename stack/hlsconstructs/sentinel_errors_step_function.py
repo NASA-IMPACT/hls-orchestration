@@ -5,9 +5,11 @@ from aws_cdk import (
 )
 import json
 from hlsconstructs.lambdafunc import Lambda
+from hlsconstructs.batch_step_function import BatchStepFunction
+from hlsconstructs.state_machine_step_function import StateMachineStepFunction
 
 
-class SentinelErrorsStepFunction(core.Construct):
+class SentinelErrorsStepFunction(BatchStepFunction, StateMachineStepFunction):
     def __init__(
         self,
         scope: core.Construct,
@@ -94,13 +96,13 @@ class SentinelErrorsStepFunction(core.Construct):
                                 "Catch": [
                                     {
                                         "ErrorEquals": ["States.ALL"],
-                                        "Next": "UpdatetSentinelFailure",
+                                        "Next": "UpdateSentinelFailure",
                                         "ResultPath": "$.jobinfo",
                                     }
                                 ],
-                                "Next": "UpdatetSentinelFailure",
+                                "Next": "UpdateSentinelFailure",
                             },
-                            "UpdatetSentinelFailure": {
+                            "UpdateSentinelFailure": {
                                 "Type": "Task",
                                 "Resource": update_sentinel_failure.function.function_arn,
                                 "Next": "SuccessState",
@@ -117,40 +119,11 @@ class SentinelErrorsStepFunction(core.Construct):
             }
         }
 
-        self.steps_role = aws_iam.Role(
-            self,
-            "SentinelErrorsStepsRole",
-            assumed_by=aws_iam.ServicePrincipal("states.amazonaws.com"),
-        )
         self.state_machine = aws_stepfunctions.CfnStateMachine(
             self,
             "SentineErrorsStateMachine",
             definition_string=json.dumps(state_definition),
             role_arn=self.steps_role.role_arn,
         )
-        region = core.Aws.REGION
-        acountid = core.Aws.ACCOUNT_ID
-        self.steps_role.add_to_policy(
-            aws_iam.PolicyStatement(
-                resources=[
-                    f"arn:aws:events:{region}:{acountid}:rule/"
-                    "StepFunctionsGetEventsForBatchJobsRule",
-                ],
-                actions=["events:PutTargets", "events:PutRule", "events:DescribeRule"],
-            )
-        )
-        self.steps_role.add_to_policy(
-            aws_iam.PolicyStatement(
-                resources=["*",],
-                actions=["batch:SubmitJob", "batch:DescribeJobs", "batch:TerminateJob"],
-            )
-        )
 
-        # Allow the step function role to invoke all its Lambdas.
-        arguments = locals()
-        for key in arguments:
-            arg = arguments[key]
-            if type(arg) == Lambda:
-                self.steps_role.add_to_policy(
-                    arg.invoke_policy_statement
-                )
+        self.addLambdasToRole(locals())
