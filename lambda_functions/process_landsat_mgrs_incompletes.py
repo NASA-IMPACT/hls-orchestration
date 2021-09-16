@@ -80,12 +80,12 @@ def handler(event, context):
 
     if hour_delta:
         delta = (event_time - timedelta(hours=int(hour_delta))).strftime("%d-%m-%Y %H:%M:%S")
-        delta_query = " AND ts <= TO_TIMESTAMP(:delta::text,'DD-MM-YYYY HH24:MI:SS');"
+        delta_query = " AND ts <= TO_TIMESTAMP(:delta::text,'DD-MM-YYYY HH24:MI:SS')"
     else:
         delta = (event_time - timedelta(days=int(date_delta))).strftime("%d/%m/%Y")
-        delta_query = " AND DATE(ts) <= TO_DATE(:delta::text,'DD/MM/YYYY');"
+        delta_query = " AND DATE(ts) <= TO_DATE(:delta::text,'DD/MM/YYYY')"
 
-    sql = q + delta_query
+    sql = q + delta_query + " LIMIT 4000" + ";"
     print(sql)
     sql_parameters.append({"name": "delta", "value": {"stringValue": delta}})
 
