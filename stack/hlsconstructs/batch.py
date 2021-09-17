@@ -94,7 +94,6 @@ class Batch(core.Construct):
                 ),
             ]
         )
-        print("Cloudwatch config is: ", str(use_cw))
         if use_cw:
             cloudwatch_ssm_param = f"BatchCloudwatchAgentConfig{self.node.unique_id}"
             cloudwatch_config_string = open(
