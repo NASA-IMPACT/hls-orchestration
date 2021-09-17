@@ -26,7 +26,7 @@ HLS_LANDSAT_SNS_TOPIC=arn:aws:sns:us-west-2:673253540267:public-c2-notify
 
 # Bucket for merged GIBS tile output.
 HLS_GIBS_OUTPUT_BUCKET=hls-browse-imagery
-
+HLS_LAADS_BUCKET_BOOTSTRAP=hls-development-laads-bucket
 
 # Optional env settings
 # Image for Sentinel processing

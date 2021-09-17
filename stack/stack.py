@@ -25,6 +25,8 @@ LAADS_TOKEN = os.environ["HLS_LAADS_TOKEN"]
 OUTPUT_BUCKET_ROLE_ARN = os.environ["HLS_OUTPUT_BUCKET_ROLE_ARN"]
 OUTPUT_BUCKET = os.environ["HLS_OUTPUT_BUCKET"]
 GIBS_OUTPUT_BUCKET = os.environ["HLS_GIBS_OUTPUT_BUCKET"]
+LAADS_BUCKET_BOOTSTRAP = os.environ["HLS_LAADS_BUCKET_BOOTSTRAP"]
+"hls-gcc-laads-bucket"
 
 
 def getenv(key, default):
@@ -79,6 +81,10 @@ LANDSAT_SNS_TOPIC = getenv(
 )
 
 DOWNLOADER_FUNCTION_ARN = getenv("HLS_DOWNLOADER_FUNCTION_ARN", None)
+HLS_LAADS_BUCKET_BOOTSTRAP = getenv(
+    "HLS_LAADS_BUCKET_BOOTSTRAP",
+    "hls-development-laads-bucket"
+)
 
 # Stack named resources
 SENTINEL_INPUT_BUCKET = f"{STACKNAME}-sentinel-input-files"
@@ -106,8 +112,6 @@ if getenv("GCC", None) == "true":
 else:
     GCC = False
 
-# Common resurces
-LAADS_BUCKET_BOOTSTRAP = "hls-gcc-laads-bucket"
 
 
 class HlsStack(core.Stack):
