@@ -96,7 +96,7 @@ if getenv("HLS_REPLACE_EXISTING", "true") == "true":
 else:
     REPLACE_EXISTING = False
 
-if getenv("HLS_USE_CLOUD_WATCH", "true") == "true":
+if getenv("HLS_USE_CLOUD_WATCH", "false") == "true":
     USE_CLOUD_WATCH = True
 else:
     USE_CLOUD_WATCH = False
@@ -107,7 +107,7 @@ else:
     GCC = False
 
 # Common resurces
-LAADS_BUCKET_BOOTSTRAP = "hls-development-laads-bucket"
+LAADS_BUCKET_BOOTSTRAP = "hls-gcc-laads-bucket"
 
 
 class HlsStack(core.Stack):
