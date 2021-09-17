@@ -88,7 +88,7 @@ LANDSAT_SNS_TOPIC = getenv(
 )
 
 DOWNLOADER_FUNCTION_ARN = getenv("HLS_DOWNLOADER_FUNCTION_ARN", None)
-HLS_LAADS_BUCKET_BOOTSTRAP = getenv(
+LAADS_BUCKET_BOOTSTRAP = getenv(
     "HLS_LAADS_BUCKET_BOOTSTRAP",
     "hls-development-laads-bucket"
 )
