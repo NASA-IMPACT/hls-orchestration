@@ -1,9 +1,11 @@
 import pytest
+import os
 import json
 from unittest.mock import patch, call
 from lambda_functions.landsat_mgrs_logger import handler
 
 
+@patch.dict(os.environ, {"HISTORIC": "historic"})
 @patch(
     "lambda_functions.landsat_mgrs_logger.rds_client"
 )
@@ -59,9 +61,11 @@ def test_handler(client):
     handler(event, {})
     path = {"name": "path", "value": {"stringValue": "127"}}
     acquisition = {"name": "acquisition", "value": {"stringValue": "2020-05-27"}}
+    historic = {"name": "historic", "value": {"booleanValue": True}}
     sql = (
-        "INSERT INTO landsat_mgrs_log (path, mgrs, acquisition, run_count)"
-        + " VALUES (:path::varchar(3), :mgrs::varchar(5), :acquisition::date, :run_count::integer)"
+        "INSERT INTO landsat_mgrs_log (path, mgrs, acquisition, run_count, historic)"
+        + " VALUES (:path::varchar(3), :mgrs::varchar(5), :acquisition::date,"
+        + " :run_count::integer, :historic::boolean)"
         + " ON CONFLICT DO NOTHING;"
     )
     expected_calls = []
@@ -70,7 +74,8 @@ def test_handler(client):
             path,
             {"name": "mgrs", "value": {"stringValue": mgrs}},
             acquisition,
-            {"name": "run_count", "value": {"longValue": 0}}
+            {"name": "run_count", "value": {"longValue": 0}},
+            historic
         ]
         insert_call = call(
             sql=sql,

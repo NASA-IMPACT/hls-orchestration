@@ -8,7 +8,7 @@ from hlsconstructs.lambdafunc import Lambda
 from hlsconstructs.batch_step_function import BatchStepFunction
 
 
-class LandsatMGRSStepFunction(BatchStepFunction):
+class LandsatMGRSPartialsStepFunction(BatchStepFunction):
     def __init__(
         self,
         scope: core.Construct,
@@ -18,7 +18,7 @@ class LandsatMGRSStepFunction(BatchStepFunction):
         intermediate_output_bucket: str,
         tile_job_definition: str,
         tilejobqueue: str,
-        landsat_pathrow_status: Lambda,
+        check_landsat_pathrow_complete: Lambda,
         pr2mgrs: Lambda,
         mgrs_logger: Lambda,
         get_random_wait: Lambda,
@@ -39,24 +39,26 @@ class LandsatMGRSStepFunction(BatchStepFunction):
                     "Type": "Task",
                     "Resource": pr2mgrs.function.function_arn,
                     "ResultPath": "$.mgrs_metadata",
-                    "Next": "CheckPathRowStatus",
+                    "Next": "CheckPathRowComplete",
                 },
-                "CheckPathRowStatus": {
+                "CheckPathRowComplete": {
                     "Type": "Task",
-                    "Resource": landsat_pathrow_status.function.function_arn,
-                    "ResultPath": "$.ready_for_tiling",
+                    "Resource": check_landsat_pathrow_complete.function.function_arn,
+                    "ResultPath": "$.mgrs_metadata.pathrows_string",
                     "Next": "ReadyForTiling",
                 },
                 "ReadyForTiling": {
                     "Type": "Choice",
                     "Choices": [
                         {
-                            "Variable": "$.ready_for_tiling",
-                            "BooleanEquals": True,
+                            "Not": {
+                                "Variable": "$.mgrs_metadata.pathrows_string",
+                                "StringEquals": ""
+                            },
                             "Next": "GetRandomWaitTile",
                         }
                     ],
-                    "Default": "Done",
+                    "Default": "LogMGRS",
                 },
                 "GetRandomWaitTile": {
                     "Type": "Task",

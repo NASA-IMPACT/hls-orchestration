@@ -20,12 +20,11 @@ def test_handler_pathrow():
         "pathrows": [
             "001086",
             "232086",
-            "232087",
             "233086"
         ],
         "mgrs_ulx": "199980",
         "mgrs_uly": "5900020",
-        "pathrows_string": "001086,232086,232087,233086"
+        "pathrows_string": "001086,232086,233086"
     }
     assert handler({"MGRS": "19HBU"}, {}) == expected
 

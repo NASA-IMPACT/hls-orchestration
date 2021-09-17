@@ -1,3 +1,4 @@
+import os
 import pytest
 import json
 from unittest.mock import patch
@@ -46,6 +47,7 @@ def test_handler(client):
             }
         ]
     }
+    print(json.dumps(message))
 
     client.return_value.start_execution.return_value = start_execution_response
     handler(event, {})
@@ -98,3 +100,27 @@ def test_handler_non_08(client):
     }
     handler(event, {})
     client.return_value.start_execution.assert_not_called()
+
+
+@patch.dict(os.environ, {"HISTORIC": "historic"})
+@patch(
+    "lambda_functions.execute_landsat_step_function.boto3.client"
+)
+def test_handler_historic(client):
+    """Test handler."""
+    message = {
+        "landsat_product_id": "LE07_L1TP_184023_20210302_20210303_02_T1",
+        "s3_location": "s3://usgs-landsat/collection02/level-1/standard/etm/2021/184/023/LE07_L1TP_184023_20210302_20210303_02_T1"
+    }
+    message = json.dumps(message)
+    event = {
+        "Records": [
+            {
+                "Sns": {
+                    "Message": message
+                }
+            }
+        ]
+    }
+    handler(event, {})
+    client.return_value.start_execution.assert_called_once()

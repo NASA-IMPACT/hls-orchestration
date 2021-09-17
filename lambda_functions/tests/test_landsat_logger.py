@@ -1,4 +1,5 @@
 import pytest
+import os
 import json
 from unittest.mock import patch
 from lambda_functions.landsat_logger import handler
@@ -39,3 +40,27 @@ def test_handler(client):
         }
     }
     assert run_count in kwargs["parameters"]
+
+
+@patch.dict(os.environ, {"HISTORIC": "historic"})
+@patch("lambda_functions.landsat_logger.rds_client")
+def test_handler_historic(client):
+    """Test handler."""
+
+    event = {
+        "path": "202",
+        "row": "114",
+        "date": "2021-03-08",
+        "scene": "LC08_L1GT_202114_20210308_20210308_02_RT"
+    }
+    client.execute_statement.return_value = {}
+    handler(event, {})
+    args, kwargs = client.execute_statement.call_args
+
+    historic = {
+        "name": "historic",
+        "value": {
+            "booleanValue": True
+        }
+    }
+    assert historic in kwargs["parameters"]
