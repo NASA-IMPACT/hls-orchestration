@@ -51,8 +51,8 @@ mount -a
 --==MYBOUNDARY==
 Content-Type: text/x-shellscript; charset="us-ascii"
 
-#!/bin/bash -xe
+#!/bin/bash
 echo ECS_IMAGE_PULL_BEHAVIOR=always >> /etc/ecs/ecs.config
-yum install -y https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm
+yum install -y amazon-cloudwatch-agent
 /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c 'ssm:{}' -s
 --==MYBOUNDARY==--

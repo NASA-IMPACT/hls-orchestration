@@ -30,8 +30,8 @@ HLS_LANDASAT_HISTORIC_SNS_TOPIC=arn:aws:sns:us-west-2:018923174646:landsat-histo
 
 # Bucket for merged GIBS tile output.
 HLS_GIBS_OUTPUT_BUCKET=hls-browse-imagery
+HLS_LAADS_BUCKET_BOOTSTRAP=hls-development-laads-bucket
 HLS_GIBS_OUTPUT_BUCKET_HISTORIC=hls-browse-imagery-historic
-
 
 # Optional env settings
 # Image for Sentinel processing

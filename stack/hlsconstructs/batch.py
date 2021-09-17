@@ -94,7 +94,6 @@ class Batch(core.Construct):
                 ),
             ]
         )
-
         if use_cw:
             cloudwatch_ssm_param = f"BatchCloudwatchAgentConfig{self.node.unique_id}"
             cloudwatch_config_string = open(
@@ -142,8 +141,9 @@ class Batch(core.Construct):
             launch_template_id=launch_template.ref,
             version=launch_template.attr_latest_version_number
         )
+        if image_id is None:
+            image_id = aws_ecs.EcsOptimizedImage.amazon_linux2().get_image(self).image_id
 
-        image_id = aws_ecs.EcsOptimizedImage.amazon_linux2().get_image(self).image_id
         compute_resources = aws_batch.CfnComputeEnvironment.ComputeResourcesProperty(
             allocation_strategy="BEST_FIT_PROGRESSIVE",
             desiredv_cpus=0,

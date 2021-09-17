@@ -88,6 +88,10 @@ LANDSAT_SNS_TOPIC = getenv(
 )
 
 DOWNLOADER_FUNCTION_ARN = getenv("HLS_DOWNLOADER_FUNCTION_ARN", None)
+LAADS_BUCKET_BOOTSTRAP = getenv(
+    "HLS_LAADS_BUCKET_BOOTSTRAP",
+    "hls-development-laads-bucket"
+)
 
 # Stack named resources
 SENTINEL_INPUT_BUCKET = f"{STACKNAME}-sentinel-input-files"
@@ -107,7 +111,7 @@ if getenv("HLS_REPLACE_EXISTING", "true") == "true":
 else:
     REPLACE_EXISTING = False
 
-if getenv("HLS_USE_CLOUD_WATCH", "true") == "true":
+if getenv("HLS_USE_CLOUD_WATCH", "false") == "true":
     USE_CLOUD_WATCH = True
 else:
     USE_CLOUD_WATCH = False
@@ -116,9 +120,6 @@ if getenv("GCC", None) == "true":
     GCC = True
 else:
     GCC = False
-
-# Common resurces
-LAADS_BUCKET_BOOTSTRAP = "hls-development-laads-bucket"
 
 
 class HlsStack(core.Stack):
