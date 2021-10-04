@@ -34,6 +34,7 @@ jobs:
       name: dev
     env:
       AWS_DEFAULT_REGION: us-west-2
+      SECRETS_CONTEXT: ${{ toJson(secrets) }}
     steps:
       - uses: actions/checkout@v2
       - name: Setup Python
@@ -49,8 +50,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-west-2
       - name: Convert to environment variables
-        env:
-          SECRETS_CONTEXT: ${{ toJson(secrets) }}
         run: |
           for s in $(echo $SECRETS_CONTEXT | jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]" ); do
             echo $s >> $GITHUB_ENV
