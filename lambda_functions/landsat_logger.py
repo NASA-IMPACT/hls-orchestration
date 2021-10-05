@@ -35,10 +35,19 @@ def handler(event, context):
         {"name": "acquisition", "value": {"stringValue": event["date"]}},
         {"name": "run_count", "value": {"longValue": 0}},
     ]
+
+    historic = os.getenv("HISTORIC")
+    if historic == "historic":
+        historic_value = True
+    else:
+        historic_value = False
+    historic_parameter = {"name": "historic", "value": {"booleanValue": historic_value}}
+    sql_parameters.append(historic_parameter)
+
     sql = (
-        "INSERT INTO landsat_ac_log (path, row, scene_id, acquisition, run_count) VALUES"
+        "INSERT INTO landsat_ac_log (path, row, scene_id, acquisition, run_count, historic) VALUES"
         + "(:path::varchar(3), :row::varchar(3),"
-        + " :scene_id::varchar(200), :acquisition::date, :run_count::integer)"
+        + " :scene_id::varchar(200), :acquisition::date, :run_count::integer, :historic::boolean)"
         + " ON CONFLICT ON CONSTRAINT no_dupe_pathrowdate"
         + " DO NOTHING"
     )

@@ -13,6 +13,7 @@ from hlsconstructs.batch_cron import BatchCron
 from hlsconstructs.sentinel_step_function import SentinelStepFunction
 from hlsconstructs.landsat_step_function import LandsatStepFunction
 from hlsconstructs.landsat_mgrs_step_function import LandsatMGRSStepFunction
+from hlsconstructs.landsat_mgrs_partials_step_function import LandsatMGRSPartialsStepFunction
 from hlsconstructs.landsat_incomplete_step_function import LandsatIncompleteStepFunction
 from hlsconstructs.sentinel_errors_step_function import SentinelErrorsStepFunction
 from hlsconstructs.landsat_ac_errors_step_function import LandsatACErrorsStepFunction
@@ -24,7 +25,10 @@ STACKNAME = os.environ["HLS_STACKNAME"]
 LAADS_TOKEN = os.environ["HLS_LAADS_TOKEN"]
 OUTPUT_BUCKET_ROLE_ARN = os.environ["HLS_OUTPUT_BUCKET_ROLE_ARN"]
 OUTPUT_BUCKET = os.environ["HLS_OUTPUT_BUCKET"]
+OUTPUT_BUCKET_HISTORIC = os.environ["HLS_OUTPUT_BUCKET_HISTORIC"]
 GIBS_OUTPUT_BUCKET = os.environ["HLS_GIBS_OUTPUT_BUCKET"]
+GIBS_OUTPUT_BUCKET_HISTORIC = os.environ["HLS_GIBS_OUTPUT_BUCKET_HISTORIC"]
+LANDSAT_HISTORIC_SNS_TOPIC = os.environ["HLS_LANDASAT_HISTORIC_SNS_TOPIC"]
 
 
 def getenv(key, default):
@@ -62,6 +66,10 @@ LANDSAT_INCOMPLETE_CRON = getenv(
     "HLS_LANDSAT_INCOMPLETE_CRON",
     "cron(0 12 * * ? *)"
 )
+LANDSAT_HISTORIC_INCOMPLETE_CRON = getenv(
+    "HLS_LANDSAT_HISTORIC_INCOMPLETE_CRON",
+    "cron(0 0/6 * * ? *)"
+)
 SENTINEL_ERRORS_CRON = getenv(
     "HLS_SENTINEL_ERRORS_CRON",
     "cron(0 20 * * ? *)"
@@ -71,6 +79,7 @@ LANDSAT_AC_ERRORS_CRON = getenv(
     "cron(0 16 * * ? *)"
 )
 LANDSAT_DAYS_PRIOR = getenv("HLS_LANDSAT_DAYS_PRIOR", "4")
+LANDSAT_HISTORIC_HOURS_PRIOR = getenv("HLS_LANDSAT_HISTORIC_HOURS_PRIOR", "4")
 SENTINEL_RETRY_LIMIT = getenv("HLS_SENTINEL_RETRY_LIMIT", "3")
 LANDSAT_RETRY_LIMIT = getenv("HLS_LANDSAT_RETRY_LIMIT", "3")
 SSH_KEYNAME = getenv("HLS_SSH_KEYNAME", "hls-mount")
@@ -79,12 +88,18 @@ LANDSAT_SNS_TOPIC = getenv(
 )
 
 DOWNLOADER_FUNCTION_ARN = getenv("HLS_DOWNLOADER_FUNCTION_ARN", None)
+LAADS_BUCKET_BOOTSTRAP = getenv(
+    "HLS_LAADS_BUCKET_BOOTSTRAP",
+    "hls-development-laads-bucket"
+)
 
 # Stack named resources
 SENTINEL_INPUT_BUCKET = f"{STACKNAME}-sentinel-input-files"
+SENTINEL_INPUT_BUCKET_HISTORIC = f"{STACKNAME}-sentinel-input-files-historic"
 LAADS_BUCKET = f"{STACKNAME}-laads-bucket"
 LANDSAT_INTERMEDIATE_OUTPUT_BUCKET = f"{STACKNAME}-landsat-intermediate-output"
 GIBS_INTERMEDIATE_OUTPUT_BUCKET = f"{STACKNAME}-gibs-intermediate-output"
+LANDSAT_INPUT_BUCKET_HISTORIC = f"{STACKNAME}-landsat-input-historic"
 
 try:
     MAXV_CPUS = int(getenv("HLS_MAXV_CPUS", 1200))
@@ -96,7 +111,7 @@ if getenv("HLS_REPLACE_EXISTING", "true") == "true":
 else:
     REPLACE_EXISTING = False
 
-if getenv("HLS_USE_CLOUD_WATCH", "true") == "true":
+if getenv("HLS_USE_CLOUD_WATCH", "false") == "true":
     USE_CLOUD_WATCH = True
 else:
     USE_CLOUD_WATCH = False
@@ -105,9 +120,6 @@ if getenv("GCC", None) == "true":
     GCC = True
 else:
     GCC = False
-
-# Common resurces
-LAADS_BUCKET_BOOTSTRAP = "hls-development-laads-bucket"
 
 
 class HlsStack(core.Stack):
@@ -142,6 +154,16 @@ class HlsStack(core.Stack):
         # Must be created as part of the stack due to trigger requirements
         self.sentinel_input_bucket = aws_s3.Bucket(
             self, "SentinelInputBucket", bucket_name=SENTINEL_INPUT_BUCKET
+        )
+
+        self.sentinel_input_bucket_historic = aws_s3.Bucket(
+            self,
+            "SentinelInputBucketHistoric",
+            bucket_name=SENTINEL_INPUT_BUCKET_HISTORIC,
+        )
+
+        self.landsat_input_bucket_historic = aws_s3.Bucket(
+            self, "LandsatInputBucketHistoric", bucket_name=LANDSAT_INPUT_BUCKET_HISTORIC
         )
 
         self.landsat_intermediate_output_bucket = aws_s3.Bucket(
@@ -257,6 +279,14 @@ class HlsStack(core.Stack):
             timeout=120,
         )
 
+        self.check_twin_granule_historic = Lambda(
+            self,
+            "CheckGranuleHistoric",
+            code_file="twin_granule.py",
+            env={"SENTINEL_INPUT_BUCKET": SENTINEL_INPUT_BUCKET_HISTORIC},
+            timeout=120,
+        )
+
         self.landsat_mgrs_logger = Lambda(
             self,
             "LandsatMGRSLogger",
@@ -265,6 +295,19 @@ class HlsStack(core.Stack):
                 "HLS_SECRETS": self.rds.secret.secret_arn,
                 "HLS_DB_NAME": self.rds.database.database_name,
                 "HLS_DB_ARN": self.rds.arn,
+            },
+            timeout=120,
+        )
+
+        self.landsat_mgrs_logger_historic = Lambda(
+            self,
+            "LandsatMGRSLoggerHistoric",
+            code_file="landsat_mgrs_logger.py",
+            env={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
+                "HISTORIC": "historic",
             },
             timeout=120,
         )
@@ -307,6 +350,19 @@ class HlsStack(core.Stack):
             timeout=120,
         )
 
+        self.landsat_logger_historic = Lambda(
+            self,
+            "LandsatLoggerHistoric",
+            code_file="landsat_logger.py",
+            env={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
+                "HISTORIC": "historic",
+            },
+            timeout=120,
+        )
+
         self.landsat_pathrow_status = Lambda(
             self,
             "LandsatPathrowStatus",
@@ -341,6 +397,19 @@ class HlsStack(core.Stack):
                 "HLS_SECRETS": self.rds.secret.secret_arn,
                 "HLS_DB_NAME": self.rds.database.database_name,
                 "HLS_DB_ARN": self.rds.arn,
+            },
+            timeout=120,
+        )
+
+        self.sentinel_logger_historic = Lambda(
+            self,
+            "SentinelLoggerHistoric",
+            code_file="sentinel_logger.py",
+            env={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
+                "HISTORIC": "historic",
             },
             timeout=120,
         )
@@ -494,6 +563,23 @@ class HlsStack(core.Stack):
             gibs_outputbucket=GIBS_OUTPUT_BUCKET,
         )
 
+        self.sentinel_step_function_historic = SentinelStepFunction(
+            self,
+            "SentinelHistoricStateMachine",
+            check_twin_granule=self.check_twin_granule_historic,
+            laads_available=self.laads_available,
+            outputbucket=OUTPUT_BUCKET_HISTORIC,
+            inputbucket=SENTINEL_INPUT_BUCKET_HISTORIC,
+            sentinel_job_definition=self.sentinel_task.job.ref,
+            jobqueue=self.batch.sentinel_historic_jobqueue.ref,
+            sentinel_ac_logger=self.sentinel_ac_logger,
+            sentinel_logger=self.sentinel_logger_historic,
+            check_exit_code=self.check_exit_code,
+            outputbucket_role_arn=OUTPUT_BUCKET_ROLE_ARN,
+            replace_existing=REPLACE_EXISTING,
+            gibs_outputbucket=GIBS_OUTPUT_BUCKET_HISTORIC,
+        )
+
         self.sentinel_errors_step_function = SentinelErrorsStepFunction(
             self,
             "SentinelErrorsStateMachine",
@@ -523,12 +609,55 @@ class HlsStack(core.Stack):
             gibs_outputbucket=GIBS_OUTPUT_BUCKET,
         )
 
+        self.landsat_mgrs_partials_step_function = LandsatMGRSPartialsStepFunction(
+            self,
+            "LandsatMGRSPartialsStateMachine",
+            outputbucket=OUTPUT_BUCKET,
+            outputbucket_role_arn=OUTPUT_BUCKET_ROLE_ARN,
+            intermediate_output_bucket=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
+            tile_job_definition=self.landsat_tile_task.job.ref,
+            tilejobqueue=self.batch.landsattile_jobqueue.ref,
+            check_landsat_pathrow_complete=self.check_landsat_pathrow_complete,
+            pr2mgrs=self.pr2mgrs_lambda,
+            mgrs_logger=self.mgrs_logger,
+            get_random_wait=self.get_random_wait,
+            gibs_outputbucket=GIBS_OUTPUT_BUCKET,
+        )
+
+        self.landsat_mgrs_step_function_historic = LandsatMGRSStepFunction(
+            self,
+            "LandsatMGRSStateMachineHistoric",
+            outputbucket=OUTPUT_BUCKET_HISTORIC,
+            outputbucket_role_arn=OUTPUT_BUCKET_ROLE_ARN,
+            intermediate_output_bucket=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
+            tile_job_definition=self.landsat_tile_task.job.ref,
+            tilejobqueue=self.batch.landsattile_historic_jobqueue.ref,
+            landsat_pathrow_status=self.landsat_pathrow_status,
+            pr2mgrs=self.pr2mgrs_lambda,
+            mgrs_logger=self.mgrs_logger,
+            get_random_wait=self.get_random_wait,
+            gibs_outputbucket=GIBS_OUTPUT_BUCKET_HISTORIC,
+        )
+
+        self.landsat_mgrs_partials_step_function_historic = LandsatMGRSPartialsStepFunction(
+            self,
+            "LandsatMGRSPartialsStateMachineHistoric",
+            outputbucket=OUTPUT_BUCKET_HISTORIC,
+            outputbucket_role_arn=OUTPUT_BUCKET_ROLE_ARN,
+            intermediate_output_bucket=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
+            tile_job_definition=self.landsat_tile_task.job.ref,
+            tilejobqueue=self.batch.landsattile_historic_jobqueue.ref,
+            check_landsat_pathrow_complete=self.check_landsat_pathrow_complete,
+            pr2mgrs=self.pr2mgrs_lambda,
+            mgrs_logger=self.mgrs_logger,
+            get_random_wait=self.get_random_wait,
+            gibs_outputbucket=GIBS_OUTPUT_BUCKET_HISTORIC,
+        )
+
         self.landsat_step_function = LandsatStepFunction(
             self,
             "LandsatStateMachine",
             laads_available=self.laads_available,
-            outputbucket=OUTPUT_BUCKET,
-            outputbucket_role_arn=OUTPUT_BUCKET_ROLE_ARN,
             intermediate_output_bucket=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
             ac_job_definition=self.landsat_task.job.ref,
             acjobqueue=self.batch.landsatac_jobqueue.ref,
@@ -539,15 +668,40 @@ class HlsStack(core.Stack):
             check_landsat_tiling_exit_code=self.check_landsat_tiling_exit_code,
             check_landsat_ac_exit_code=self.check_exit_code,
             get_random_wait=self.get_random_wait,
-            gibs_outputbucket=GIBS_OUTPUT_BUCKET,
             replace_existing=REPLACE_EXISTING,
             landsat_mgrs_step_function_arn=self.landsat_mgrs_step_function.state_machine.ref,
+        )
+
+        self.landsat_step_function_historic = LandsatStepFunction(
+            self,
+            "LandsatStateMachineHistoric",
+            laads_available=self.laads_available,
+            intermediate_output_bucket=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
+            ac_job_definition=self.landsat_task.job.ref,
+            acjobqueue=self.batch.landsatac_historic_jobqueue.ref,
+            landsat_mgrs_logger=self.landsat_mgrs_logger_historic,
+            landsat_ac_logger=self.landsat_ac_logger,
+            landsat_logger=self.landsat_logger_historic,
+            pr2mgrs=self.pr2mgrs_lambda,
+            check_landsat_tiling_exit_code=self.check_landsat_tiling_exit_code,
+            check_landsat_ac_exit_code=self.check_exit_code,
+            get_random_wait=self.get_random_wait,
+            replace_existing=REPLACE_EXISTING,
+            landsat_mgrs_step_function_arn=self.landsat_mgrs_step_function_historic.state_machine.ref,
         )
 
         self.landsat_incomplete_step_function = LandsatIncompleteStepFunction(
             self,
             "LandsatIncompleteStateMachine",
-            landsat_mgrs_step_function_arn=self.landsat_mgrs_step_function.state_machine.ref,
+            landsat_mgrs_step_function_arn=self.landsat_mgrs_partials_step_function.state_machine.ref,
+            get_random_wait=self.get_random_wait,
+        )
+
+        self.landsat_historic_incomplete_step_function = LandsatIncompleteStepFunction(
+            self,
+            "LandsatHistoricIncompleteStateMachine",
+            landsat_mgrs_step_function_arn=self.landsat_mgrs_partials_step_function_historic.state_machine.ref,
+            get_random_wait=self.get_random_wait,
         )
 
         self.landsat_ac_errors_step_function = LandsatACErrorsStepFunction(
@@ -565,8 +719,21 @@ class HlsStack(core.Stack):
             input_bucket=self.sentinel_input_bucket,
         )
 
+        self.step_function_trigger_historic = StepFunctionTrigger(
+            self,
+            "SentinelStepFunctionTriggerHistoric",
+            state_machine=self.sentinel_step_function_historic.sentinel_state_machine.ref,
+            code_file="execute_step_function.py",
+            timeout=180,
+            input_bucket=self.sentinel_input_bucket_historic,
+        )
+
         self.landsat_sns_topic = aws_sns.Topic.from_topic_arn(
             self, "LandsatSNSTopc", topic_arn=LANDSAT_SNS_TOPIC
+        )
+
+        self.landsat_historic_sns_topic = aws_sns.Topic.from_topic_arn(
+            self, "LandsatHistoricSNSTopic", topic_arn=LANDSAT_HISTORIC_SNS_TOPIC
         )
 
         self.landsat_step_function_trigger = StepFunctionTrigger(
@@ -577,6 +744,19 @@ class HlsStack(core.Stack):
             timeout=180,
             input_sns=self.landsat_sns_topic,
             layers=[self.hls_lambda_layer],
+        )
+
+        self.landsat_step_function_historic_trigger = StepFunctionTrigger(
+            self,
+            "LandsatStepFunctionHistoricTrigger",
+            state_machine=self.landsat_step_function_historic.state_machine.ref,
+            code_file="execute_landsat_step_function.py",
+            timeout=180,
+            input_sns=self.landsat_historic_sns_topic,
+            layers=[self.hls_lambda_layer],
+            env_vars={
+                "HISTORIC": "historic",
+            },
         )
 
         self.landsat_incomplete_step_function_trigger = StepFunctionTrigger(
@@ -594,6 +774,25 @@ class HlsStack(core.Stack):
                 "HLS_DB_ARN": self.rds.arn,
                 "DAYS_PRIOR": LANDSAT_DAYS_PRIOR,
                 "RETRY_LIMIT": LANDSAT_RETRY_LIMIT,
+            },
+        )
+
+        self.landsat_historic_incomplete_step_function_trigger = StepFunctionTrigger(
+            self,
+            "LandsatHistoricIncompleteStepFunctionTrigger",
+            state_machine=self.landsat_historic_incomplete_step_function.state_machine.ref,
+            code_file="process_landsat_mgrs_incompletes.py",
+            timeout=900,
+            lambda_name="ProcessLandsatMgrsIncompletes",
+            layers=[self.hls_lambda_layer],
+            cron_str=LANDSAT_HISTORIC_INCOMPLETE_CRON,
+            env_vars={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
+                "HOURS_PRIOR": LANDSAT_HISTORIC_HOURS_PRIOR,
+                "RETRY_LIMIT": LANDSAT_RETRY_LIMIT,
+                "HISTORIC": "historic",
             },
         )
 
@@ -638,6 +837,13 @@ class HlsStack(core.Stack):
             root_name="Sentinel",
         )
 
+        self.sentinel_step_function_historic_alarm = StepFunctionAlarm(
+            self,
+            "SentinelStepFunctioniHistoricAlarm",
+            state_machine=self.sentinel_step_function_historic.sentinel_state_machine.ref,
+            root_name="SentinelHistoric",
+        )
+
         self.landsat_step_function_alarm = StepFunctionAlarm(
             self,
             "LandsatStepFunctionAlarm",
@@ -660,14 +866,18 @@ class HlsStack(core.Stack):
         self.laads_available.function.add_to_role_policy(self.laads_bucket_read_policy)
 
         if DOWNLOADER_FUNCTION_ARN:
-            self.sentinel_input_bucket.add_to_resource_policy(
+            self.downloader_function = aws_lambda.Function.from_function_arn(
+                self,
+                "DownloaderFunction",
+                DOWNLOADER_FUNCTION_ARN
+            )
+            self.downloader_function.add_to_role_policy(
                 aws_iam.PolicyStatement(
                     resources=[
                         self.sentinel_input_bucket.bucket_arn,
                         f"{self.sentinel_input_bucket.bucket_arn}/*",
                     ],
                     actions=["s3:PutObject*", "s3:Abort*"],
-                    principals=[aws_iam.ArnPrincipal(DOWNLOADER_FUNCTION_ARN)]
                 )
             )
 
@@ -684,6 +894,21 @@ class HlsStack(core.Stack):
         self.sentinel_task.role.add_to_policy(
             self.sentinel_input_bucket_policy
         )
+
+        self.sentinel_input_bucket_historic_policy = aws_iam.PolicyStatement(
+            resources=[
+                self.sentinel_input_bucket_historic.bucket_arn,
+                f"{self.sentinel_input_bucket_historic.bucket_arn}/*",
+            ],
+            actions=["s3:Get*", "s3:List*",],
+        )
+        self.check_twin_granule_historic.function.add_to_role_policy(
+            self.sentinel_input_bucket_historic_policy
+        )
+        self.sentinel_task.role.add_to_policy(
+            self.sentinel_input_bucket_historic_policy
+        )
+
         self.laads_task.role.add_to_policy(
             aws_iam.PolicyStatement(
                 resources=[
@@ -691,6 +916,15 @@ class HlsStack(core.Stack):
                     f"{self.laads_bucket.bucket_arn}/*",
                 ],
                 actions=["s3:Get*", "s3:Put*", "s3:List*", "s3:AbortMultipartUpload",],
+            )
+        )
+        self.laads_task.role.add_to_policy(
+            aws_iam.PolicyStatement(
+                resources=[
+                    f"arn:aws:s3:::{LAADS_BUCKET_BOOTSTRAP}",
+                    f"arn:aws:s3:::{LAADS_BUCKET_BOOTSTRAP}/*",
+                ],
+                actions=["s3:Get*", "s3:List*"],
             )
         )
         self.sentinel_task.role.add_to_policy(
@@ -819,16 +1053,20 @@ class HlsStack(core.Stack):
         lambdas = [
             self.rds_bootstrap,
             self.landsat_mgrs_logger,
+            self.landsat_mgrs_logger_historic,
             self.landsat_ac_logger,
             self.mgrs_logger,
             self.landsat_pathrow_status,
             self.sentinel_ac_logger,
             self.sentinel_logger,
+            self.sentinel_logger_historic,
             self.update_sentinel_failure,
             self.check_landsat_pathrow_complete,
             self.landsat_incomplete_step_function_trigger.execute_step_function,
+            self.landsat_historic_incomplete_step_function_trigger.execute_step_function,
             self.sentinel_errors_step_function_trigger.execute_step_function,
             self.landsat_logger,
+            self.landsat_logger_historic,
             self.put_landsat_task_cw_metric,
             self.put_landsat_tile_task_cw_metric,
             self.put_sentintel_task_cw_metric,

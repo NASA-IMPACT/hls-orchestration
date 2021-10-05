@@ -33,28 +33,7 @@ jobs:
     environment:
       name: production
     env:
-      HLS_STACKNAME: ${{ secrets.HLS_STACKNAME }}
-      HLS_OUTPUT_BUCKET_ROLE_ARN: ${{ secrets.HLS_OUTPUT_BUCKET_ROLE_ARN }}
-      HLS_OUTPUT_BUCKET: ${{ secrets.HLS_OUTPUT_BUCKET }}
-      HLS_LAADS_TOKEN: ${{ secrets.HLS_LAADS_TOKEN }}
-      HLS_GIBS_OUTPUT_BUCKET: ${{ secrets.HLS_GIBS_OUTPUT_BUCKET }}
-      AWS-ACCESS-KEY-ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS-SECRET-ACCESS-KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: us-west-2
-      HLS_SENTINEL_ECR_URI: ${{ secrets.HLS_SENTINEL_ECR_URI }}
-      HLS_LANDSAT_ECR_URI: ${{ secrets.HLS_LANDSAT_ECR_URI }}
-      HLS_LANDSAT_TILE_ECR_URI: ${{ secrets.HLS_LANDSAT_TILE_ECR_URI }}
-      HLS_LAADS_ECR_URI: ${{ secrets.HLS_LAADS_ECR_URI }}
-      HLS_LAADS_CRON: ${{ secrets.HLS_LAADS_CRON }}
-      HLS_LANDSAT_INCOMPLETE_CRON: ${{ secrets.HLS_LANDSAT_INCOMPLETE_CRON }}
-      HLS_SENTINEL_ERRORS_CRON: ${{ secrets.HLS_SENTINEL_ERRORS_CRON }}
-      HLS_LANDSAT_DAYS_PRIOR: ${{ secrets.HLS_LANDSAT_DAYS_PRIOR }}
-      HLS_SENTINEL_DAYS_PRIOR: ${{ secrets.HLS_SENTINEL_DAYS_PRIOR }}
-      HLS_MAXV_CPUS: ${{ secrets.HLS_MAXV_CPUS }}
-      HLS_REPLACE_EXISTING: ${{ secrets.HLS_REPLACE_EXISTING }}
-      HLS_SSH_KEYNAME: ${{ secrets.HLS_SSH_KEYNAME }}
-      HLS_DOWNLOADER_FUNCTION_ARN: ${{ secrets.HLS_DOWNLOADER_FUNCTION_ARN }}
-
     steps:
       - uses: actions/checkout@v2
       - name: Setup Python
@@ -69,6 +48,15 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-west-2
+      - name: Convert to environment variables
+        env:
+          SECRETS_CONTEXT: ${{ toJson(secrets) }}
+        run: |
+          while read -rd $'' line
+          do
+            echo "$line" >> $GITHUB_ENV
+          done < <(jq -r <<<"$SECRETS_CONTEXT" \
+            'to_entries|map("\(.key)=\(.value)\u0000")[]')
       - name: Deploy with tox
         run: tox -e dev -r -- deploy --require-approval never
       - name: Run DB setup

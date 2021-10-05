@@ -102,3 +102,21 @@ def test_handler_error_non_json(client):
     }
     assert jobinfo in kwargs["parameters"]
     assert expected == "nocode"
+
+
+@patch(
+    "lambda_functions.mgrs_logger.rds_client"
+)
+def test_handler_error_no_tilejobinfo(client):
+    """Test handler."""
+    event = {
+        "date": "2020-07-19",
+        "path": "210",
+        "MGRS": "29VMJ",
+    }
+    client.execute_statement.return_value = {}
+    expected = handler(event, {})
+    args, kwargs = client.execute_statement.call_args
+
+    assert len(kwargs["parameters"]) == 3
+    assert expected == "nocode"
