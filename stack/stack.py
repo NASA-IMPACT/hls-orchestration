@@ -918,6 +918,15 @@ class HlsStack(core.Stack):
                 actions=["s3:Get*", "s3:Put*", "s3:List*", "s3:AbortMultipartUpload",],
             )
         )
+        self.laads_task.role.add_to_policy(
+            aws_iam.PolicyStatement(
+                resources=[
+                    f"arn:aws:s3:::{LAADS_BUCKET_BOOTSTRAP}",
+                    f"arn:aws:s3:::{LAADS_BUCKET_BOOTSTRAP}/*",
+                ],
+                actions=["s3:Get*", "s3:List*"],
+            )
+        )
         self.sentinel_task.role.add_to_policy(
             aws_iam.PolicyStatement(
                 resources=[
