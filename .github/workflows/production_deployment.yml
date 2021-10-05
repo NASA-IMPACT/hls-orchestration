@@ -2,7 +2,6 @@ name: production deployment
 
 on:
   release:
-    branches: [ master ]
     types: [ published ]
 
 jobs:
