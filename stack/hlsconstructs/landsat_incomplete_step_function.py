@@ -53,11 +53,10 @@ class LandsatIncompleteStepFunction(StateMachineStepFunction):
                                         "date.$": "$.date",
                                     },
                                 },
-                                "Retry":[
+                                "Catch": [
                                     {
-                                        "ErrorEquals":[
-                                            "StepFunctions.ExecutionLimitExceeded"
-                                        ]
+                                        "ErrorEquals": ["States.ALL"],
+                                        "Next": "SuccessState",
                                     }
                                 ],
                                 "Next": "SuccessState",
