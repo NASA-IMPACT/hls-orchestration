@@ -56,11 +56,10 @@ class LandsatACErrorsStepFunction(StateMachineStepFunction):
                                         "prefix.$": "$.prefix"
                                     },
                                 },
-                                "Retry":[
+                                "Catch": [
                                     {
-                                        "ErrorEquals":[
-                                            "StepFunctions.ExecutionLimitExceeded"
-                                        ]
+                                        "ErrorEquals": ["States.ALL"],
+                                        "Next": "SuccessState",
                                     }
                                 ],
                                 "Next": "SuccessState",
