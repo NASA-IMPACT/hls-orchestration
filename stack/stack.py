@@ -1095,6 +1095,7 @@ class HlsStack(core.Stack):
             self.landsat_incomplete_step_function_trigger.execute_step_function,
             self.landsat_historic_incomplete_step_function_trigger.execute_step_function,
             self.sentinel_errors_step_function_trigger.execute_step_function,
+            self.sentinel_historic_errors_step_function_trigger.execute_step_function,
             self.landsat_logger,
             self.landsat_logger_historic,
             self.put_landsat_task_cw_metric,
