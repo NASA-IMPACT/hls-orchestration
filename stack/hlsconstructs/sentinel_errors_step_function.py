@@ -21,7 +21,6 @@ class SentinelErrorsStepFunction(BatchStepFunction, StateMachineStepFunction):
         jobqueue: str,
         update_sentinel_failure: Lambda,
         get_random_wait: Lambda,
-        gibs_intermediate_output_bucket: str,
         gibs_outputbucket: str,
         **kwargs,
     ) -> None:
@@ -77,10 +76,6 @@ class SentinelErrorsStepFunction(BatchStepFunction, StateMachineStepFunction):
                                             {
                                                 "Name": "REPLACE_EXISTING",
                                                 "Value": "replace",
-                                            },
-                                            {
-                                                "Name": "GIBS_INTERMEDIATE_BUCKET",
-                                                "Value": gibs_intermediate_output_bucket,
                                             },
                                             {
                                                 "Name": "GIBS_OUTPUT_BUCKET",
