@@ -72,7 +72,7 @@ LANDSAT_HISTORIC_INCOMPLETE_CRON = getenv(
 )
 SENTINEL_ERRORS_CRON = getenv(
     "HLS_SENTINEL_ERRORS_CRON",
-    "cron(0 20 * * ? *)"
+    "cron(0 0/4 * * ? *)"
 )
 LANDSAT_AC_ERRORS_CRON = getenv(
     "HLS_LANDSAT_AC_ERRORS_CRON",
@@ -589,8 +589,20 @@ class HlsStack(core.Stack):
             jobqueue=self.batch.sentinel_jobqueue.ref,
             update_sentinel_failure=self.update_sentinel_failure,
             outputbucket_role_arn=OUTPUT_BUCKET_ROLE_ARN,
-            gibs_intermediate_output_bucket=GIBS_INTERMEDIATE_OUTPUT_BUCKET,
             gibs_outputbucket=GIBS_OUTPUT_BUCKET,
+            get_random_wait=self.get_random_wait,
+        )
+
+        self.sentinel_errors_step_function_historic = SentinelErrorsStepFunction(
+            self,
+            "SentinelHistoricErrorsStateMachine",
+            outputbucket=OUTPUT_BUCKET_HISTORIC,
+            inputbucket=SENTINEL_INPUT_BUCKET_HISTORIC,
+            sentinel_job_definition=self.sentinel_task.job.ref,
+            jobqueue=self.batch.sentinel_historic_jobqueue.ref,
+            update_sentinel_failure=self.update_sentinel_failure,
+            outputbucket_role_arn=OUTPUT_BUCKET_ROLE_ARN,
+            gibs_outputbucket=GIBS_OUTPUT_BUCKET_HISTORIC,
             get_random_wait=self.get_random_wait,
         )
 
@@ -826,6 +838,24 @@ class HlsStack(core.Stack):
                 "HLS_DB_NAME": self.rds.database.database_name,
                 "HLS_DB_ARN": self.rds.arn,
                 "RETRY_LIMIT": SENTINEL_RETRY_LIMIT,
+                "HISTORIC": "no"
+            },
+        )
+
+        self.sentinel_historic_errors_step_function_trigger = StepFunctionTrigger(
+            self,
+            "SentinelHistoricErrorsStepFunctionTrigger",
+            state_machine=self.sentinel_errors_step_function_historic.state_machine.ref,
+            code_file="process_sentinel_errors.py",
+            timeout=900,
+            lambda_name="ProcessSentinelHistoricErrors",
+            cron_str=SENTINEL_ERRORS_CRON,
+            env_vars={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
+                "RETRY_LIMIT": SENTINEL_RETRY_LIMIT,
+                "HISTORIC": "historic"
             },
         )
 
