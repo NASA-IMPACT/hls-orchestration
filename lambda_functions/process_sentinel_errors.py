@@ -54,17 +54,28 @@ def execute_step_function(error_chunk, submit_errors):
 
 def handler(event, context):
     retry_limit = int(os.getenv("RETRY_LIMIT"))
-    #  Using the view ensures we are only using records which have jobinfo
+    historic = os.getenv("HISTORIC")
+
+    if historic == "historic":
+        historic_value = True
+    else:
+        historic_value = False
+
     q = (
-        "SELECT id, granule from sentinel_granule_log WHERE"
-        + " (jobinfo->'Container'->>'ExitCode' = '1'"
+        "SELECT id, granule from sentinel_log WHERE"
+        + " (jobinfo->'Container'->>'ExitCode' NOT IN ('0', '137', '3', '4')"
         + " or jobinfo->'Container'->>'ExitCode' is NULL)"
-        + " AND run_count < :retry_limit::integer;"
+        + " AND jobinfo is NOT NULL"
+        + " AND run_count < :retry_limit::integer"
+        + " AND historic = :historic_value::boolean"
+        + " LIMIT 4000;"
     )
+    print(q)
     response = execute_statement(
         q,
         sql_parameters=[
             {"name": "retry_limit", "value": {"longValue": retry_limit}},
+            {"name": "historic_value", "value": {"booleanValue": historic_value}},
         ]
     )
     records = map(convert_records, response["records"])
