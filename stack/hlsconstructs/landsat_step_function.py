@@ -196,19 +196,19 @@ class LandsatStepFunction(BatchStepFunction, StateMachineStepFunction):
                                         "date.$": "$.date",
                                     },
                                 },
-                                "Retry":[
+                                "OutputPath": "$.Output",
+                                "Catch": [
                                     {
-                                        "ErrorEquals":[
-                                            "StepFunctions.ExecutionLimitExceeded"
-                                        ]
+                                        "ErrorEquals": ["States.ALL"],
+                                        "Next": "SuccessState",
                                     }
                                 ],
-                                "OutputPath": "$.Output",
                                 "Next": "SuccessState",
                             },
                             "SuccessState": {"Type": "Succeed"},
                         },
-                    }, "Next": "CheckExitCodes",
+                    },
+                    "Next": "CheckExitCodes",
                 },
                 "CheckExitCodes": {
                     "Type": "Task",
