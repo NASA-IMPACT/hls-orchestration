@@ -1,9 +1,10 @@
 import os
-import boto3
 from pathlib import Path
-from typing import Dict
-from botocore.errorfactory import ClientError
 from random import randint
+from typing import Dict
+
+import boto3
+from botocore.errorfactory import ClientError
 
 
 def handler(event: Dict, context: Dict):

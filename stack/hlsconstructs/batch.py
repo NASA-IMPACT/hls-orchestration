@@ -1,14 +1,7 @@
-from aws_cdk import (
-    aws_batch,
-    aws_ec2,
-    aws_ecs,
-    aws_efs,
-    aws_iam,
-    aws_ssm,
-    core,
-)
-from hlsconstructs.network import Network
 import os
+
+from aws_cdk import aws_batch, aws_ec2, aws_ecs, aws_efs, aws_iam, aws_ssm, core
+from hlsconstructs.network import Network
 
 dirname = os.path.dirname(os.path.realpath(__file__))
 
@@ -81,7 +74,9 @@ class Batch(core.Construct):
         )
 
         ecs_instance_profile = aws_iam.CfnInstanceProfile(
-            self, "EcsInstanceProfile", roles=[self.ecs_instance_role.role_name],
+            self,
+            "EcsInstanceProfile",
+            roles=[self.ecs_instance_role.role_name],
         )
 
         self.ec2_spot_fleet_role = aws_iam.Role(
@@ -92,7 +87,7 @@ class Batch(core.Construct):
                 aws_iam.ManagedPolicy.from_aws_managed_policy_name(
                     "service-role/AmazonEC2SpotFleetTaggingRole"
                 ),
-            ]
+            ],
         )
         if use_cw:
             cloudwatch_ssm_param = f"BatchCloudwatchAgentConfig{self.node.unique_id}"
@@ -109,9 +104,7 @@ class Batch(core.Construct):
             # Grant ssm:GetParameters to ECS Instnace role.
             cloudwatch_config_param.grant_read(self.ecs_instance_role)
 
-            userdata_file = open(
-                os.path.join(dirname, "userdata.txt"), "rb"
-            ).read()
+            userdata_file = open(os.path.join(dirname, "userdata.txt"), "rb").read()
             user_data = aws_ec2.UserData.for_linux()
             user_data_string = str(userdata_file, "utf-8").format(
                 efs.ref, cloudwatch_ssm_param
@@ -121,9 +114,7 @@ class Batch(core.Construct):
                 os.path.join(dirname, "userdata_no_cw.txt"), "rb"
             ).read()
             user_data = aws_ec2.UserData.for_linux()
-            user_data_string = str(userdata_file, "utf-8").format(
-                efs.ref
-            )
+            user_data_string = str(userdata_file, "utf-8").format(efs.ref)
 
         user_data.add_commands(user_data_string)
         user_data_str = "\n".join(user_data.render().split("\n")[1:])
@@ -134,15 +125,21 @@ class Batch(core.Construct):
         )
 
         launch_template = aws_ec2.CfnLaunchTemplate(
-            self, "LaunchTemplate", launch_template_data=launch_template_data,
+            self,
+            "LaunchTemplate",
+            launch_template_data=launch_template_data,
         )
 
-        launch_template_props = aws_batch.CfnComputeEnvironment.LaunchTemplateSpecificationProperty(
-            launch_template_id=launch_template.ref,
-            version=launch_template.attr_latest_version_number
+        launch_template_props = (
+            aws_batch.CfnComputeEnvironment.LaunchTemplateSpecificationProperty(
+                launch_template_id=launch_template.ref,
+                version=launch_template.attr_latest_version_number,
+            )
         )
         if image_id is None:
-            image_id = aws_ecs.EcsOptimizedImage.amazon_linux2().get_image(self).image_id
+            image_id = (
+                aws_ecs.EcsOptimizedImage.amazon_linux2().get_image(self).image_id
+            )
 
         compute_resources = aws_batch.CfnComputeEnvironment.ComputeResourcesProperty(
             allocation_strategy="BEST_FIT_PROGRESSIVE",

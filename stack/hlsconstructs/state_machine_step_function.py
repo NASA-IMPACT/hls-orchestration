@@ -1,9 +1,6 @@
-from aws_cdk import (
-    aws_stepfunctions,
-    aws_iam,
-    core,
-)
 import json
+
+from aws_cdk import aws_iam, aws_stepfunctions, core
 from hlsconstructs.lambdafunc import Lambda
 from hlsconstructs.step_function import StepFunction
 
@@ -39,9 +36,6 @@ class StateMachineStepFunction(StepFunction):
         self.steps_role.add_to_policy(
             aws_iam.PolicyStatement(
                 resources=["*"],
-                actions=[
-                    "states:DescribeExecution",
-                    "states:StopExecution"
-                ]
+                actions=["states:DescribeExecution", "states:StopExecution"],
             )
         )

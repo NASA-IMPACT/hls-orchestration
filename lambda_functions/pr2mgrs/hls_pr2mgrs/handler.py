@@ -6,9 +6,8 @@ the pre-computed relationship between Sentinel-2 tile and Landsat pathrow.
 
 ref: https://github.com/NASA-IMPACT/hls.v1.5/blob/d7fdaf2cc3745ce434f77fb0506b9eeb26acdc35/L8/sr_tile/script/run_sr_tile.sh#L126
 """
-from typing import Dict
-
 import os
+from typing import Dict
 
 # We put this outside the function so it can be cached
 lookup_file = os.path.join(os.path.dirname(__file__), "data", "HLS.L8S2overlap.txt")

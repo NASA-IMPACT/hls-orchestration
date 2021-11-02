@@ -1,9 +1,6 @@
-from aws_cdk import (
-    aws_stepfunctions,
-    aws_iam,
-    core,
-)
 import json
+
+from aws_cdk import aws_iam, aws_stepfunctions, core
 from hlsconstructs.lambdafunc import Lambda
 
 
@@ -25,6 +22,4 @@ class StepFunction(core.Construct):
         for key in arguments:
             arg = arguments[key]
             if type(arg) == Lambda:
-                self.steps_role.add_to_policy(
-                    arg.invoke_policy_statement
-                )
+                self.steps_role.add_to_policy(arg.invoke_policy_statement)

@@ -1,7 +1,8 @@
 """Update landsat_mgrs_log with intersecting MGRS grid values when a landsat granule enter the system"""
-import os
-import boto3
 import json
+import os
+
+import boto3
 
 rds_client = boto3.client("rds-data")
 
@@ -44,14 +45,17 @@ def handler(event, context):
             {"name": "path", "value": {"stringValue": event["path"]}},
             {"name": "mgrs", "value": {"stringValue": mgrs_grid}},
             {"name": "acquisition", "value": {"stringValue": event["date"]}},
-            {"name": "run_count", "value": {"longValue": 0}}
+            {"name": "run_count", "value": {"longValue": 0}},
         ]
 
         if historic == "historic":
             historic_value = True
         else:
             historic_value = False
-        historic_parameter = {"name": "historic", "value": {"booleanValue": historic_value}}
+        historic_parameter = {
+            "name": "historic",
+            "value": {"booleanValue": historic_value},
+        }
         sql_parameters.append(historic_parameter)
 
         execute_statement(

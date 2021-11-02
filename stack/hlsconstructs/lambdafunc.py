@@ -1,9 +1,14 @@
 import os
-from aws_cdk import (
-    aws_lambda, core, aws_iam, aws_lambda_python, aws_events, aws_events_targets
-)
-
 from typing import Dict
+
+from aws_cdk import (
+    aws_events,
+    aws_events_targets,
+    aws_iam,
+    aws_lambda,
+    aws_lambda_python,
+    core,
+)
 from utils import align
 
 
@@ -32,8 +37,11 @@ class Lambda(core.Construct):
 
         if package_code_dir is not None:
             absolute_path = os.path.join(
-                os.path.dirname(__file__), "..", "..",
-                "lambda_functions", package_code_dir
+                os.path.dirname(__file__),
+                "..",
+                "..",
+                "lambda_functions",
+                package_code_dir,
             )
             self.function = aws_lambda_python.PythonFunction(
                 self,
@@ -49,7 +57,11 @@ class Lambda(core.Construct):
             if code_dir is not None:
                 self.code = aws_lambda.Code.from_asset(
                     os.path.join(
-                        os.path.dirname(__file__), "..", "..", "lambda_functions", code_dir
+                        os.path.dirname(__file__),
+                        "..",
+                        "..",
+                        "lambda_functions",
+                        code_dir,
                     )
                 )
             elif code_file is not None:
@@ -86,10 +98,15 @@ class Lambda(core.Construct):
 
         if cron_str is not None:
             self.rule = aws_events.Rule(
-                self, "rule", schedule=aws_events.Schedule.expression(cron_str),
+                self,
+                "rule",
+                schedule=aws_events.Schedule.expression(cron_str),
             )
             self.rule.add_target(aws_events_targets.LambdaFunction(self.function))
 
         self.invoke_policy_statement = aws_iam.PolicyStatement(
-            resources=[self.function.function_arn], actions=["lambda:InvokeFunction",],
+            resources=[self.function.function_arn],
+            actions=[
+                "lambda:InvokeFunction",
+            ],
         )

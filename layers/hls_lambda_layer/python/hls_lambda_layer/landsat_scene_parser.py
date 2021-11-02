@@ -1,5 +1,5 @@
-import re
 import datetime
+import re
 from typing import Any, Dict
 
 
@@ -67,9 +67,7 @@ def landsat_parse_scene_id(sceneid):
         meta["date"] = date.strftime("%Y-%m-%d")
     else:
         meta["date"] = "{}-{}-{}".format(
-            meta["acquisitionYear"],
-            meta["acquisitionMonth"],
-            meta["acquisitionDay"]
+            meta["acquisitionYear"], meta["acquisitionMonth"], meta["acquisitionDay"]
         )
 
     collection = meta.get("collectionNumber", "")

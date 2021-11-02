@@ -1,12 +1,12 @@
 import os
-import sys
-import boto3
 import random
-
+import sys
 from pathlib import Path
+
+import boto3
 from hls_lambda_layer.landsat_scene_parser import landsat_parse_scene_id
 
-client = boto3.client('batch')
+client = boto3.client("batch")
 jobqueue = os.getenv("HLSSTACK_LANDSATACJOBQUEUEEXPORT")
 jobdefinition = os.getenv("HLSSTACK_LANDSATJOBDEFINITION")
 inputbucket = "usgs-landsat"
@@ -25,39 +25,18 @@ def submit_job(scene_id):
         jobQueue=jobqueue,
         jobDefinition=jobdefinition,
         containerOverrides={
-            'memory': 10000,
-            'command': ['export && landsat.sh'],
-            'environment': [
-                {
-                    "name": "GRANULE",
-                    "value": scene_id
-                },
-                {
-                    "name": "PREFIX",
-                    "value": prefix
-                },
-                {
-                    "name": "LASRC_AUX_DIR",
-                    "value": "/var/lasrc_aux"
-                },
-                {
-                    "name": "DEBUG_BUCKET",
-                    "value": "hls-debug-output"
-                },
-                {
-                    "name": "INPUT_BUCKET",
-                    "value": inputbucket
-                },
-                {
-                    "name": "OMP_NUM_THREADS",
-                    "value": "2"
-                },
-                {
-                    "name": "REPLACE_EXISTING",
-                    "value": "replace"
-                },
+            "memory": 10000,
+            "command": ["export && landsat.sh"],
+            "environment": [
+                {"name": "GRANULE", "value": scene_id},
+                {"name": "PREFIX", "value": prefix},
+                {"name": "LASRC_AUX_DIR", "value": "/var/lasrc_aux"},
+                {"name": "OUTPUT_BUCKET", "value": "hls-debug-output"},
+                {"name": "INPUT_BUCKET", "value": inputbucket},
+                {"name": "OMP_NUM_THREADS", "value": "2"},
+                {"name": "REPLACE_EXISTING", "value": "replace"},
             ],
-        }
+        },
     )
     print(response)
 

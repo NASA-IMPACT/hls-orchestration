@@ -24,22 +24,30 @@ class PermissionBoundaryAspect:
         :param construct_ref: ObjRef object with string reference to the actual object.
         :return: None
         """
-        if isinstance(construct_ref, jsii._kernel.ObjRef) and hasattr(construct_ref, 'ref'):
-            kernel = Singleton._instances[jsii._kernel.Kernel]  # The same object is available as: jsii.kernel
+        if isinstance(construct_ref, jsii._kernel.ObjRef) and hasattr(
+            construct_ref, "ref"
+        ):
+            kernel = Singleton._instances[
+                jsii._kernel.Kernel
+            ]  # The same object is available as: jsii.kernel
             resolve = _refs.resolve(kernel, construct_ref)
         else:
             resolve = construct_ref
 
         def _walk(obj):
             if isinstance(obj, aws_iam.Role):
-                cfn_role = obj.node.find_child('Resource')
-                policy_arn = self.permission_boundary if isinstance(self.permission_boundary, str) else self.permission_boundary.managed_policy_arn
-                cfn_role.add_property_override('PermissionsBoundary', policy_arn)
+                cfn_role = obj.node.find_child("Resource")
+                policy_arn = (
+                    self.permission_boundary
+                    if isinstance(self.permission_boundary, str)
+                    else self.permission_boundary.managed_policy_arn
+                )
+                cfn_role.add_property_override("PermissionsBoundary", policy_arn)
             else:
-                if hasattr(obj, 'permissions_node'):
+                if hasattr(obj, "permissions_node"):
                     for c in obj.permissions_node.children:
                         _walk(c)
-                if hasattr(obj, 'node') and obj.node.children:
+                if hasattr(obj, "node") and obj.node.children:
                     for c in obj.node.children:
                         _walk(c)
 

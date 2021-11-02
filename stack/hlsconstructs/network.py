@@ -1,15 +1,8 @@
-from aws_cdk import core
-from aws_cdk import aws_ec2
+from aws_cdk import aws_ec2, core
 
 
 class Network(core.Construct):
-    def __init__(
-        self,
-        scope: core.Construct,
-        id: str,
-        vpcid=None,
-        **kwargs
-    ) -> None:
+    def __init__(self, scope: core.Construct, id: str, vpcid=None, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
         if vpcid:
             self.vpc = aws_ec2.Vpc.from_lookup(self, "Vpc", vpc_id=vpcid)
@@ -23,7 +16,8 @@ class Network(core.Construct):
                 nat_gateways=0,
                 subnet_configuration=[
                     aws_ec2.SubnetConfiguration(
-                        name="PublicSubnet1", subnet_type=aws_ec2.SubnetType.PUBLIC,
+                        name="PublicSubnet1",
+                        subnet_type=aws_ec2.SubnetType.PUBLIC,
                     ),
                 ],
                 max_azs=2,

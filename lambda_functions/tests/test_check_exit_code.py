@@ -1,4 +1,5 @@
 import pytest
+
 from lambda_functions.check_exit_code import handler
 
 

@@ -1,7 +1,8 @@
 """Lambda function for omnipotent setup and modification of HLS logging database"""
-import os
-import boto3
 import json
+import os
+
+import boto3
 
 rds_client = boto3.client("rds-data")
 
