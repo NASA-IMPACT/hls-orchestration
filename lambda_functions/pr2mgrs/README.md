@@ -9,7 +9,7 @@ $ pip install pip -U
 $ pip install .[deploy]
 ```
 
-### Deploy 
+### Deploy
 
 ```
 $ cd stack
@@ -24,7 +24,7 @@ The lambda handler accepts either `PATHROW` or `MGRS` argument passed in a dicti
 ```python
 from hls_pr2mgrs.handler import handler
 
->> handler({"PATHROW": "001001"}, {})                                                                                                  
+>> handler({"PATHROW": "001001"}, {})
 >> ['29XNK',
  '29XNL',
  '30XVQ',
@@ -39,7 +39,7 @@ from hls_pr2mgrs.handler import handler
  '31XEK',
  '31XEL']
 
->> handler({"MGRS": "29XNK"}, {})                                                                                                 
+>> handler({"MGRS": "29XNK"}, {})
 >> ['001001',
  '001002',
  '002001',
