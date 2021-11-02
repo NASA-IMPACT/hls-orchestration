@@ -1,8 +1,9 @@
 """Setup for hls-orchestration"""
-import sys
-import subprocess
-from setuptools import setup, find_packages
 import os
+import subprocess
+import sys
+
+from setuptools import find_packages, setup
 
 # Runtime requirements.
 aws_cdk_version = "1.65.0"
@@ -35,8 +36,8 @@ inst_reqs = [
 inst_reqs.append([f"aws_cdk.{x}=={aws_cdk_version}" for x in aws_cdk_reqs])
 
 extra_reqs = {
-    "test": ["pytest", "pytest-cov", "black", "flake8",],
-    "dev": ["pytest", "black", "flake8", "nodeenv"]
+    "test": ["pytest", "pytest-cov", "black", "flake8", "isort"],
+    "dev": ["pytest", "black", "flake8", "nodeenv", "isort"]
 }
 
 setup(
