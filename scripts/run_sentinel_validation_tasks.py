@@ -1,7 +1,8 @@
 import os
-import sys
-import boto3
 import random
+import sys
+
+import boto3
 
 client = boto3.client('stepfunctions')
 s3 = boto3.resource('s3')

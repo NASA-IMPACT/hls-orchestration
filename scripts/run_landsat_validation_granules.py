@@ -1,9 +1,9 @@
 import os
-import sys
-import boto3
 import random
-
+import sys
 from pathlib import Path
+
+import boto3
 from hls_lambda_layer.landsat_scene_parser import landsat_parse_scene_id
 
 client = boto3.client('batch')
@@ -41,7 +41,7 @@ def submit_job(scene_id):
                     "value": "/var/lasrc_aux"
                 },
                 {
-                    "name": "DEBUG_BUCKET",
+                    "name": "OUTPUT_BUCKET",
                     "value": "hls-debug-output"
                 },
                 {

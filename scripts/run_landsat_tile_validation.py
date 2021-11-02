@@ -1,7 +1,7 @@
 import os
-import boto3
 import random
 
+import boto3
 
 client = boto3.client('batch')
 jobqueue = os.getenv("HLSSTACK_LANDSATTILEJOBQUEUEEXPORT")
@@ -30,7 +30,7 @@ response = client.submit_job(
             },
             {
                 "name": "INPUT_BUCKET",
-                "value": "hls-debug-output/LC08_L1TP_003067_20200826_20200905_02_T1_2021_05_04_15_26"
+                "value": "hls-debug-output"
             },
             {
                 "name": "DATE",
