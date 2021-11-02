@@ -6,11 +6,13 @@ repos:
         name: trailing-whitespace-fixer
         entry: trailing-whitespace-fixer
         language: system
+        exclude: ^docs
 
       - id: end-of-file-fixer
         name: end-of-file-fixer
         entry: end-of-file-fixer
         language: system
+        exclude: ^docs
 
       - id: isort
         name: isort
