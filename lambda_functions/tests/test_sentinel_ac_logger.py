@@ -1,12 +1,14 @@
-import pytest
 import json
 from unittest.mock import patch
-from lambda_functions.sentinel_ac_logger import handler
+
+import pytest
 from hls_lambda_layer.batch_test_events import (
     batch_failed_event,
+    batch_failed_event_string_cause,
     batch_succeeded_event,
-    batch_failed_event_string_cause
 )
+
+from lambda_functions.sentinel_ac_logger import handler
 
 
 @patch("lambda_functions.sentinel_ac_logger.rds_client")

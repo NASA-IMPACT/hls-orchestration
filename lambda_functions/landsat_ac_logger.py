@@ -1,10 +1,10 @@
 """Update landsat_ac_log table with results of landsat ac batch job."""
-import os
-import boto3
 import json
+import os
 from operator import itemgetter
-from hls_lambda_layer.hls_batch_utils import parse_jobinfo
 
+import boto3
+from hls_lambda_layer.hls_batch_utils import parse_jobinfo
 
 db_credentials_secrets_store_arn = os.getenv("HLS_SECRETS")
 database_name = os.getenv("HLS_DB_NAME")

@@ -1,8 +1,8 @@
-import os
-import boto3
 import json
+import os
 from functools import reduce
 
+import boto3
 
 db_credentials_secrets_store_arn = os.getenv("HLS_SECRETS")
 database_name = os.getenv("HLS_DB_NAME")

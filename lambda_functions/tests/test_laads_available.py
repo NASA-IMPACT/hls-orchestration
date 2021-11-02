@@ -8,9 +8,7 @@ def env_setup(monkeypatch):
 
 
 def test_getyyyydoy():
-    from lambda_functions.laads_available import (
-        getyyyydoy
-    )
+    from lambda_functions.laads_available import getyyyydoy
 
     assert getyyyydoy("2020-01-01") == ("2020001", "2020")
     assert getyyyydoy("2020-001") == ("2020001", "2020")

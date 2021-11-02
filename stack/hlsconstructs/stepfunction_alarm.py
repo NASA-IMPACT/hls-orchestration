@@ -1,4 +1,4 @@
-from aws_cdk import core, aws_cloudwatch, aws_cloudwatch_actions, aws_sns
+from aws_cdk import aws_cloudwatch, aws_cloudwatch_actions, aws_sns, core
 
 
 class StepFunctionAlarm(core.Construct):

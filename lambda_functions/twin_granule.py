@@ -1,12 +1,13 @@
 """
 HLS: Check if Twin Granule Exists
 """
-from typing import Dict
 import os
 import re
+from datetime import date
+from typing import Dict
+
 import boto3
 from botocore.errorfactory import ClientError
-from datetime import date
 
 s3 = boto3.client("s3")
 bucket = os.getenv("SENTINEL_INPUT_BUCKET", None)

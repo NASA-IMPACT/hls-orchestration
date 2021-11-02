@@ -1,6 +1,6 @@
-from aws_cdk import aws_s3, core, aws_iam
 import boto3
 import botocore
+from aws_cdk import aws_iam, aws_s3, core
 
 
 # Creates new S3 bucket. If bucket already exists will connect to existing bucket.

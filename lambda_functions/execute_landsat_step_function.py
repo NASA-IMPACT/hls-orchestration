@@ -1,8 +1,9 @@
-import os
-import boto3
 import json
-from urllib.parse import urlparse
+import os
 from typing import Dict
+from urllib.parse import urlparse
+
+import boto3
 from botocore.errorfactory import ClientError
 from hls_lambda_layer.landsat_scene_parser import landsat_parse_scene_id
 

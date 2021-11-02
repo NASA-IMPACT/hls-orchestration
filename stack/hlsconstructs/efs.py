@@ -1,4 +1,4 @@
-from aws_cdk import aws_efs, aws_ec2, core, aws_iam
+from aws_cdk import aws_ec2, aws_efs, aws_iam, core
 from hlsconstructs.network import Network
 
 

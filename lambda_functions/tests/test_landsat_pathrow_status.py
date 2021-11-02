@@ -1,6 +1,8 @@
-import pytest
 import json
 from unittest.mock import patch
+
+import pytest
+
 from lambda_functions.landsat_pathrow_status import handler
 
 

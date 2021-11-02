@@ -1,10 +1,10 @@
 """Select failed Sentinel processing jobs and re-process them in blocks"""
-import os
-import boto3
 import json
-from botocore.errorfactory import ClientError
+import os
 from datetime import datetime, timedelta
 
+import boto3
+from botocore.errorfactory import ClientError
 
 db_credentials_secrets_store_arn = os.getenv("HLS_SECRETS")
 database_name = os.getenv("HLS_DB_NAME")

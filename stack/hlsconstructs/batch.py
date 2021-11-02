@@ -1,14 +1,7 @@
-from aws_cdk import (
-    aws_batch,
-    aws_ec2,
-    aws_ecs,
-    aws_efs,
-    aws_iam,
-    aws_ssm,
-    core,
-)
-from hlsconstructs.network import Network
 import os
+
+from aws_cdk import aws_batch, aws_ec2, aws_ecs, aws_efs, aws_iam, aws_ssm, core
+from hlsconstructs.network import Network
 
 dirname = os.path.dirname(os.path.realpath(__file__))
 

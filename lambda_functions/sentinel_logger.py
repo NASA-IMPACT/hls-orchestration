@@ -1,5 +1,6 @@
 """Update sentinel_log with new granule when it firsts enters the system."""
 import os
+
 import boto3
 
 db_credentials_secrets_store_arn = os.getenv("HLS_SECRETS")

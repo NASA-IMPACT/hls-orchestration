@@ -1,16 +1,17 @@
+from typing import Dict, List
+
 from aws_cdk import (
-    core,
-    aws_s3,
-    aws_iam,
-    aws_stepfunctions,
     aws_events,
     aws_events_targets,
-    aws_lambda_event_sources,
-    aws_sns,
+    aws_iam,
     aws_lambda,
+    aws_lambda_event_sources,
+    aws_s3,
+    aws_sns,
+    aws_stepfunctions,
+    core,
 )
 from hlsconstructs.lambdafunc import Lambda
-from typing import Dict, List
 
 
 class StepFunctionTrigger(core.Construct):

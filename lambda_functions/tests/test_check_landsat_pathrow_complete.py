@@ -1,8 +1,9 @@
-import pytest
 import json
 from unittest.mock import patch
-from lambda_functions.check_landsat_pathrow_complete import handler
 
+import pytest
+
+from lambda_functions.check_landsat_pathrow_complete import handler
 
 event = {
     "date": "2021-01-02",

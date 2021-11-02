@@ -1,7 +1,8 @@
 import os
-from aws_cdk import core
-from stack import HlsStack
 
+from aws_cdk import core
+
+from stack import HlsStack
 
 # Required env settings
 STACKNAME = os.environ["HLS_STACKNAME"]

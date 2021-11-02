@@ -1,7 +1,8 @@
 """Update landsat_ac_log with new granule when it firsts enters the system."""
 import os
-import boto3
 from operator import itemgetter
+
+import boto3
 
 db_credentials_secrets_store_arn = os.getenv("HLS_SECRETS")
 database_name = os.getenv("HLS_DB_NAME")

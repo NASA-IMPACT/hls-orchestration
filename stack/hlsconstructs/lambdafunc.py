@@ -1,9 +1,14 @@
 import os
-from aws_cdk import (
-    aws_lambda, core, aws_iam, aws_lambda_python, aws_events, aws_events_targets
-)
-
 from typing import Dict
+
+from aws_cdk import (
+    aws_events,
+    aws_events_targets,
+    aws_iam,
+    aws_lambda,
+    aws_lambda_python,
+    core,
+)
 from utils import align
 
 

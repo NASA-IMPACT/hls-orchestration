@@ -1,7 +1,9 @@
-import os
-import pytest
 import json
-from unittest.mock import patch, call
+import os
+from unittest.mock import call, patch
+
+import pytest
+
 from lambda_functions.process_landsat_ac_errors import convert_records, handler
 
 

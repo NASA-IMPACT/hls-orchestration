@@ -1,7 +1,8 @@
 """Update landsat_mgrs_log with intersecting MGRS grid values when a landsat granule enter the system"""
-import os
-import boto3
 import json
+import os
+
+import boto3
 
 rds_client = boto3.client("rds-data")
 

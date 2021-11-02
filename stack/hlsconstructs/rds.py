@@ -1,5 +1,6 @@
 import os
-from aws_cdk import aws_rds, aws_ec2, core, aws_iam, aws_secretsmanager
+
+from aws_cdk import aws_ec2, aws_iam, aws_rds, aws_secretsmanager, core
 from hlsconstructs.network import Network
 
 

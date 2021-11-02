@@ -1,9 +1,6 @@
-from aws_cdk import (
-    aws_stepfunctions,
-    aws_iam,
-    core,
-)
 import json
+
+from aws_cdk import aws_iam, aws_stepfunctions, core
 from hlsconstructs.step_function import StepFunction
 
 

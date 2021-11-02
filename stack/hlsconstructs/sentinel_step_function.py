@@ -1,11 +1,8 @@
-from aws_cdk import (
-    aws_stepfunctions,
-    aws_iam,
-    core,
-)
 import json
-from hlsconstructs.lambdafunc import Lambda
+
+from aws_cdk import aws_iam, aws_stepfunctions, core
 from hlsconstructs.batch_step_function import BatchStepFunction
+from hlsconstructs.lambdafunc import Lambda
 
 
 class SentinelStepFunction(BatchStepFunction):

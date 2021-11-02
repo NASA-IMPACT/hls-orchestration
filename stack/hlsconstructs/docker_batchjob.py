@@ -1,12 +1,6 @@
-from aws_cdk import (
-    aws_ecr_assets,
-    aws_batch,
-    aws_ecs,
-    aws_iam,
-    aws_s3,
-    core,
-)
 import os
+
+from aws_cdk import aws_batch, aws_ecr_assets, aws_ecs, aws_iam, aws_s3, core
 
 dirname = os.path.dirname(os.path.realpath(__file__))
 

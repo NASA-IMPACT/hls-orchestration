@@ -1,7 +1,9 @@
-import pytest
-import os
 import json
-from unittest.mock import patch, call
+import os
+from unittest.mock import call, patch
+
+import pytest
+
 from lambda_functions.landsat_mgrs_logger import handler
 
 

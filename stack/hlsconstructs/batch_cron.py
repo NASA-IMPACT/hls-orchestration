@@ -1,8 +1,9 @@
-from aws_cdk import core, aws_events, aws_lambda, aws_events_targets, aws_iam
 from typing import Dict
-from hlsconstructs.lambdafunc import Lambda
+
+from aws_cdk import aws_events, aws_events_targets, aws_iam, aws_lambda, core
 from hlsconstructs.docker_batchjob import DockerBatchJob
-from utils import aws_env, align
+from hlsconstructs.lambdafunc import Lambda
+from utils import align, aws_env
 
 
 class BatchCron(Lambda):

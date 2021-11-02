@@ -1,5 +1,4 @@
-from aws_cdk import core
-from aws_cdk import aws_ec2
+from aws_cdk import aws_ec2, core
 
 
 class Network(core.Construct):

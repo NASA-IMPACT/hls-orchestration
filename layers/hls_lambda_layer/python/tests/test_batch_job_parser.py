@@ -1,12 +1,13 @@
-import pytest
 import json
-from hls_lambda_layer.hls_batch_utils import parse_jobinfo
+
+import pytest
 from hls_lambda_layer.batch_test_events import (
     batch_failed_event,
-    batch_succeeded_event,
+    batch_failed_event_no_exit,
     batch_failed_event_string_cause,
-    batch_failed_event_no_exit
+    batch_succeeded_event,
 )
+from hls_lambda_layer.hls_batch_utils import parse_jobinfo
 
 
 def test_parse_jobinfo_keyError():

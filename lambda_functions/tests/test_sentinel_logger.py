@@ -1,7 +1,9 @@
-import pytest
-import os
 import json
+import os
 from unittest.mock import patch
+
+import pytest
+
 from lambda_functions.sentinel_logger import handler
 
 

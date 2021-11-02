@@ -1,8 +1,9 @@
 """Update sentinel_log table with results of sentinel batch job."""
-import os
-import boto3
 import json
+import os
 from operator import itemgetter
+
+import boto3
 from hls_lambda_layer.hls_batch_utils import parse_jobinfo
 
 db_credentials_secrets_store_arn = os.getenv("HLS_SECRETS")
