@@ -21,7 +21,10 @@ def handler(event: Dict, context: Dict):
     granule = event.get("granule")
     prefix = granule[0:-6]
     print(prefix)
-    response = s3.list_objects_v2(Bucket=bucket, Prefix=prefix,)
+    response = s3.list_objects_v2(
+        Bucket=bucket,
+        Prefix=prefix,
+    )
     print(response)
     granules = []
     contents = response["Contents"]

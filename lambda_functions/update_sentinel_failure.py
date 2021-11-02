@@ -35,12 +35,8 @@ def handler(event, context):
     execute_statement(
         sql,
         sql_parameters=[
-            {
-                "name": "jobinfo", "value": {"stringValue": jobinfostring}
-            },
-            {
-                "name": "id", "value": {"longValue": id_value}
-            }
+            {"name": "jobinfo", "value": {"stringValue": jobinfostring}},
+            {"name": "id", "value": {"longValue": id_value}},
         ],
     )
 

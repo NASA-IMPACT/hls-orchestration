@@ -17,8 +17,9 @@ app = core.App()
 if GCC:
     region = os.environ["AWS_DEFAULT_REGION"]
     account = os.environ["HLS_GCC_ACCOUNT"]
-    hls_stack = HlsStack(app, STACKNAME, stack_name=STACKNAME,
-                         env={"account": account, "region": region})
+    hls_stack = HlsStack(
+        app, STACKNAME, stack_name=STACKNAME, env={"account": account, "region": region}
+    )
 else:
     hls_stack = HlsStack(app, STACKNAME, stack_name=STACKNAME)
 

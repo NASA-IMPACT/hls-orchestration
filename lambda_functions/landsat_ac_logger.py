@@ -45,16 +45,16 @@ def handler(event, context):
     )
     sql_parameters = [
         {"name": "jobinfo", "value": {"stringValue": jobinfostring}},
-        {"name": "scene", "value": {"stringValue": event["scene"]}}
+        {"name": "scene", "value": {"stringValue": event["scene"]}},
     ]
     if jobid:
         sql_parameters.append(
-            {"name": "jobid", "value": {"stringValue": jobid},},
+            {
+                "name": "jobid",
+                "value": {"stringValue": jobid},
+            },
         )
-    execute_statement(
-        q,
-        sql_parameters=sql_parameters
-    )
+    execute_statement(q, sql_parameters=sql_parameters)
 
     print(f"Exit Code is {exitcode}")
     return exitcode

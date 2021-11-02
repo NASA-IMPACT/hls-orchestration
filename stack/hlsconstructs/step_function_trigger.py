@@ -43,7 +43,7 @@ class StepFunctionTrigger(core.Construct):
             code_file=code_file,
             timeout=timeout,
             env=env,
-            layers=layers
+            layers=layers,
         )
 
         if input_bucket is not None:
@@ -51,17 +51,15 @@ class StepFunctionTrigger(core.Construct):
                 bucket=input_bucket, events=[aws_s3.EventType.OBJECT_CREATED]
             )
         if input_sns is not None:
-            self.event_source = aws_lambda_event_sources.SnsEventSource(
-                topic=input_sns
-            )
+            self.event_source = aws_lambda_event_sources.SnsEventSource(topic=input_sns)
         if cron_str is not None:
             self.rule = aws_events.Rule(
-                self, "Rule", schedule=aws_events.Schedule.expression(cron_str),
+                self,
+                "Rule",
+                schedule=aws_events.Schedule.expression(cron_str),
             )
             self.rule.add_target(
-                aws_events_targets.LambdaFunction(
-                    self.execute_step_function.function
-                )
+                aws_events_targets.LambdaFunction(self.execute_step_function.function)
             )
         else:
             self.execute_step_function.function.add_event_source(self.event_source)

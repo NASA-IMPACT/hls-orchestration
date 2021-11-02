@@ -26,8 +26,9 @@ def execute_statement(sql, sql_parameters=[]):
 def build_pathrows_string(records):
     pathrows_string = ""
     for record in records:
-        pathrows_string = pathrows_string + record[2]["stringValue"] \
-            + record[3]["stringValue"] + ","
+        pathrows_string = (
+            pathrows_string + record[2]["stringValue"] + record[3]["stringValue"] + ","
+        )
 
     return pathrows_string
 

@@ -28,7 +28,10 @@ class DockerBatchJob(core.Construct):
 
         host = aws_batch.CfnJobDefinition.VolumesHostProperty(source_path="/mnt/efs")
 
-        volume = aws_batch.CfnJobDefinition.VolumesProperty(name="volume", host=host,)
+        volume = aws_batch.CfnJobDefinition.VolumesProperty(
+            name="volume",
+            host=host,
+        )
 
         scratch_host = aws_batch.CfnJobDefinition.VolumesHostProperty(
             source_path="/scratch"
@@ -53,7 +56,9 @@ class DockerBatchJob(core.Construct):
             )
 
         mount_point = aws_batch.CfnJobDefinition.MountPointsProperty(
-            source_volume=volume.name, container_path=mountpath, read_only=False,
+            source_volume=volume.name,
+            container_path=mountpath,
+            read_only=False,
         )
         scratch_mount_point = aws_batch.CfnJobDefinition.MountPointsProperty(
             source_volume=scratch_volume.name,

@@ -50,7 +50,9 @@ class BatchCron(Lambda):
         super().__init__(scope, id, **kwargs)
 
         self.rule = aws_events.Rule(
-            self, "Rule", schedule=aws_events.Schedule.expression(cron_str),
+            self,
+            "Rule",
+            schedule=aws_events.Schedule.expression(cron_str),
         )
 
         self.rule.add_target(aws_events_targets.LambdaFunction(self.function))

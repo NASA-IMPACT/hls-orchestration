@@ -17,9 +17,7 @@ class StepFunctionAlarm(core.Construct):
             metric_name="ExecutionsFailed",
             period=core.Duration.minutes(20),
             statistic="avg",
-            dimensions={
-                "StateMachineArn": state_machine
-            }
+            dimensions={"StateMachineArn": state_machine},
         )
 
         self.step_function_alarm = aws_cloudwatch.Alarm(
@@ -31,8 +29,7 @@ class StepFunctionAlarm(core.Construct):
         )
 
         self.step_function_sns = aws_sns.Topic(
-            self,
-            f"{root_name}StepFunctionFailuresSNS"
+            self, f"{root_name}StepFunctionFailuresSNS"
         )
 
         self.step_function_alarm.add_alarm_action(

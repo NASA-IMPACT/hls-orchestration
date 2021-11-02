@@ -35,14 +35,14 @@ class LandsatIncompleteStepFunction(StateMachineStepFunction):
                             "Wait": {
                                 "Type": "Wait",
                                 "SecondsPath": "$.wait_time",
-                                "Next": "ProcessMGRSGrids"
+                                "Next": "ProcessMGRSGrids",
                             },
                             "ProcessMGRSGrids": {
-                                "Type":"Task",
-                                "Resource":"arn:aws:states:::states:startExecution.sync",
-                                "Parameters":{
+                                "Type": "Task",
+                                "Resource": "arn:aws:states:::states:startExecution.sync",
+                                "Parameters": {
                                     "StateMachineArn": landsat_mgrs_step_function_arn,
-                                    "Input":{
+                                    "Input": {
                                         "NeedCallback": False,
                                         "AWS_STEP_FUNCTIONS_STARTED_BY_EXECUTION_ID.$": "$$.Execution.Id",
                                         "MGRS.$": "$.MGRS",
@@ -64,7 +64,7 @@ class LandsatIncompleteStepFunction(StateMachineStepFunction):
                     "Next": "Done",
                 },
                 "Done": {"Type": "Succeed"},
-            }
+            },
         }
 
         self.state_machine = aws_stepfunctions.CfnStateMachine(
@@ -79,7 +79,7 @@ class LandsatIncompleteStepFunction(StateMachineStepFunction):
                 resources=[landsat_mgrs_step_function_arn],
                 actions=[
                     "states:StartExecution",
-                ]
+                ],
             )
         )
 

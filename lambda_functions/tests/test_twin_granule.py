@@ -13,7 +13,8 @@ def test_twin_granule(monkeypatch):
     from lambda_functions.twin_granule import handler, s3
 
     def test_lo(
-        Bucket: str, Prefix: str,
+        Bucket: str,
+        Prefix: str,
     ):
         response = {"Contents": [{"Key": "one.zip"}]}
         if Prefix == "one":

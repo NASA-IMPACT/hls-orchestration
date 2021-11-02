@@ -16,7 +16,7 @@ def test_handler_keyError(client):
     """Test handler."""
     event = {
         "granule": "S2A_MSIL1C_20200708T232851_N0209_R044_T58LEP_20200709T005119",
-        "jobinfo": batch_failed_event
+        "jobinfo": batch_failed_event,
     }
     cause = json.loads(event["jobinfo"]["Cause"])
     jobinfo = {"name": "jobinfo", "value": {"stringValue": json.dumps(cause)}}
@@ -34,16 +34,14 @@ def test_handler(client):
     """Test handler."""
     event = {
         "granule": "S2A_MSIL1C_20200708T232851_N0209_R044_T58LEP_20200709T005119",
-        "jobinfo": batch_succeeded_event
+        "jobinfo": batch_succeeded_event,
     }
     client.execute_statement.return_value = {}
     output = handler(event, {})
     args, kwargs = client.execute_statement.call_args
     jobinfo = {
         "name": "jobinfo",
-        "value": {
-            "stringValue": json.dumps(event["jobinfo"])
-        }
+        "value": {"stringValue": json.dumps(event["jobinfo"])},
     }
     assert jobinfo in kwargs["parameters"]
     assert output == 0
@@ -54,19 +52,12 @@ def test_handler_valueError(client):
     """Test handler."""
     event = {
         "granule": "S2A_MSIL1C_20200708T232851_N0209_R044_T58LEP_20200709T005119",
-        "jobinfo": batch_failed_event_string_cause
+        "jobinfo": batch_failed_event_string_cause,
     }
 
-    jobinfo_value = {
-        "cause": event["jobinfo"]["Cause"]
-    }
+    jobinfo_value = {"cause": event["jobinfo"]["Cause"]}
 
-    jobinfo = {
-        "name": "jobinfo",
-        "value": {
-            "stringValue": json.dumps(jobinfo_value)
-        }
-    }
+    jobinfo = {"name": "jobinfo", "value": {"stringValue": json.dumps(jobinfo_value)}}
     client.execute_statement.return_value = {}
     output = handler(event, {})
     args, kwargs = client.execute_statement.call_args

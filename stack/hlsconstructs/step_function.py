@@ -22,6 +22,4 @@ class StepFunction(core.Construct):
         for key in arguments:
             arg = arguments[key]
             if type(arg) == Lambda:
-                self.steps_role.add_to_policy(
-                    arg.invoke_policy_statement
-                )
+                self.steps_role.add_to_policy(arg.invoke_policy_statement)

@@ -15,32 +15,17 @@ def test_handler(client):
         "path": "202",
         "row": "114",
         "date": "2021-03-08",
-        "scene": "LC08_L1GT_202114_20210308_20210308_02_RT"
+        "scene": "LC08_L1GT_202114_20210308_20210308_02_RT",
     }
     client.execute_statement.return_value = {}
     handler(event, {})
     args, kwargs = client.execute_statement.call_args
-    acquisition = {
-        "name": "acquisition",
-        "value": {
-            "stringValue": event["date"]
-        }
-    }
+    acquisition = {"name": "acquisition", "value": {"stringValue": event["date"]}}
     assert acquisition in kwargs["parameters"]
-    scene_id = {
-        "name": "scene_id",
-        "value": {
-            "stringValue": event["scene"]
-        }
-    }
+    scene_id = {"name": "scene_id", "value": {"stringValue": event["scene"]}}
     assert scene_id in kwargs["parameters"]
     # Initial run_count should be 0.
-    run_count = {
-        "name": "run_count",
-        "value": {
-            "longValue": 0
-        }
-    }
+    run_count = {"name": "run_count", "value": {"longValue": 0}}
     assert run_count in kwargs["parameters"]
 
 
@@ -53,16 +38,11 @@ def test_handler_historic(client):
         "path": "202",
         "row": "114",
         "date": "2021-03-08",
-        "scene": "LC08_L1GT_202114_20210308_20210308_02_RT"
+        "scene": "LC08_L1GT_202114_20210308_20210308_02_RT",
     }
     client.execute_statement.return_value = {}
     handler(event, {})
     args, kwargs = client.execute_statement.call_args
 
-    historic = {
-        "name": "historic",
-        "value": {
-            "booleanValue": True
-        }
-    }
+    historic = {"name": "historic", "value": {"booleanValue": True}}
     assert historic in kwargs["parameters"]

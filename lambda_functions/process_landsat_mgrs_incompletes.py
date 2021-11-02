@@ -16,7 +16,7 @@ step_function_client = boto3.client("stepfunctions")
 
 def chunk(chunk_list, chunk_size):
     for i in range(0, len(chunk_list), chunk_size):
-        yield chunk_list[i:i + chunk_size]
+        yield chunk_list[i : i + chunk_size]
 
 
 def execute_statement(sql, sql_parameters=[]):
@@ -34,16 +34,18 @@ def convert_records(record):
     converted = {
         "MGRS": record[0]["stringValue"],
         "path": record[1]["stringValue"],
-        "date": record[2]["stringValue"]
+        "date": record[2]["stringValue"],
     }
     return converted
 
 
 def execute_step_function(chunk, submit_errors, job_stopped):
-    input = json.dumps({
-        "incompletes": chunk,
-        "fromdate": job_stopped,
-    })
+    input = json.dumps(
+        {
+            "incompletes": chunk,
+            "fromdate": job_stopped,
+        }
+    )
     try:
         step_function_client.start_execution(
             stateMachineArn=state_machine,
@@ -59,7 +61,7 @@ def handler(event, context):
     hour_delta = os.getenv("HOURS_PRIOR")
     retry_limit = int(os.getenv("RETRY_LIMIT"))
     historic = os.getenv("HISTORIC")
-    event_time = datetime.strptime(event["time"], '%Y-%m-%dT%H:%M:%SZ')
+    event_time = datetime.strptime(event["time"], "%Y-%m-%dT%H:%M:%SZ")
 
     if historic == "historic":
         historic_value = True
@@ -79,7 +81,9 @@ def handler(event, context):
     ]
 
     if hour_delta:
-        delta = (event_time - timedelta(hours=int(hour_delta))).strftime("%d-%m-%Y %H:%M:%S")
+        delta = (event_time - timedelta(hours=int(hour_delta))).strftime(
+            "%d-%m-%Y %H:%M:%S"
+        )
         delta_query = " AND ts <= TO_TIMESTAMP(:delta::text,'DD-MM-YYYY HH24:MI:SS')"
     else:
         delta = (event_time - timedelta(days=int(date_delta))).strftime("%d/%m/%Y")

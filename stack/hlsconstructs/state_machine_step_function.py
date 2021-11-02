@@ -36,9 +36,6 @@ class StateMachineStepFunction(StepFunction):
         self.steps_role.add_to_policy(
             aws_iam.PolicyStatement(
                 resources=["*"],
-                actions=[
-                    "states:DescribeExecution",
-                    "states:StopExecution"
-                ]
+                actions=["states:DescribeExecution", "states:StopExecution"],
             )
         )

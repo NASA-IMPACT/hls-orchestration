@@ -47,9 +47,6 @@ def handler(event, context):
         {"name": "jobinfo", "value": {"stringValue": jobinfostring}},
         {"name": "granule", "value": {"stringValue": event["granule"]}},
     ]
-    execute_statement(
-        q,
-        sql_parameters=sql_parameters
-    )
+    execute_statement(q, sql_parameters=sql_parameters)
     print(f"Exit Code is {exitcode}")
     return exitcode

@@ -6,7 +6,11 @@ from hlsconstructs.network import Network
 
 class Rds(core.Construct):
     def __init__(
-        self, scope: core.Construct, id: str, network: Network, **kwargs,
+        self,
+        scope: core.Construct,
+        id: str,
+        network: Network,
+        **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
 
@@ -24,12 +28,14 @@ class Rds(core.Construct):
             group_description="Security Group for RDS",
             security_group_ingress=[
                 aws_ec2.CfnSecurityGroup.IngressProperty(
-                    ip_protocol="-1", cidr_ip="0.0.0.0/0",
+                    ip_protocol="-1",
+                    cidr_ip="0.0.0.0/0",
                 )
             ],
             security_group_egress=[
                 aws_ec2.CfnSecurityGroup.EgressProperty(
-                    ip_protocol="-1", cidr_ip="0.0.0.0/0",
+                    ip_protocol="-1",
+                    cidr_ip="0.0.0.0/0",
                 )
             ],
         )

@@ -12,9 +12,7 @@ def test_handler_keyError(capsys):
     assert out == expected
 
 
-@patch(
-    "lambda_functions.execute_step_function.boto3.client"
-)
+@patch("lambda_functions.execute_step_function.boto3.client")
 def test_handler(client):
     """Test handler."""
     expected_input = (

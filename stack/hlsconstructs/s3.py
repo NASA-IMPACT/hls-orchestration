@@ -6,7 +6,11 @@ from aws_cdk import aws_iam, aws_s3, core
 # Creates new S3 bucket. If bucket already exists will connect to existing bucket.
 class S3(core.Construct):
     def __init__(
-        self, scope: core.Construct, id: str, bucket_name: str = None, **kwargs,
+        self,
+        scope: core.Construct,
+        id: str,
+        bucket_name: str = None,
+        **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
         if bucket_name is None:

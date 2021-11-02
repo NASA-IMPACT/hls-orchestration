@@ -137,7 +137,7 @@ class SentinelStepFunction(BatchStepFunction):
                             "Variable": "$",
                             "BooleanEquals": False,
                             "Next": "Error",
-                        }
+                        },
                     ],
                     "Default": "Done",
                 },

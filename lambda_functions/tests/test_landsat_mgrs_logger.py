@@ -8,9 +8,7 @@ from lambda_functions.landsat_mgrs_logger import handler
 
 
 @patch.dict(os.environ, {"HISTORIC": "historic"})
-@patch(
-    "lambda_functions.landsat_mgrs_logger.rds_client"
-)
+@patch("lambda_functions.landsat_mgrs_logger.rds_client")
 def test_handler(client):
     """Test handler."""
     event = {
@@ -77,7 +75,7 @@ def test_handler(client):
             {"name": "mgrs", "value": {"stringValue": mgrs}},
             acquisition,
             {"name": "run_count", "value": {"longValue": 0}},
-            historic
+            historic,
         ]
         insert_call = call(
             sql=sql,

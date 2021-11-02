@@ -6,5 +6,5 @@ setup(
     url="https://github.com/nasa-impact/hls-orchestration",
     author="Sean Harkins",
     license="MIT",
-    packages=["hls_lambda_layer"]
+    packages=["hls_lambda_layer"],
 )

@@ -50,7 +50,7 @@ class LandsatMGRSPartialsStepFunction(BatchStepFunction):
                         {
                             "Not": {
                                 "Variable": "$.mgrs_metadata.pathrows_string",
-                                "StringEquals": ""
+                                "StringEquals": "",
                             },
                             "Next": "GetRandomWaitTile",
                         }
@@ -66,7 +66,7 @@ class LandsatMGRSPartialsStepFunction(BatchStepFunction):
                 "WaitForTiling": {
                     "Type": "Wait",
                     "SecondsPath": "$.wait_time",
-                    "Next": "RunLandsatTile"
+                    "Next": "RunLandsatTile",
                 },
                 "RunLandsatTile": {
                     "Type": "Task",
@@ -80,44 +80,32 @@ class LandsatMGRSPartialsStepFunction(BatchStepFunction):
                             "Command": ["export && landsat-tile.sh"],
                             "Environment": [
                                 {
-                                    "Name":"PATHROW_LIST",
-                                    "Value.$": "$.mgrs_metadata.pathrows_string"
+                                    "Name": "PATHROW_LIST",
+                                    "Value.$": "$.mgrs_metadata.pathrows_string",
                                 },
                                 {
                                     "Name": "INPUT_BUCKET",
-                                    "Value": intermediate_output_bucket
+                                    "Value": intermediate_output_bucket,
                                 },
-                                {
-                                    "Name": "OUTPUT_BUCKET",
-                                    "Value": outputbucket
-                                },
+                                {"Name": "OUTPUT_BUCKET", "Value": outputbucket},
                                 {
                                     "Name": "GCC_ROLE_ARN",
                                     "Value": outputbucket_role_arn,
                                 },
-                                {
-                                    "Name": "DATE",
-                                    "Value.$": "$.date"
-                                },
-                                {
-                                    "Name": "MGRS",
-                                    "Value.$": "$.MGRS"
-                                },
-                                {
-                                    "Name": "LANDSAT_PATH",
-                                    "Value.$": "$.path"
-                                },
+                                {"Name": "DATE", "Value.$": "$.date"},
+                                {"Name": "MGRS", "Value.$": "$.MGRS"},
+                                {"Name": "LANDSAT_PATH", "Value.$": "$.path"},
                                 {
                                     "Name": "MGRS_ULX",
-                                    "Value.$": "$.mgrs_metadata.mgrs_ulx"
+                                    "Value.$": "$.mgrs_metadata.mgrs_ulx",
                                 },
                                 {
                                     "Name": "MGRS_ULY",
-                                    "Value.$": "$.mgrs_metadata.mgrs_uly"
+                                    "Value.$": "$.mgrs_metadata.mgrs_uly",
                                 },
                                 {
                                     "Name": "GIBS_OUTPUT_BUCKET",
-                                    "Value": gibs_outputbucket
+                                    "Value": gibs_outputbucket,
                                 },
                             ],
                         },

@@ -18,7 +18,7 @@ def test_handler(rds_client, cw_client):
             },
             {
                 "longValue": 10,
-            }
+            },
         ],
         [
             {
@@ -26,22 +26,12 @@ def test_handler(rds_client, cw_client):
             },
             {
                 "longValue": 20,
-            }
-        ]
-    ]
-    response = {
-        "records": records
-    }
-    list_metrics_response = {
-        "Metrics": [
-            {
-                "MetricName": "id-exit_code_0"
             },
-            {
-                "MetricName": "id-exit_code_1"
-            }
-        ]
-
+        ],
+    ]
+    response = {"records": records}
+    list_metrics_response = {
+        "Metrics": [{"MetricName": "id-exit_code_0"}, {"MetricName": "id-exit_code_1"}]
     }
     cw_client.list_metrics.return_value = list_metrics_response
     rds_client.execute_statement.return_value = response
@@ -65,7 +55,7 @@ def test_handler_not_updated(rds_client, cw_client):
             },
             {
                 "longValue": 10,
-            }
+            },
         ],
         [
             {
@@ -73,25 +63,16 @@ def test_handler_not_updated(rds_client, cw_client):
             },
             {
                 "longValue": 20,
-            }
-        ]
+            },
+        ],
     ]
-    response = {
-        "records": records
-    }
+    response = {"records": records}
     list_metrics_response = {
         "Metrics": [
-            {
-                "MetricName": "id-exit_code_0"
-            },
-            {
-                "MetricName": "id-exit_code_1"
-            },
-            {
-                "MetricName": "id-exit_code_3"
-            }
+            {"MetricName": "id-exit_code_0"},
+            {"MetricName": "id-exit_code_1"},
+            {"MetricName": "id-exit_code_3"},
         ]
-
     }
     cw_client.list_metrics.return_value = list_metrics_response
     rds_client.execute_statement.return_value = response

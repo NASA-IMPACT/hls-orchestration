@@ -49,8 +49,7 @@ def test_handler(monkeypatch):
         return ""
 
     monkeypatch.setattr(
-        lambda_functions.laads_available.s3,
-        "head_object", head_object_exists
+        lambda_functions.laads_available.s3, "head_object", head_object_exists
     )
     ret = handler(event, {})
     assert ret == response
@@ -61,9 +60,7 @@ def test_handler(monkeypatch):
         )
 
     monkeypatch.setattr(
-        lambda_functions.laads_available.s3,
-        "head_object",
-        head_object_notexists
+        lambda_functions.laads_available.s3, "head_object", head_object_notexists
     )
     ret = handler(event, {})
     response["available"] = False
@@ -75,9 +72,7 @@ def test_handler(monkeypatch):
         )
 
     monkeypatch.setattr(
-        lambda_functions.laads_available.s3,
-        "head_object",
-        head_object_exception
+        lambda_functions.laads_available.s3, "head_object", head_object_exception
     )
 
     with pytest.raises(Exception):
