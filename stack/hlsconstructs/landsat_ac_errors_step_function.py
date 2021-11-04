@@ -1,9 +1,6 @@
-from aws_cdk import (
-    aws_stepfunctions,
-    aws_iam,
-    core,
-)
 import json
+
+from aws_cdk import aws_iam, aws_stepfunctions, core
 from hlsconstructs.state_machine_step_function import StateMachineStepFunction
 
 
@@ -29,11 +26,11 @@ class LandsatACErrorsStepFunction(StateMachineStepFunction):
                         "StartAt": "ProcessError",
                         "States": {
                             "ProcessError": {
-                                "Type":"Task",
-                                "Resource":"arn:aws:states:::states:startExecution.sync",
-                                "Parameters":{
+                                "Type": "Task",
+                                "Resource": "arn:aws:states:::states:startExecution.sync",
+                                "Parameters": {
                                     "StateMachineArn": landsat_step_function_arn,
-                                    "Input":{
+                                    "Input": {
                                         "NeedCallback": False,
                                         "AWS_STEP_FUNCTIONS_STARTED_BY_EXECUTION_ID.$": "$$.Execution.Id",
                                         "sensor.$": "$.sensor",
@@ -53,7 +50,7 @@ class LandsatACErrorsStepFunction(StateMachineStepFunction):
                                         "date.$": "$.date",
                                         "scheme.$": "$.scheme",
                                         "bucket.$": "$.bucket",
-                                        "prefix.$": "$.prefix"
+                                        "prefix.$": "$.prefix",
                                     },
                                 },
                                 "Catch": [
@@ -69,8 +66,8 @@ class LandsatACErrorsStepFunction(StateMachineStepFunction):
                     },
                     "Next": "Done",
                 },
-                "Done": {"Type": "Succeed"}
-            }
+                "Done": {"Type": "Succeed"},
+            },
         }
 
         self.state_machine = aws_stepfunctions.CfnStateMachine(
@@ -85,6 +82,6 @@ class LandsatACErrorsStepFunction(StateMachineStepFunction):
                 resources=[landsat_step_function_arn],
                 actions=[
                     "states:StartExecution",
-                ]
+                ],
             )
         )

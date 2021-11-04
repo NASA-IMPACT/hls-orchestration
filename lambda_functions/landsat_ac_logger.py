@@ -1,10 +1,10 @@
 """Update landsat_ac_log table with results of landsat ac batch job."""
-import os
-import boto3
 import json
+import os
 from operator import itemgetter
-from hls_lambda_layer.hls_batch_utils import parse_jobinfo
 
+import boto3
+from hls_lambda_layer.hls_batch_utils import parse_jobinfo
 
 db_credentials_secrets_store_arn = os.getenv("HLS_SECRETS")
 database_name = os.getenv("HLS_DB_NAME")
@@ -45,16 +45,16 @@ def handler(event, context):
     )
     sql_parameters = [
         {"name": "jobinfo", "value": {"stringValue": jobinfostring}},
-        {"name": "scene", "value": {"stringValue": event["scene"]}}
+        {"name": "scene", "value": {"stringValue": event["scene"]}},
     ]
     if jobid:
         sql_parameters.append(
-            {"name": "jobid", "value": {"stringValue": jobid},},
+            {
+                "name": "jobid",
+                "value": {"stringValue": jobid},
+            },
         )
-    execute_statement(
-        q,
-        sql_parameters=sql_parameters
-    )
+    execute_statement(q, sql_parameters=sql_parameters)
 
     print(f"Exit Code is {exitcode}")
     return exitcode

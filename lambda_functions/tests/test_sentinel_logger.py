@@ -1,7 +1,9 @@
-import pytest
-import os
 import json
+import os
 from unittest.mock import patch
+
+import pytest
+
 from lambda_functions.sentinel_logger import handler
 
 
@@ -14,20 +16,10 @@ def test_handler(client):
     client.execute_statement.return_value = {}
     handler(event, {})
     args, kwargs = client.execute_statement.call_args
-    granule = {
-        "name": "granule",
-        "value": {
-            "stringValue": event["granule"]
-        }
-    }
+    granule = {"name": "granule", "value": {"stringValue": event["granule"]}}
     assert granule in kwargs["parameters"]
     # Initial run_count should be 0.
-    run_count = {
-        "name": "run_count",
-        "value": {
-            "longValue": 0
-        }
-    }
+    run_count = {"name": "run_count", "value": {"longValue": 0}}
     assert run_count in kwargs["parameters"]
 
 
@@ -42,10 +34,5 @@ def test_handler_historic(client):
     handler(event, {})
     args, kwargs = client.execute_statement.call_args
 
-    historic = {
-        "name": "historic",
-        "value": {
-            "booleanValue": True
-        }
-    }
+    historic = {"name": "historic", "value": {"booleanValue": True}}
     assert historic in kwargs["parameters"]

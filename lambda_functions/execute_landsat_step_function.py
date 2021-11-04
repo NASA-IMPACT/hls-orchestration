@@ -1,8 +1,9 @@
-import os
-import boto3
 import json
-from urllib.parse import urlparse
+import os
 from typing import Dict
+from urllib.parse import urlparse
+
+import boto3
 from botocore.errorfactory import ClientError
 from hls_lambda_layer.landsat_scene_parser import landsat_parse_scene_id
 
@@ -28,10 +29,11 @@ def handler(event: Dict, context: Dict):
     scene_meta["prefix"] = url_components.path.strip("/")
     print(scene_meta)
     # Skip unless real-time (RT) collection
-    if (scene_meta["collectionCategory"] == "RT"
-            and scene_meta["satellite"] == "08"
-            and scene_meta["processingCorrectionLevel"] == "L1TP") \
-            or historic_value == "historic":
+    if (
+        scene_meta["collectionCategory"] == "RT"
+        and scene_meta["satellite"] == "08"
+        and scene_meta["processingCorrectionLevel"] == "L1TP"
+    ) or historic_value == "historic":
         try:
             input = json.dumps(scene_meta)
             step_functions.start_execution(

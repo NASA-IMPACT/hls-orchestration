@@ -1,7 +1,8 @@
-import os
-import boto3
 import json
+import os
 from operator import itemgetter
+
+import boto3
 from hls_lambda_layer.hls_batch_utils import parse_jobinfo
 
 rds_client = boto3.client("rds-data")

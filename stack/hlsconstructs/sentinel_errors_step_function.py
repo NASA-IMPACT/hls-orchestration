@@ -1,11 +1,8 @@
-from aws_cdk import (
-    aws_stepfunctions,
-    aws_iam,
-    core,
-)
 import json
-from hlsconstructs.lambdafunc import Lambda
+
+from aws_cdk import aws_iam, aws_stepfunctions, core
 from hlsconstructs.batch_step_function import BatchStepFunction
+from hlsconstructs.lambdafunc import Lambda
 from hlsconstructs.state_machine_step_function import StateMachineStepFunction
 
 
@@ -52,7 +49,7 @@ class SentinelErrorsStepFunction(BatchStepFunction, StateMachineStepFunction):
                             "WaitForProcessSentinel": {
                                 "Type": "Wait",
                                 "SecondsPath": "$.wait_time",
-                                "Next": "ProcessSentinel"
+                                "Next": "ProcessSentinel",
                             },
                             "ProcessSentinel": {
                                 "Type": "Task",
@@ -65,10 +62,22 @@ class SentinelErrorsStepFunction(BatchStepFunction, StateMachineStepFunction):
                                     "ContainerOverrides": {
                                         "Command": ["export && sentinel.sh"],
                                         "Environment": [
-                                            {"Name": "GRANULE_LIST", "Value.$": "$.granule"},
-                                            {"Name": "OUTPUT_BUCKET", "Value": outputbucket},
-                                            {"Name": "INPUT_BUCKET", "Value": inputbucket},
-                                            {"Name": "LASRC_AUX_DIR", "Value": "/var/lasrc_aux"},
+                                            {
+                                                "Name": "GRANULE_LIST",
+                                                "Value.$": "$.granule",
+                                            },
+                                            {
+                                                "Name": "OUTPUT_BUCKET",
+                                                "Value": outputbucket,
+                                            },
+                                            {
+                                                "Name": "INPUT_BUCKET",
+                                                "Value": inputbucket,
+                                            },
+                                            {
+                                                "Name": "LASRC_AUX_DIR",
+                                                "Value": "/var/lasrc_aux",
+                                            },
                                             {
                                                 "Name": "GCC_ROLE_ARN",
                                                 "Value": outputbucket_role_arn,
@@ -103,15 +112,13 @@ class SentinelErrorsStepFunction(BatchStepFunction, StateMachineStepFunction):
                                 "Next": "SuccessState",
                                 "Retry": [retry],
                             },
-                            "SuccessState": {
-                                "Type": "Succeed"
-                            },
-                        }
+                            "SuccessState": {"Type": "Succeed"},
+                        },
                     },
-                    "Next": "Done"
+                    "Next": "Done",
                 },
-                "Done": {"Type": "Succeed"}
-            }
+                "Done": {"Type": "Succeed"},
+            },
         }
 
         self.state_machine = aws_stepfunctions.CfnStateMachine(

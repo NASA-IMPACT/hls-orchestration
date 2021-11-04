@@ -1,17 +1,22 @@
-import os
-import pytest
 import json
-from unittest.mock import patch, call
+import os
+from unittest.mock import call, patch
+
+import pytest
+
 from lambda_functions.process_landsat_ac_errors import convert_records, handler
 
 
 def test_convert_records():
     record = [
         {"longValue": 1},
-        {"stringValue": "LC08_L1TP_111070_20210701_20210701_02_RT"}
+        {"stringValue": "LC08_L1TP_111070_20210701_20210701_02_RT"},
     ]
     converted = convert_records(record)
-    assert converted["prefix"] == "collection02/level-1/standard/oli-tirs/2021/111/070/LC08_L1TP_111070_20210701_20210701_02_RT"
+    assert (
+        converted["prefix"]
+        == "collection02/level-1/standard/oli-tirs/2021/111/070/LC08_L1TP_111070_20210701_20210701_02_RT"
+    )
     assert converted["id"] == 1
 
 
@@ -23,11 +28,10 @@ def test_handler_chunking(rds_client, step_function_client):
         [
             {"longValue": 1},
             {"stringValue": "LC08_L1TP_111070_20210701_20210701_02_RT"},
-        ] for i in range(350)
+        ]
+        for i in range(350)
     ]
-    response = {
-        "records": records
-    }
+    response = {"records": records}
     rds_client.execute_statement.return_value = response
     handler({}, {})
     assert step_function_client.start_execution.call_count == 4
@@ -53,7 +57,7 @@ def test_handler_chunking(rds_client, step_function_client):
         "collectionNumber": "02",
         "collectionCategory": "RT",
         "scene": "LC08_L1TP_111070_20210701_20210701_02_RT",
-        "date": "2021-07-01"
+        "date": "2021-07-01",
     }
 
     args, kwargs = rds_client.execute_statement.call_args

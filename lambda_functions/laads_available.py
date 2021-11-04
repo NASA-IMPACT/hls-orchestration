@@ -8,12 +8,13 @@ doy as yyyydoy
 landsat as LC08_L1TP_170071_20190303_20190309_01_T1
 sentinel as S2B_MSIL1C_20190301T075849_N0207_R035_T35HKD_20190301T121820
 """
-from typing import Dict
 import os
 import re
+from datetime import date
+from typing import Dict
+
 import boto3
 from botocore.errorfactory import ClientError
-from datetime import date
 
 s3 = boto3.client("s3")
 bucket = os.getenv("LAADS_BUCKET", None)

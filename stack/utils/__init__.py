@@ -1,5 +1,5 @@
-from typing import Dict
 import json
+from typing import Dict
 
 
 def aws_env(env: Dict):

@@ -1,10 +1,14 @@
-from aws_cdk import aws_efs, aws_ec2, core, aws_iam
+from aws_cdk import aws_ec2, aws_efs, aws_iam, core
 from hlsconstructs.network import Network
 
 
 class Efs(core.Construct):
     def __init__(
-        self, scope: core.Construct, id: str, network: Network, **kwargs,
+        self,
+        scope: core.Construct,
+        id: str,
+        network: Network,
+        **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
 
@@ -23,9 +27,7 @@ class Efs(core.Construct):
             ],
         )
 
-        self.filesystem = aws_efs.CfnFileSystem(
-            self, "Efs", lifecycle_policies=None
-        )
+        self.filesystem = aws_efs.CfnFileSystem(self, "Efs", lifecycle_policies=None)
 
         mount_targets = []
         # Only create one mount target per availability zone

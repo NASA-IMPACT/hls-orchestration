@@ -1,10 +1,10 @@
 """Select failed Sentinel processing jobs and re-process them in blocks"""
-import os
-import boto3
 import json
-from botocore.errorfactory import ClientError
+import os
 from datetime import datetime, timedelta
 
+import boto3
+from botocore.errorfactory import ClientError
 
 db_credentials_secrets_store_arn = os.getenv("HLS_SECRETS")
 database_name = os.getenv("HLS_DB_NAME")
@@ -16,7 +16,7 @@ step_function_client = boto3.client("stepfunctions")
 
 def chunk(chunk_list, chunk_size):
     for i in range(0, len(chunk_list), chunk_size):
-        yield chunk_list[i:i + chunk_size]
+        yield chunk_list[i : i + chunk_size]
 
 
 def execute_statement(sql, sql_parameters=[]):
@@ -31,17 +31,16 @@ def execute_statement(sql, sql_parameters=[]):
 
 
 def convert_records(record):
-    converted = {
-        "id": record[0]["longValue"],
-        "granule": record[1]["stringValue"]
-    }
+    converted = {"id": record[0]["longValue"], "granule": record[1]["stringValue"]}
     return converted
 
 
 def execute_step_function(error_chunk, submit_errors):
-    input = json.dumps({
-        "errors": error_chunk,
-    })
+    input = json.dumps(
+        {
+            "errors": error_chunk,
+        }
+    )
     try:
         step_function_client.start_execution(
             stateMachineArn=state_machine,
@@ -76,7 +75,7 @@ def handler(event, context):
         sql_parameters=[
             {"name": "retry_limit", "value": {"longValue": retry_limit}},
             {"name": "historic_value", "value": {"booleanValue": historic_value}},
-        ]
+        ],
     )
     records = map(convert_records, response["records"])
     granule_errors = list(records)

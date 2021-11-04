@@ -1,12 +1,12 @@
-import pytest
 import json
 import os
 from unittest.mock import patch
+
+import pytest
+
 from lambda_functions.process_landsat_mgrs_incompletes import handler
 
-event = {
-    "time": "2021-01-30T12:00:00Z"
-}
+event = {"time": "2021-01-30T12:00:00Z"}
 
 
 @patch("lambda_functions.process_landsat_mgrs_incompletes.step_function_client")
@@ -19,12 +19,11 @@ def test_handler_chunking(rds_client, step_function_client):
         [
             {"stringValue": "15UUT"},
             {"stringValue": "030"},
-            {"stringValue": "2021-01-26"}
-        ] for i in range(350)
+            {"stringValue": "2021-01-26"},
+        ]
+        for i in range(350)
     ]
-    response = {
-        "records": records
-    }
+    response = {"records": records}
     rds_client.execute_statement.return_value = response
     handler(event, {})
     assert step_function_client.start_execution.call_count == 4
@@ -33,7 +32,7 @@ def test_handler_chunking(rds_client, step_function_client):
     assert input["incompletes"][0] == {
         "MGRS": "15UUT",
         "path": "030",
-        "date": "2021-01-26"
+        "date": "2021-01-26",
     }
     assert input["fromdate"] == "26/01/2021"
 
@@ -57,12 +56,11 @@ def test_handler_hours(rds_client, step_function_client):
         [
             {"stringValue": "15UUT"},
             {"stringValue": "030"},
-            {"stringValue": "2021-01-26"}
-        ] for i in range(1)
+            {"stringValue": "2021-01-26"},
+        ]
+        for i in range(1)
     ]
-    response = {
-        "records": records
-    }
+    response = {"records": records}
     rds_client.execute_statement.return_value = response
     handler(event, {})
 

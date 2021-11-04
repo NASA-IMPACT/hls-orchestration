@@ -1,12 +1,6 @@
-from aws_cdk import (
-    aws_ecr_assets,
-    aws_batch,
-    aws_ecs,
-    aws_iam,
-    aws_s3,
-    core,
-)
 import os
+
+from aws_cdk import aws_batch, aws_ecr_assets, aws_ecs, aws_iam, aws_s3, core
 
 dirname = os.path.dirname(os.path.realpath(__file__))
 
@@ -34,7 +28,10 @@ class DockerBatchJob(core.Construct):
 
         host = aws_batch.CfnJobDefinition.VolumesHostProperty(source_path="/mnt/efs")
 
-        volume = aws_batch.CfnJobDefinition.VolumesProperty(name="volume", host=host,)
+        volume = aws_batch.CfnJobDefinition.VolumesProperty(
+            name="volume",
+            host=host,
+        )
 
         scratch_host = aws_batch.CfnJobDefinition.VolumesHostProperty(
             source_path="/scratch"
@@ -59,7 +56,9 @@ class DockerBatchJob(core.Construct):
             )
 
         mount_point = aws_batch.CfnJobDefinition.MountPointsProperty(
-            source_volume=volume.name, container_path=mountpath, read_only=False,
+            source_volume=volume.name,
+            container_path=mountpath,
+            read_only=False,
         )
         scratch_mount_point = aws_batch.CfnJobDefinition.MountPointsProperty(
             source_volume=scratch_volume.name,

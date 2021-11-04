@@ -1,8 +1,8 @@
 import os
-import boto3
+from datetime import datetime, timedelta, timezone
 from typing import Dict
-from datetime import datetime, timezone, timedelta
 
+import boto3
 
 db_credentials_secrets_store_arn = os.getenv("HLS_SECRETS")
 database_name = os.getenv("HLS_DB_NAME")
@@ -37,13 +37,8 @@ def handler(event: Dict, context: Dict):
     )
 
     from_ts = str(datetime.now(timezone.utc) - timedelta(hours=1))
-    sql_parameters = [
-        {"name": "from_ts", "value": {"stringValue": from_ts}}
-    ]
-    query_response = execute_statement(
-        query,
-        sql_parameters=sql_parameters
-    )
+    sql_parameters = [{"name": "from_ts", "value": {"stringValue": from_ts}}]
+    query_response = execute_statement(query, sql_parameters=sql_parameters)
 
     updated_metrics = [
         {
@@ -63,7 +58,8 @@ def handler(event: Dict, context: Dict):
     list_metrics_response = cw_client.list_metrics(Namespace=metric_namespace)
 
     metric_names = [
-        metric["MetricName"] for metric in list_metrics_response["Metrics"]
+        metric["MetricName"]
+        for metric in list_metrics_response["Metrics"]
         if metric["MetricName"].startswith(job_id)
     ]
 
@@ -80,7 +76,4 @@ def handler(event: Dict, context: Dict):
     ]
 
     metric_data = updated_metrics + not_updated_metrics
-    cw_client.put_metric_data(
-        Namespace=metric_namespace,
-        MetricData=metric_data
-    )
+    cw_client.put_metric_data(Namespace=metric_namespace, MetricData=metric_data)

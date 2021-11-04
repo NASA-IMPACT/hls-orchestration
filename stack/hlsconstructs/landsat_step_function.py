@@ -1,11 +1,8 @@
-from aws_cdk import (
-    aws_stepfunctions,
-    aws_iam,
-    core,
-)
 import json
-from hlsconstructs.lambdafunc import Lambda
+
+from aws_cdk import aws_iam, aws_stepfunctions, core
 from hlsconstructs.batch_step_function import BatchStepFunction
+from hlsconstructs.lambdafunc import Lambda
 from hlsconstructs.state_machine_step_function import StateMachineStepFunction
 
 
@@ -97,11 +94,7 @@ class LandsatStepFunction(BatchStepFunction, StateMachineStepFunction):
                     ],
                     "Default": "Wait",
                 },
-                "Wait": {
-                    "Type": "Wait",
-                    "Seconds": 3600,
-                    "Next": "CheckLaads"
-                },
+                "Wait": {"Type": "Wait", "Seconds": 3600, "Next": "CheckLaads"},
                 "GetRandomWait": {
                     "Type": "Task",
                     "Resource": get_random_wait.function.function_arn,
@@ -111,7 +104,7 @@ class LandsatStepFunction(BatchStepFunction, StateMachineStepFunction):
                 "WaitForAc": {
                     "Type": "Wait",
                     "SecondsPath": "$.wait_time",
-                    "Next": "RunLandsatAc"
+                    "Next": "RunLandsatAc",
                 },
                 "RunLandsatAc": {
                     "Type": "Task",
@@ -124,34 +117,16 @@ class LandsatStepFunction(BatchStepFunction, StateMachineStepFunction):
                         "ContainerOverrides": {
                             "Command": ["export && landsat.sh"],
                             "Environment": [
-                                {
-                                    "Name": "INPUT_BUCKET",
-                                    "Value.$": "$.bucket"
-                                },
-                                {
-                                    "Name": "PREFIX",
-                                    "Value.$": "$.prefix"
-                                },
-                                {
-                                    "Name": "GRANULE",
-                                    "Value.$": "$.scene"
-                                },
+                                {"Name": "INPUT_BUCKET", "Value.$": "$.bucket"},
+                                {"Name": "PREFIX", "Value.$": "$.prefix"},
+                                {"Name": "GRANULE", "Value.$": "$.scene"},
                                 {
                                     "Name": "OUTPUT_BUCKET",
                                     "Value": intermediate_output_bucket,
                                 },
-                                {
-                                    "Name": "LASRC_AUX_DIR",
-                                    "Value": "/var/lasrc_aux"
-                                },
-                                {
-                                    "Name": "REPLACE_EXISTING",
-                                    "Value": replace
-                                },
-                                {
-                                    "Name": "OMP_NUM_THREADS",
-                                    "Value": "2"
-                                }
+                                {"Name": "LASRC_AUX_DIR", "Value": "/var/lasrc_aux"},
+                                {"Name": "REPLACE_EXISTING", "Value": replace},
+                                {"Name": "OMP_NUM_THREADS", "Value": "2"},
                             ],
                         },
                     },
@@ -184,11 +159,11 @@ class LandsatStepFunction(BatchStepFunction, StateMachineStepFunction):
                         "StartAt": "ProcessMGRSGrids",
                         "States": {
                             "ProcessMGRSGrids": {
-                                "Type":"Task",
-                                "Resource":"arn:aws:states:::states:startExecution.sync",
-                                "Parameters":{
+                                "Type": "Task",
+                                "Resource": "arn:aws:states:::states:startExecution.sync",
+                                "Parameters": {
                                     "StateMachineArn": landsat_mgrs_step_function_arn,
-                                    "Input":{
+                                    "Input": {
                                         "NeedCallback": False,
                                         "AWS_STEP_FUNCTIONS_STARTED_BY_EXECUTION_ID.$": "$$.Execution.Id",
                                         "MGRS.$": "$.MGRS",
@@ -196,19 +171,19 @@ class LandsatStepFunction(BatchStepFunction, StateMachineStepFunction):
                                         "date.$": "$.date",
                                     },
                                 },
-                                "Retry":[
+                                "OutputPath": "$.Output",
+                                "Catch": [
                                     {
-                                        "ErrorEquals":[
-                                            "StepFunctions.ExecutionLimitExceeded"
-                                        ]
+                                        "ErrorEquals": ["States.ALL"],
+                                        "Next": "SuccessState",
                                     }
                                 ],
-                                "OutputPath": "$.Output",
                                 "Next": "SuccessState",
                             },
                             "SuccessState": {"Type": "Succeed"},
                         },
-                    }, "Next": "CheckExitCodes",
+                    },
+                    "Next": "CheckExitCodes",
                 },
                 "CheckExitCodes": {
                     "Type": "Task",
@@ -227,7 +202,7 @@ class LandsatStepFunction(BatchStepFunction, StateMachineStepFunction):
                             "Variable": "$",
                             "BooleanEquals": False,
                             "Next": "Error",
-                        }
+                        },
                     ],
                     "Default": "Done",
                 },
@@ -254,13 +229,13 @@ class LandsatStepFunction(BatchStepFunction, StateMachineStepFunction):
                             "Variable": "$",
                             "BooleanEquals": False,
                             "Next": "Error",
-                        }
+                        },
                     ],
                     "Default": "Done",
                 },
                 "Done": {"Type": "Succeed"},
                 "Error": {"Type": "Fail"},
-            }
+            },
         }
 
         self.state_machine = aws_stepfunctions.CfnStateMachine(
@@ -275,7 +250,7 @@ class LandsatStepFunction(BatchStepFunction, StateMachineStepFunction):
                 resources=[landsat_mgrs_step_function_arn],
                 actions=[
                     "states:StartExecution",
-                ]
+                ],
             )
         )
 
