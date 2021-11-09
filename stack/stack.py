@@ -80,6 +80,9 @@ LANDSAT_HISTORIC_INCOMPLETE_CRON = getenv(
 )
 SENTINEL_ERRORS_CRON = getenv("HLS_SENTINEL_ERRORS_CRON", "cron(0 0/4 * * ? *)")
 LANDSAT_AC_ERRORS_CRON = getenv("HLS_LANDSAT_AC_ERRORS_CRON", "cron(0 16 * * ? *)")
+LANDSAT_HISTORIC_AC_ERRORS_CRON = getenv(
+    "HLS_LANDSAT_HISTORIC_AC_ERRORS_CRON", "cron(0 0/4 * * ? *)"
+)
 LANDSAT_DAYS_PRIOR = getenv("HLS_LANDSAT_DAYS_PRIOR", "4")
 LANDSAT_HISTORIC_HOURS_PRIOR = getenv("HLS_LANDSAT_HISTORIC_HOURS_PRIOR", "4")
 SENTINEL_RETRY_LIMIT = getenv("HLS_SENTINEL_RETRY_LIMIT", "3")
@@ -726,6 +729,12 @@ class HlsStack(core.Stack):
             landsat_step_function_arn=self.landsat_step_function.state_machine.ref,
         )
 
+        self.landsat_historic_ac_errors_step_function = LandsatACErrorsStepFunction(
+            self,
+            "LandsatHistoricACErrorsStateMachine",
+            landsat_step_function_arn=self.landsat_step_function_historic.state_machine.ref,
+        )
+
         self.step_function_trigger = StepFunctionTrigger(
             self,
             "SentinelStepFunctionTrigger",
@@ -826,6 +835,24 @@ class HlsStack(core.Stack):
                 "HLS_DB_NAME": self.rds.database.database_name,
                 "HLS_DB_ARN": self.rds.arn,
                 "RETRY_LIMIT": LANDSAT_RETRY_LIMIT,
+            },
+        )
+
+        self.landsat_historic_ac_errors_step_function_trigger = StepFunctionTrigger(
+            self,
+            "LandsatHistoricACErrorsStepFunctionTrigger",
+            state_machine=self.landsat_historic_ac_errors_step_function.state_machine.ref,
+            code_file="process_landsat_ac_errors.py",
+            timeout=900,
+            lambda_name="ProcessLandsatACErrors",
+            layers=[self.hls_lambda_layer],
+            cron_str=LANDSAT_HISTORIC_AC_ERRORS_CRON,
+            env_vars={
+                "HLS_SECRETS": self.rds.secret.secret_arn,
+                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_ARN": self.rds.arn,
+                "RETRY_LIMIT": LANDSAT_RETRY_LIMIT,
+                "HISTORIC": "historic",
             },
         )
 
@@ -1135,6 +1162,7 @@ class HlsStack(core.Stack):
             self.put_landsat_tile_task_cw_metric,
             self.put_sentintel_task_cw_metric,
             self.landsat_ac_errors_step_function_trigger.execute_step_function,
+            self.landsat_historic_ac_errors_step_function_trigger.execute_step_function,
         ]
         for lambda_function in lambdas:
             lambda_function.function.add_to_role_policy(self.rds.policy_statement)
