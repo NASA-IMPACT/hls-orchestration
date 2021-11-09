@@ -66,21 +66,35 @@ def execute_step_function(error_chunk, submit_errors):
 
 
 def handler(event, context):
+    historic = os.getenv("HISTORIC")
     retry_limit = int(os.getenv("RETRY_LIMIT"))
-    #  Using the view ensures we are only using records which have jobinfo
+
+    if historic == "historic":
+        historic_value = True
+    else:
+        historic_value = False
+
     q = (
-        "SELECT id, scene_id from landsat_ac_granule_log WHERE"
-        + " (jobinfo->'Container'->>'ExitCode' = '1'"
+        "SELECT id, scene_id from landsat_ac_log WHERE"
+        + " (jobinfo->'Container'->>'ExitCode' NOT IN ('0', '137', '3', '4')"
         + " or jobinfo->'Container'->>'ExitCode' is NULL)"
-        + " AND scene_id is not null AND run_count >= 1 AND"
-        + " run_count < :retry_limit::integer;"
+        + " AND run_count < :retry_limit::integer"
+        + " AND historic = :historic_value::boolean"
     )
-    response = execute_statement(
-        q,
-        sql_parameters=[
-            {"name": "retry_limit", "value": {"longValue": retry_limit}},
-        ],
-    )
+    sql_parameters = [
+        {"name": "retry_limit", "value": {"longValue": retry_limit}},
+        {"name": "historic_value", "value": {"booleanValue": historic_value}},
+    ]
+
+    if not historic_value:
+        has_run = " AND jobinfo is NOT NULL"
+    else:
+        has_run = ""
+
+    sql = q + has_run + " LIMIT 4000" + ";"
+    print(sql)
+
+    response = execute_statement(sql, sql_parameters=sql_parameters)
     records = map(convert_records, response["records"])
     granule_errors = list(records)
     error_chunks = list(chunk(granule_errors, 100))
