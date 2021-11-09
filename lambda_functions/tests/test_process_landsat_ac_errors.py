@@ -62,4 +62,18 @@ def test_handler_chunking(rds_client, step_function_client):
 
     args, kwargs = rds_client.execute_statement.call_args
     retry_limit = {"name": "retry_limit", "value": {"longValue": 3}}
+    historic = {"name": "historic_value", "value": {"booleanValue": False}}
+
     assert retry_limit in kwargs["parameters"]
+    assert historic in kwargs["parameters"]
+
+
+@patch("lambda_functions.process_landsat_ac_errors.step_function_client")
+@patch("lambda_functions.process_landsat_ac_errors.rds_client")
+@patch.dict(os.environ, {"RETRY_LIMIT": "3"})
+def test_not_historic(rds_client, step_function_client):
+    handler({}, {})
+    args, kwargs = rds_client.execute_statement.call_args
+    historic = {"name": "historic_value", "value": {"booleanValue": False}}
+    assert historic in kwargs["parameters"]
+    assert " AND jobinfo is NOT NULL" in kwargs["sql"]
