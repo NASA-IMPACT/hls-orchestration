@@ -54,6 +54,13 @@ def handler(event, context):
                 "value": {"stringValue": jobid},
             },
         )
+    else:
+        sql_parameters.append(
+            {
+                "name": "jobid",
+                "value": {"isNull": True},
+            },
+        )
     execute_statement(q, sql_parameters=sql_parameters)
 
     print(f"Exit Code is {exitcode}")

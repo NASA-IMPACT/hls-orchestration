@@ -81,6 +81,10 @@ def test_handler_no_jobid(client):
         "name": "scene",
         "value": {"stringValue": "LC08_L1TP_127010_20200527_20200527_02_RT"},
     }
+    null_jobid = {
+        "name": "jobid",
+        "value": {"isNull": True},
+    }
     assert scene in kwargs["parameters"]
-    assert len(kwargs["parameters"]) == 2
+    assert null_jobid in kwargs["parameters"]
     assert output == "nocode"
