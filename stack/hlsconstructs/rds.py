@@ -79,6 +79,12 @@ class Rds(core.Construct):
                 ],
             ),
             vpc_security_group_ids=[self.security_group.ref],
+            scaling_configuration=aws_rds.CfnDBCluster.ScalingConfigurationProperty(
+                auto_pause=True,
+                max_capacity=32,
+                min_capacity=8,
+                seconds_until_auto_pause=6000,
+            ),
         )
 
         region = core.Aws.REGION
