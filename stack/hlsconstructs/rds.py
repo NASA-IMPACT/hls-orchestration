@@ -83,7 +83,7 @@ class Rds(core.Construct):
                 auto_pause=True,
                 max_capacity=32,
                 min_capacity=8,
-                seconds_until_auto_pause=6000,
+                seconds_until_auto_pause=600,
             ),
         )
 
