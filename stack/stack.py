@@ -71,8 +71,8 @@ LAADS_ECR_URI = getenv(
     "HLS_LAADS_ECR_URI",
     "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-laads:latest",
 )
-RDS_MIN_CAPACITY = getenv("HLS_RDS_MIN_CAPACITY", 4)
-RDS_MAX_CAPACITY = getenv("HLS_RDS_MAX_CAPACITY", 8)
+RDS_MIN_CAPACITY = int(getenv("HLS_RDS_MIN_CAPACITY", 4))
+RDS_MAX_CAPACITY = int(getenv("HLS_RDS_MAX_CAPACITY", 8))
 
 
 # Cron settings
