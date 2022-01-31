@@ -10,6 +10,8 @@ class Rds(core.Construct):
         scope: core.Construct,
         id: str,
         network: Network,
+        min_capacity: int,
+        max_capacity: int,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -81,8 +83,8 @@ class Rds(core.Construct):
             vpc_security_group_ids=[self.security_group.ref],
             scaling_configuration=aws_rds.CfnDBCluster.ScalingConfigurationProperty(
                 auto_pause=True,
-                max_capacity=64,
-                min_capacity=16,
+                max_capacity=max_capacity,
+                min_capacity=min_capacity,
                 seconds_until_auto_pause=600,
             ),
         )

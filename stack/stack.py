@@ -71,6 +71,9 @@ LAADS_ECR_URI = getenv(
     "HLS_LAADS_ECR_URI",
     "018923174646.dkr.ecr.us-west-2.amazonaws.com/hls-laads:latest",
 )
+RDS_MIN_CAPACITY = int(getenv("HLS_RDS_MIN_CAPACITY", 4))
+RDS_MAX_CAPACITY = int(getenv("HLS_RDS_MAX_CAPACITY", 8))
+
 
 # Cron settings
 LAADS_CRON = getenv("HLS_LAADS_CRON", "cron(0 0/12 * * ? *)")
@@ -104,6 +107,7 @@ LAADS_BUCKET = f"{STACKNAME}-laads-bucket"
 LANDSAT_INTERMEDIATE_OUTPUT_BUCKET = f"{STACKNAME}-landsat-intermediate-output"
 GIBS_INTERMEDIATE_OUTPUT_BUCKET = f"{STACKNAME}-gibs-intermediate-output"
 LANDSAT_INPUT_BUCKET_HISTORIC = f"{STACKNAME}-landsat-input-historic"
+
 
 try:
     MAXV_CPUS = int(getenv("HLS_MAXV_CPUS", 1200))
@@ -185,7 +189,13 @@ class HlsStack(core.Stack):
 
         self.efs = Efs(self, "Efs", network=self.network)
 
-        self.rds = Rds(self, "Rds", network=self.network)
+        self.rds = Rds(
+            self,
+            "Rds",
+            network=self.network,
+            min_capacity=RDS_MIN_CAPACITY,
+            max_capacity=RDS_MAX_CAPACITY,
+        )
 
         self.rds_bootstrap = Lambda(
             self,
