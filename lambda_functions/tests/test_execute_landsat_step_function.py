@@ -48,7 +48,7 @@ def test_handler(client):
 
 
 @patch("lambda_functions.execute_landsat_step_function.boto3.client")
-def test_handler_non_RT(client):
+def test_handler_08_non_RT(client):
     """Test handler."""
     message = {
         "landsat_product_id": "LC08_L1TP_197119_20210201_20210302_02_T2",
@@ -61,7 +61,7 @@ def test_handler_non_RT(client):
 
 
 @patch("lambda_functions.execute_landsat_step_function.boto3.client")
-def test_handler_non_08(client):
+def test_handler_07(client):
     """Test handler."""
     message = {
         "landsat_product_id": "LE07_L1TP_184023_20210302_20210303_02_RT",
@@ -80,6 +80,19 @@ def test_handler_historic(client):
     message = {
         "landsat_product_id": "LE07_L1TP_184023_20210302_20210303_02_T1",
         "s3_location": "s3://usgs-landsat/collection02/level-1/standard/etm/2021/184/023/LE07_L1TP_184023_20210302_20210303_02_T1",
+    }
+    message = json.dumps(message)
+    event = {"Records": [{"Sns": {"Message": message}}]}
+    handler(event, {})
+    client.return_value.start_execution.assert_called_once()
+
+
+@patch("lambda_functions.execute_landsat_step_function.boto3.client")
+def test_handler_09(client):
+    """Test handler."""
+    message = {
+        "landsat_product_id": "LC09_L1TP_007029_20220329_20220329_02_T1",
+        "s3_location": "s3://usgs-landsat/collection02/level-1/standard/oli-tirs/2022/007/029/LC09_L1TP_007029_20220329_20220329_02_T1/",
     }
     message = json.dumps(message)
     event = {"Records": [{"Sns": {"Message": message}}]}

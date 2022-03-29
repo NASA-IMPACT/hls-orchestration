@@ -28,12 +28,19 @@ def handler(event: Dict, context: Dict):
     scene_meta["bucket"] = url_components.netloc
     scene_meta["prefix"] = url_components.path.strip("/")
     print(scene_meta)
-    # Skip unless real-time (RT) collection
+    # Landsat 08 uses RT processing while Landsat 9 goes directly to T1.
     if (
-        scene_meta["collectionCategory"] == "RT"
-        and scene_meta["satellite"] == "08"
-        and scene_meta["processingCorrectionLevel"] == "L1TP"
-    ) or historic_value == "historic":
+        (
+            scene_meta["satellite"] == "08"
+            and scene_meta["collectionCategory"] == "RT"
+            and scene_meta["processingCorrectionLevel"] == "L1TP"
+        )
+        or (
+            scene_meta["satellite"] == "09"
+            and scene_meta["processingCorrectionLevel"] == "L1TP"
+        )
+        or historic_value == "historic"
+    ):
         try:
             input = json.dumps(scene_meta)
             step_functions.start_execution(
