@@ -70,7 +70,9 @@ class Batch(core.Construct):
                     "CloudWatchAgentServerPolicy"
                 ),
             ],
-            inline_policies=[efs_policy_document],
+            inline_policies={
+                "efs_document": efs_policy_document
+            }
         )
 
         ecs_instance_profile = aws_iam.CfnInstanceProfile(
