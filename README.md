@@ -4,6 +4,11 @@ AWS Stack for processing HLS data.
 
 ![Alt text](/docs/HLS_architecture.png)
 
+For more detailed data flow diagrams and architecture see [architecture](/docs/architecture.md).
+
+For more details about all of the HLS project's components see [hls-project](https://github.com/nasa-impact/hls-project).
+
+
 ### Requirements
 Python>=3.7 \
 tox \
