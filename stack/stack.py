@@ -144,7 +144,7 @@ class HlsStack(core.Stack):
             self.node.apply_aspect(PermissionBoundaryAspect(boundary_arn))
         else:
             vpcid = None
-            image_id = "ami-0d034e17dea566f28"
+            image_id = "ami-0d927e3ac55a7b26f"
 
         self.network = Network(self, "Network", vpcid=vpcid)
 
