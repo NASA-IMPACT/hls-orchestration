@@ -136,6 +136,7 @@ class Batch(core.Construct):
                 version=launch_template.attr_latest_version_number,
             )
         )
+        print(launch_template_props)
         if image_id is None:
             image_id = (
                 aws_ecs.EcsOptimizedImage.amazon_linux2().get_image(self).image_id
@@ -147,7 +148,7 @@ class Batch(core.Construct):
             image_id=image_id,
             instance_role=ecs_instance_profile.ref,
             instance_types=instance_types,
-            launch_template=launch_template_props,
+            #  launch_template=launch_template_props,
             maxv_cpus=maxv_cpus,
             minv_cpus=0,
             security_group_ids=[self.ecs_host_security_group.ref],
