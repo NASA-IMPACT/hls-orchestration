@@ -48,15 +48,15 @@ class Batch(core.Construct):
             ],
         )
 
-        efs_policy_statement = aws_iam.PolicyStatement(
-            resources=["*"],
-            actions=[
-                "elasticfilesystem:DescribeMountTargets",
-                "elasticfilesystem:DescribeFileSystems",
-            ],
-        )
+        #  efs_policy_statement = aws_iam.PolicyStatement(
+        #  resources=["*"],
+        #  actions=[
+        #  "elasticfilesystem:DescribeMountTargets",
+        #  "elasticfilesystem:DescribeFileSystems",
+        #  ],
+        #  )
 
-        efs_policy_document = aws_iam.PolicyDocument(statements=[efs_policy_statement])
+        #  efs_policy_document = aws_iam.PolicyDocument(statements=[efs_policy_statement])
 
         self.ecs_instance_role = aws_iam.Role(
             self,
@@ -70,7 +70,7 @@ class Batch(core.Construct):
                     "CloudWatchAgentServerPolicy"
                 ),
             ],
-            inline_policies={"AllowEFS": efs_policy_document},
+            #  inline_policies={"AllowEFS": efs_policy_document},
         )
 
         ecs_instance_profile = aws_iam.CfnInstanceProfile(
