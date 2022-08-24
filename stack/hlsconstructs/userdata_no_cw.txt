@@ -8,6 +8,7 @@ packages:
 - mdadm
 
 runcmd:
+- yum update -y --exclude="chrony*"
 - ephemeral_disks=$(realpath -P  /dev/disk/by-id/nvme*Instance_Storage* | uniq)
 - ephemeral_disks_count=$(echo "$ephemeral_disks" | wc -w)
 - scratch_fs=ext4
@@ -35,7 +36,6 @@ runcmd:
 Content-Type: text/cloud-boothook; charset="us-ascii"
 
 # Install amazon-efs-utils
-cloud-init-per once yum_update yum update -y
 cloud-init-per once install_amazon-efs-utils yum install -y amazon-efs-utils
 
 # Create /efs folder
