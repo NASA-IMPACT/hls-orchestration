@@ -13,6 +13,8 @@ jobdefinition = os.getenv("HLSSTACK_SENTINELJOBDEFINITION")
 #  Short running granule
 #  S2B_MSIL1C_20200806T173909_N0209_R098_T13TFN_20200806T195018
 
+run_id = sys.argv[1]
+
 
 def submit_job(granule_id):
     response = client.submit_job(
@@ -25,7 +27,7 @@ def submit_job(granule_id):
                 {"name": "GRANULE_LIST", "value": granule_id},
                 {"name": "INPUT_BUCKET", "value": f"{input_bucket}/cloud_free_google"},
                 {"name": "LASRC_AUX_DIR", "value": "/var/lasrc_aux"},
-                {"name": "DEBUG_BUCKET", "value": "hls-debug-output"},
+                {"name": "DEBUG_BUCKET", "value": f"hls-debug-output/{run_id}"},
                 {"name": "OMP_NUM_THREADS", "value": "2"},
                 {"name": "REPLACE_EXISTING", "value": "replace"},
             ],
@@ -34,10 +36,12 @@ def submit_job(granule_id):
     print(response)
 
 
-if len(sys.argv) > 1:
-    submit_job(sys.argv[1])
+if len(sys.argv) == 3:
+    submit_job(sys.argv[2])
 else:
     granule_list = bucket.objects.filter(Delimiter="/", Prefix="cloud_free_google/")
     for granule in granule_list:
         granule_id = os.path.splitext(granule.key.split("/")[1])[0]
-        submit_job(granule_id)
+        if len(granule_id) > 0:
+            print(granule_id)
+            submit_job(granule_id)
