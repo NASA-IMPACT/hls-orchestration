@@ -29,6 +29,10 @@ def submit_job(granule_id):
                 {"name": "DEBUG_BUCKET", "value": f"hls-debug-output/{run_id}"},
                 {"name": "OMP_NUM_THREADS", "value": "2"},
                 {"name": "REPLACE_EXISTING", "value": "replace"},
+                {
+                    "name": "GCC_ROLE_ARN",
+                    "value": "arn:aws:iam::611670965994:role/hls-gcc-xaccount-s3-access",
+                },
             ],
         },
     )
