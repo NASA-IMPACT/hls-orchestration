@@ -134,6 +134,8 @@ if os.path.isfile(granules):
         process_mgrs(tile, date)
 else:
     components = granules.split("_")
-    tile = components[5][1:]
-    date = components[2][0:8]
-    process_mgrs(tile, date)
+    path = components[2][0:3]
+    row = components[2][3:6]
+    date = components[3]
+    result = handler.handler({"path": path, "row": row}, {})
+    process_mgrs(result["mgrs"][0], date)
