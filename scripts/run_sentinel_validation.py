@@ -13,10 +13,15 @@ run_id = sys.argv[1]
 input_bucket = sys.argv[2]
 granules = sys.argv[3]
 
-if len(sys.argv) == 5:
+if len(sys.argv) >= 5:
     jobdefinition = sys.argv[4]
 else:
     jobdefinition = os.getenv("HLSSTACK_SENTINELJOBDEFINITION")
+
+if len(sys.argv) == 6:
+    aux_dir = "/var/lasrc_aux/viirs"
+else:
+    aux_dir = "/var/lasrc_aux"
 
 
 def submit_job(granule_id):
@@ -29,7 +34,7 @@ def submit_job(granule_id):
             "environment": [
                 {"name": "GRANULE_LIST", "value": granule_id},
                 {"name": "INPUT_BUCKET", "value": input_bucket},
-                {"name": "LASRC_AUX_DIR", "value": "/var/lasrc_aux"},
+                {"name": "LASRC_AUX_DIR", "value": aux_dir},
                 {"name": "DEBUG_BUCKET", "value": f"hls-debug-output/{run_id}"},
                 {"name": "OMP_NUM_THREADS", "value": "2"},
                 {"name": "REPLACE_EXISTING", "value": "replace"},

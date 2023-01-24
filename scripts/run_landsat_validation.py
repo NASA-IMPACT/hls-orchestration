@@ -17,7 +17,6 @@ s3_client = boto3.client("s3")
 batch_client = boto3.client("batch")
 
 ac_jobqueue = os.getenv("HLSSTACK_LANDSATACJOBQUEUEEXPORT")
-ac_jobdefinition = os.getenv("HLSSTACK_LANDSATJOBDEFINITION")
 tile_jobqueue = os.getenv("HLSSTACK_LANDSATTILEJOBQUEUEEXPORT")
 tile_jobdefinition = os.getenv("HLSSTACK_LANDSATTILEJOBDEFINITION")
 inputbucket = "usgs-landsat"
@@ -25,6 +24,16 @@ s3_basepath = "collection02/level-1/standard/oli-tirs"
 
 run_id = sys.argv[1]
 granules = sys.argv[2]
+
+if len(sys.argv) >= 4:
+    ac_jobdefinition = sys.argv[3]
+else:
+    ac_jobdefinition = os.getenv("HLSSTACK_LANDSATJOBDEFINITION")
+
+if len(sys.argv) == 5:
+    aux_dir = "/var/lasrc_aux/viirs"
+else:
+    aux_dir = "/var/lasrc_aux"
 
 ac_jobids = {}
 
@@ -41,7 +50,7 @@ def submit_ac_job(scene_id, path, row, year):
             "environment": [
                 {"name": "GRANULE", "value": scene_id},
                 {"name": "PREFIX", "value": prefix},
-                {"name": "LASRC_AUX_DIR", "value": "/var/lasrc_aux"},
+                {"name": "LASRC_AUX_DIR", "value": aux_dir},
                 {"name": "OUTPUT_BUCKET", "value": f"hls-debug-output/{run_id}"},
                 {"name": "INPUT_BUCKET", "value": inputbucket},
                 {"name": "OMP_NUM_THREADS", "value": "2"},
