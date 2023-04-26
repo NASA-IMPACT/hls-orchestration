@@ -1,3 +1,4 @@
+import argparse
 import itertools
 import os
 import random
@@ -22,15 +23,26 @@ tile_jobdefinition = os.getenv("HLSSTACK_LANDSATTILEJOBDEFINITION")
 inputbucket = "usgs-landsat"
 s3_basepath = "collection02/level-1/standard/oli-tirs"
 
-run_id = sys.argv[1]
-granules = sys.argv[2]
+parser = argparse.ArgumentParser()
+parser.add_argument("--run_id", help="Output bucket key")
+parser.add_argument("--granules", help="Granule or list of granules")
+parser.add_argument("--ignore", help="Upstream Landsat granules to ignore")
+parser.add_argument("--ac_jobdefinition", help="AC Job Definition")
+parser.add_argument("--use_viirs", help="Use viirs")
 
-if len(sys.argv) >= 4:
-    ac_jobdefinition = sys.argv[3]
+args = parser.parse_args()
+run_id = args.run_id
+granules = args.granules
+
+if args.ignore:
+    ignore = args.ignore
+else:
+    ignore = []
+if args.ac_jobdefinition:
+    ac_jobdefinition = args.ac_jobdefinition
 else:
     ac_jobdefinition = os.getenv("HLSSTACK_LANDSATJOBDEFINITION")
-
-if len(sys.argv) == 5:
+if args.use_viirs:
     aux_dir = "/var/lasrc_aux/viirs"
 else:
     aux_dir = "/var/lasrc_aux"
@@ -55,6 +67,7 @@ def submit_ac_job(scene_id, path, row, year):
                 {"name": "INPUT_BUCKET", "value": inputbucket},
                 {"name": "OMP_NUM_THREADS", "value": "2"},
                 {"name": "REPLACE_EXISTING", "value": "replace"},
+                {"name": "USE_ORIG_AERO", "value": "--use_orig_aero"},
             ],
         },
     )
@@ -91,7 +104,7 @@ def submit_tile_job(
     return response
 
 
-def process_mgrs(mgrs_tile, date):
+def process_mgrs(mgrs_tile, date, ignore):
     print(mgrs_tile)
     event = {"MGRS": mgrs_tile}
     mgrs_result = handler.handler(event, {})
@@ -117,18 +130,21 @@ def process_mgrs(mgrs_tile, date):
             ]
             if len(updated_key) > 0:
                 scene_id = updated_key[0].split("/")[-2]
-                print(scene_id)
-                valid_pathrows.append(pathrow)
-                date_pathrow = f"{date}_{pathrow}"
-                if date_pathrow not in ac_jobids:
-                    batch_response = submit_ac_job(scene_id, path, row, year)
-                    ac_jobids[date_pathrow] = batch_response.get("jobId")
-                ac_job_dependencies.append(
-                    {"jobId": ac_jobids[date_pathrow], "type": "N_TO_N"}
-                )
+                if scene_id not in ignore:
+                    print(scene_id)
+                    valid_pathrows.append(pathrow)
+                    date_pathrow = f"{date}_{pathrow}"
+                    if date_pathrow not in ac_jobids:
+                        batch_response = submit_ac_job(scene_id, path, row, year)
+                        ac_jobids[date_pathrow] = batch_response.get("jobId")
+                    ac_job_dependencies.append(
+                        {"jobId": ac_jobids[date_pathrow], "type": "N_TO_N"}
+                    )
+                else:
+                    print(f"Skipping {scene_id}")
 
-    landsat_path = valid_pathrows[0][:3]
     print(valid_pathrows)
+    landsat_path = valid_pathrows[0][:3]
     submit_tile_job(
         valid_pathrows, mgrs_tile, mgrs_result, landsat_path, ac_job_dependencies, date
     )
@@ -150,4 +166,4 @@ else:
     row = components[2][3:6]
     date = components[3]
     result = handler.handler({"path": path, "row": row}, {})
-    process_mgrs(result["mgrs"][0], date)
+    process_mgrs(result["mgrs"][0], date, ignore)
