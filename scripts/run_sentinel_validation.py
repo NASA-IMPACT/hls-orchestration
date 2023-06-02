@@ -1,3 +1,4 @@
+import argparse
 import os
 import random
 import sys
@@ -19,6 +20,26 @@ else:
     jobdefinition = os.getenv("HLSSTACK_SENTINELJOBDEFINITION")
 
 if len(sys.argv) == 6:
+    aux_dir = "/var/lasrc_aux/viirs"
+else:
+    aux_dir = "/var/lasrc_aux"
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--run_id", help="Output bucket key")
+parser.add_argument("--granules", help="Granule or list of granules")
+parser.add_argument("--jobdefinition", help="Job Definition")
+parser.add_argument("--use_viirs", help="Use viirs")
+
+args = parser.parse_args()
+run_id = args.run_id
+granules = args.granules
+
+if args.jobdefinition:
+    jobdefinition = args.jobdefinition
+else:
+    jobdefinition = os.getenv("HLSSTACK_SENTINELJOBDEFINITION")
+if args.use_viirs:
     aux_dir = "/var/lasrc_aux/viirs"
 else:
     aux_dir = "/var/lasrc_aux"
