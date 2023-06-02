@@ -10,29 +10,17 @@ jobqueue = os.getenv("HLSSTACK_SENTINELJOBQUEUEEXPORT")
 #  Short running granule
 #  S2B_MSIL1C_20200806T173909_N0209_R098_T13TFN_20200806T195018
 
-run_id = sys.argv[1]
-input_bucket = sys.argv[2]
-granules = sys.argv[3]
-
-if len(sys.argv) >= 5:
-    jobdefinition = sys.argv[4]
-else:
-    jobdefinition = os.getenv("HLSSTACK_SENTINELJOBDEFINITION")
-
-if len(sys.argv) == 6:
-    aux_dir = "/var/lasrc_aux/viirs"
-else:
-    aux_dir = "/var/lasrc_aux"
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--run_id", help="Output bucket key")
+parser.add_argument("--input_bucket", help="Sentinel file source")
 parser.add_argument("--granules", help="Granule or list of granules")
 parser.add_argument("--jobdefinition", help="Job Definition")
 parser.add_argument("--use_viirs", help="Use viirs")
 
 args = parser.parse_args()
 run_id = args.run_id
+input_bucket = args.input_bucket
 granules = args.granules
 
 if args.jobdefinition:
