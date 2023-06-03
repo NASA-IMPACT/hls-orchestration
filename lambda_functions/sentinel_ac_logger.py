@@ -38,15 +38,36 @@ def handler(event, context):
     jobinfo, jobinfostring, exitcode = itemgetter(
         "jobinfo", "jobinfostring", "exitcode"
     )(parsed_info)
+    print(f"Exit Code is {exitcode}")
+
+    succeeded = False
+    expected_error = False
+    unexpected_error = True
+
+    if exitcode == 0:
+        succeeded = True
+        unexpected_error = False
+    elif exitcode in [137, 3, 4]:
+        succeeded = False
+        expected_error = True
+        unexpected_error = False
+    else:
+        succeeded = False
+        expected_error = False
+        unexpected_error = True
+
     q = (
-        "UPDATE sentinel_log SET (jobinfo, run_count) ="
-        + " (:jobinfo::jsonb, run_count + 1)"
+        "UPDATE sentinel_log SET"
+        + " (jobinfo, run_count, succeeded, expected_error, unexpected_error) ="
+        + " (:jobinfo::jsonb, run_count + 1, :succeeded::boolean, expected_error::boolean, unexpected_error::boolean)"
         + " WHERE granule = :granule::text"
     )
     sql_parameters = [
         {"name": "jobinfo", "value": {"stringValue": jobinfostring}},
         {"name": "granule", "value": {"stringValue": event["granule"]}},
+        {"name": "succeeded", "value": {"booleanValue": succeeded}},
+        {"name": "expected_error", "value": {"booleanValue": expected_error}},
+        {"name": "unexpected_error", "value": {"booleanValue": unexpected_error}},
     ]
     execute_statement(q, sql_parameters=sql_parameters)
-    print(f"Exit Code is {exitcode}")
     return exitcode
