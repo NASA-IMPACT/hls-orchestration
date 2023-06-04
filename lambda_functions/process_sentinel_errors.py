@@ -62,12 +62,10 @@ def handler(event, context):
 
     q = (
         "SELECT id, granule from sentinel_log WHERE"
-        + " (jobinfo->'Container'->>'ExitCode' NOT IN ('0', '137', '3', '4')"
-        + " or jobinfo->'Container'->>'ExitCode' is NULL)"
-        + " AND jobinfo is NOT NULL"
+        + " unexpected_error"
         + " AND run_count < :retry_limit::integer"
         + " AND historic = :historic_value::boolean"
-        + " LIMIT 4000;"
+        + " LIMIT 1000;"
     )
     print(q)
     response = execute_statement(
