@@ -446,7 +446,7 @@ class HlsStack(core.Stack):
         self.update_sentinel_failure = Lambda(
             self,
             "UpdateSentinelFailure",
-            code_file="sentinel_ac_logger.py",
+            code_file="update_sentinel_failure.py",
             env={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
                 "HLS_DB_NAME": self.rds.database.database_name,
@@ -475,77 +475,77 @@ class HlsStack(core.Stack):
             timeout=900,
         )
 
-        self.put_landsat_task_cw_metric = Lambda(
-            self,
-            "PutLandsatTaskCWMetric",
-            code_file="put_exit_code_cw_metric.py",
-            env={
-                "HLS_SECRETS": self.rds.secret.secret_arn,
-                "HLS_DB_NAME": self.rds.database.database_name,
-                "HLS_DB_ARN": self.rds.arn,
-                "JOB_ID": f"{STACKNAME}_landsat_ac",
-                "TABLE_NAME": "landsat_ac_granule_log",
-            },
-            timeout=900,
-        )
-        self.put_landsat_tile_task_cw_metric = Lambda(
-            self,
-            "PutLandsatTileTaskCWMetric",
-            code_file="put_exit_code_cw_metric.py",
-            env={
-                "HLS_SECRETS": self.rds.secret.secret_arn,
-                "HLS_DB_NAME": self.rds.database.database_name,
-                "HLS_DB_ARN": self.rds.arn,
-                "JOB_ID": f"{STACKNAME}_landsat_tile",
-                "TABLE_NAME": "landsat_mgrs_granule_log",
-            },
-            timeout=900,
-        )
-        self.put_sentintel_task_cw_metric = Lambda(
-            self,
-            "PutSentinelTaskCWMetric",
-            code_file="put_exit_code_cw_metric.py",
-            env={
-                "HLS_SECRETS": self.rds.secret.secret_arn,
-                "HLS_DB_NAME": self.rds.database.database_name,
-                "HLS_DB_ARN": self.rds.arn,
-                "JOB_ID": f"{STACKNAME}_sentinel",
-                "TABLE_NAME": "sentinel_granule_log",
-            },
-            timeout=900,
-        )
-        self.put_metric_policy = aws_iam.PolicyStatement(
-            resources=["*"],
-            actions=[
-                "cloudwatch:PutMetricData",
-                "cloudwatch:ListMetrics",
-            ],
-        )
-        self.put_landsat_task_cw_metric.function.add_to_role_policy(
-            self.put_metric_policy
-        )
-        self.put_landsat_tile_task_cw_metric.function.add_to_role_policy(
-            self.put_metric_policy
-        )
-        self.put_sentintel_task_cw_metric.function.add_to_role_policy(
-            self.put_metric_policy
-        )
-        self.put_metric_cron_rule = aws_events.Rule(
-            self,
-            "Rule",
-            schedule=aws_events.Schedule.expression("cron(0/15 * * * ? *)"),
-            targets=[
-                aws_events_targets.LambdaFunction(
-                    self.put_landsat_task_cw_metric.function
-                ),
-                aws_events_targets.LambdaFunction(
-                    self.put_landsat_tile_task_cw_metric.function
-                ),
-                aws_events_targets.LambdaFunction(
-                    self.put_sentintel_task_cw_metric.function
-                ),
-            ],
-        )
+        #  self.put_landsat_task_cw_metric = Lambda(
+        #  self,
+        #  "PutLandsatTaskCWMetric",
+        #  code_file="put_exit_code_cw_metric.py",
+        #  env={
+        #  "HLS_SECRETS": self.rds.secret.secret_arn,
+        #  "HLS_DB_NAME": self.rds.database.database_name,
+        #  "HLS_DB_ARN": self.rds.arn,
+        #  "JOB_ID": f"{STACKNAME}_landsat_ac",
+        #  "TABLE_NAME": "landsat_ac_granule_log",
+        #  },
+        #  timeout=900,
+        #  )
+        #  self.put_landsat_tile_task_cw_metric = Lambda(
+        #  self,
+        #  "PutLandsatTileTaskCWMetric",
+        #  code_file="put_exit_code_cw_metric.py",
+        #  env={
+        #  "HLS_SECRETS": self.rds.secret.secret_arn,
+        #  "HLS_DB_NAME": self.rds.database.database_name,
+        #  "HLS_DB_ARN": self.rds.arn,
+        #  "JOB_ID": f"{STACKNAME}_landsat_tile",
+        #  "TABLE_NAME": "landsat_mgrs_granule_log",
+        #  },
+        #  timeout=900,
+        #  )
+        #  self.put_sentintel_task_cw_metric = Lambda(
+        #  self,
+        #  "PutSentinelTaskCWMetric",
+        #  code_file="put_exit_code_cw_metric.py",
+        #  env={
+        #  "HLS_SECRETS": self.rds.secret.secret_arn,
+        #  "HLS_DB_NAME": self.rds.database.database_name,
+        #  "HLS_DB_ARN": self.rds.arn,
+        #  "JOB_ID": f"{STACKNAME}_sentinel",
+        #  "TABLE_NAME": "sentinel_granule_log",
+        #  },
+        #  timeout=900,
+        #  )
+        #  self.put_metric_policy = aws_iam.PolicyStatement(
+        #  resources=["*"],
+        #  actions=[
+        #  "cloudwatch:PutMetricData",
+        #  "cloudwatch:ListMetrics",
+        #  ],
+        #  )
+        #  self.put_landsat_task_cw_metric.function.add_to_role_policy(
+        #  self.put_metric_policy
+        #  )
+        #  self.put_landsat_tile_task_cw_metric.function.add_to_role_policy(
+        #  self.put_metric_policy
+        #  )
+        #  self.put_sentintel_task_cw_metric.function.add_to_role_policy(
+        #  self.put_metric_policy
+        #  )
+        #  self.put_metric_cron_rule = aws_events.Rule(
+        #  self,
+        #  "Rule",
+        #  schedule=aws_events.Schedule.expression("cron(0/15 * * * ? *)"),
+        #  targets=[
+        #  aws_events_targets.LambdaFunction(
+        #  self.put_landsat_task_cw_metric.function
+        #  ),
+        #  aws_events_targets.LambdaFunction(
+        #  self.put_landsat_tile_task_cw_metric.function
+        #  ),
+        #  aws_events_targets.LambdaFunction(
+        #  self.put_sentintel_task_cw_metric.function
+        #  ),
+        #  ],
+        #  )
 
         self.laads_cron = BatchCron(
             self,
@@ -1168,9 +1168,9 @@ class HlsStack(core.Stack):
             self.sentinel_historic_errors_step_function_trigger.execute_step_function,
             self.landsat_logger,
             self.landsat_logger_historic,
-            self.put_landsat_task_cw_metric,
-            self.put_landsat_tile_task_cw_metric,
-            self.put_sentintel_task_cw_metric,
+            #  self.put_landsat_task_cw_metric,
+            #  self.put_landsat_tile_task_cw_metric,
+            #  self.put_sentintel_task_cw_metric,
             self.landsat_ac_errors_step_function_trigger.execute_step_function,
             self.landsat_historic_ac_errors_step_function_trigger.execute_step_function,
         ]
