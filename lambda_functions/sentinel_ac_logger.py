@@ -56,15 +56,21 @@ def handler(event, context):
         expected_error = False
         unexpected_error = True
 
+    if "id" in event:
+        selector_string = " WHERE id = :selector::text"
+        selector_value = event["id"]
+    else:
+        selector_string = " WHERE granule = :selector::text"
+        selector_value = event["granule"]
     q = (
         "UPDATE sentinel_log SET"
         + " (jobinfo, run_count, succeeded, expected_error, unexpected_error) ="
         + " (:jobinfo::jsonb, run_count + 1, :succeeded::boolean, expected_error::boolean, unexpected_error::boolean)"
-        + " WHERE granule = :granule::text"
+        + selector_string
     )
     sql_parameters = [
         {"name": "jobinfo", "value": {"stringValue": jobinfostring}},
-        {"name": "granule", "value": {"stringValue": event["granule"]}},
+        {"name": "selector", "value": {"stringValue": selector_value}},
         {"name": "succeeded", "value": {"booleanValue": succeeded}},
         {"name": "expected_error", "value": {"booleanValue": expected_error}},
         {"name": "unexpected_error", "value": {"booleanValue": unexpected_error}},

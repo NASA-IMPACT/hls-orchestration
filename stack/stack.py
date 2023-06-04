@@ -446,7 +446,7 @@ class HlsStack(core.Stack):
         self.update_sentinel_failure = Lambda(
             self,
             "UpdateSentinelFailure",
-            code_file="update_sentinel_failure.py",
+            code_file="sentinel_ac_logger.py",
             env={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
                 "HLS_DB_NAME": self.rds.database.database_name,

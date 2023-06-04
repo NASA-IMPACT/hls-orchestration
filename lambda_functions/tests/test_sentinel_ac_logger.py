@@ -21,7 +21,7 @@ def test_handler_keyError(client):
     }
     cause = json.loads(event["jobinfo"]["Cause"])
     jobinfo = {"name": "jobinfo", "value": {"stringValue": json.dumps(cause)}}
-    granule = {"name": "granule", "value": {"stringValue": event["granule"]}}
+    selector = {"name": "selector", "value": {"stringValue": event["granule"]}}
     succeeded = {"name": "succeeded", "value": {"booleanValue": False}}
     expected_error = {"name": "expected_error", "value": {"booleanValue": False}}
     unexpected_error = {"name": "unexpected_error", "value": {"booleanValue": True}}
@@ -29,7 +29,7 @@ def test_handler_keyError(client):
     output = handler(event, {})
     args, kwargs = client.execute_statement.call_args
     assert jobinfo in kwargs["parameters"]
-    assert granule in kwargs["parameters"]
+    assert selector in kwargs["parameters"]
     assert succeeded in kwargs["parameters"]
     assert expected_error in kwargs["parameters"]
     assert unexpected_error in kwargs["parameters"]
@@ -45,7 +45,7 @@ def test_handler_expected_keyError(client):
     }
     cause = json.loads(event["jobinfo"]["Cause"])
     jobinfo = {"name": "jobinfo", "value": {"stringValue": json.dumps(cause)}}
-    granule = {"name": "granule", "value": {"stringValue": event["granule"]}}
+    selector = {"name": "selector", "value": {"stringValue": event["granule"]}}
     succeeded = {"name": "succeeded", "value": {"booleanValue": False}}
     expected_error = {"name": "expected_error", "value": {"booleanValue": True}}
     unexpected_error = {"name": "unexpected_error", "value": {"booleanValue": False}}
@@ -53,7 +53,7 @@ def test_handler_expected_keyError(client):
     output = handler(event, {})
     args, kwargs = client.execute_statement.call_args
     assert jobinfo in kwargs["parameters"]
-    assert granule in kwargs["parameters"]
+    assert selector in kwargs["parameters"]
     assert succeeded in kwargs["parameters"]
     assert expected_error in kwargs["parameters"]
     assert unexpected_error in kwargs["parameters"]
@@ -74,6 +74,34 @@ def test_handler(client):
         "name": "jobinfo",
         "value": {"stringValue": json.dumps(event["jobinfo"])},
     }
+    selector = {"name": "selector", "value": {"stringValue": event["granule"]}}
+    succeeded = {"name": "succeeded", "value": {"booleanValue": True}}
+    expected_error = {"name": "expected_error", "value": {"booleanValue": False}}
+    unexpected_error = {"name": "unexpected_error", "value": {"booleanValue": False}}
+    assert jobinfo in kwargs["parameters"]
+    assert succeeded in kwargs["parameters"]
+    assert expected_error in kwargs["parameters"]
+    assert unexpected_error in kwargs["parameters"]
+    assert selector in kwargs["parameters"]
+    assert output == 0
+    assert "WHERE granule" in kwargs["sql"]
+
+
+@patch("lambda_functions.sentinel_ac_logger.rds_client")
+def test_handler_update_by_id(client):
+    """Test handler."""
+    event = {
+        "id": 1,
+        "jobinfo": batch_succeeded_event,
+    }
+    client.execute_statement.return_value = {}
+    output = handler(event, {})
+    args, kwargs = client.execute_statement.call_args
+    jobinfo = {
+        "name": "jobinfo",
+        "value": {"stringValue": json.dumps(event["jobinfo"])},
+    }
+    selector = {"name": "selector", "value": {"stringValue": event["id"]}}
     succeeded = {"name": "succeeded", "value": {"booleanValue": True}}
     expected_error = {"name": "expected_error", "value": {"booleanValue": False}}
     unexpected_error = {"name": "unexpected_error", "value": {"booleanValue": False}}
@@ -82,6 +110,8 @@ def test_handler(client):
     assert expected_error in kwargs["parameters"]
     assert unexpected_error in kwargs["parameters"]
     assert output == 0
+    assert selector in kwargs["parameters"]
+    assert "WHERE id" in kwargs["sql"]
 
 
 @patch("lambda_functions.sentinel_ac_logger.rds_client")
