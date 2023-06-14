@@ -57,7 +57,7 @@ def handler(event, context):
         unexpected_error = True
 
     if "id" in event:
-        selector_string = " WHERE id = :selector::text"
+        selector_string = " WHERE id = :selector"
         selector_value = event["id"]
         selector_parameter = {
             "name": "selector",
