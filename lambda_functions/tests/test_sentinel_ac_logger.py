@@ -101,7 +101,7 @@ def test_handler_update_by_id(client):
         "name": "jobinfo",
         "value": {"stringValue": json.dumps(event["jobinfo"])},
     }
-    selector = {"name": "selector", "value": {"stringValue": event["id"]}}
+    selector = {"name": "selector", "value": {"longValue": event["id"]}}
     succeeded = {"name": "succeeded", "value": {"booleanValue": True}}
     expected_error = {"name": "expected_error", "value": {"booleanValue": False}}
     unexpected_error = {"name": "unexpected_error", "value": {"booleanValue": False}}
