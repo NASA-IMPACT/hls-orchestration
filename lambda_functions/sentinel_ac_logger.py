@@ -65,7 +65,7 @@ def handler(event, context):
     q = (
         "UPDATE sentinel_log SET"
         + " (jobinfo, run_count, succeeded, expected_error, unexpected_error) ="
-        + " (:jobinfo::jsonb, run_count + 1, :succeeded::boolean, expected_error::boolean, unexpected_error::boolean)"
+        + " (:jobinfo::jsonb, run_count + 1, :succeeded::boolean, :expected_error::boolean, :unexpected_error::boolean)"
         + selector_string
     )
     sql_parameters = [
