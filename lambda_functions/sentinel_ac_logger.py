@@ -59,9 +59,17 @@ def handler(event, context):
     if "id" in event:
         selector_string = " WHERE id = :selector::text"
         selector_value = event["id"]
+        selector_parameter = {
+            "name": "selector",
+            "value": {"longValue": selector_value},
+        }
     else:
         selector_string = " WHERE granule = :selector::text"
         selector_value = event["granule"]
+        selector_parameter = {
+            "name": "selector",
+            "value": {"stringValue": selector_value},
+        }
     q = (
         "UPDATE sentinel_log SET"
         + " (jobinfo, run_count, succeeded, expected_error, unexpected_error) ="
@@ -70,10 +78,10 @@ def handler(event, context):
     )
     sql_parameters = [
         {"name": "jobinfo", "value": {"stringValue": jobinfostring}},
-        {"name": "selector", "value": {"stringValue": selector_value}},
         {"name": "succeeded", "value": {"booleanValue": succeeded}},
         {"name": "expected_error", "value": {"booleanValue": expected_error}},
         {"name": "unexpected_error", "value": {"booleanValue": unexpected_error}},
     ]
+    sql_parameters.append(selector_parameter)
     execute_statement(q, sql_parameters=sql_parameters)
     return exitcode
