@@ -72,44 +72,23 @@ ALTER TABLE sentinel_log ADD COLUMN IF NOT EXISTS granule VARCHAR;
 ALTER TABLE sentinel_log ADD COLUMN IF NOT EXISTS run_count INTEGER;
 
 DROP VIEW IF EXISTS sentinel_granule_log;
-CREATE VIEW sentinel_granule_log AS
-select id, ts, granule, run_count,
-jobinfo->>'Status' as status,
-to_timestamp((jobinfo->>'CreatedAt')::float/1000) as job_created,
-to_timestamp((jobinfo->>'StartedAt')::float/1000) as job_started,
-to_timestamp((jobinfo->>'StoppedAt')::float/1000) as job_stopped,
-jobinfo
-from sentinel_log WHERE jobinfo IS NOT NULL;
 
-DROP VIEW IF EXISTS granule_log;
 DROP FUNCTION IF EXISTS granule(IN event jsonb, OUT granule text);
 
 ALTER TABLE landsat_ac_log ADD COLUMN IF NOT EXISTS run_count INTEGER;
 ALTER TABLE landsat_mgrs_log ADD COLUMN IF NOT EXISTS run_count INTEGER;
 
 DROP VIEW IF EXISTS landsat_ac_granule_log;
-CREATE VIEW landsat_ac_granule_log AS
-select id, ts, run_count, scene_id,
-jobinfo->>'Status' as status,
-to_timestamp((jobinfo->>'CreatedAt')::float/1000) as job_created,
-to_timestamp((jobinfo->>'StartedAt')::float/1000) as job_started,
-to_timestamp((jobinfo->>'StoppedAt')::float/1000) as job_stopped,
-jobinfo
-from landsat_ac_log WHERE jobinfo IS NOT NULL;
-
 DROP VIEW IF EXISTS landsat_mgrs_granule_log;
-CREATE VIEW landsat_mgrs_granule_log AS
-select id, ts, run_count,
-jobinfo->>'Status' as status,
-to_timestamp((jobinfo->>'CreatedAt')::float/1000) as job_created,
-to_timestamp((jobinfo->>'StartedAt')::float/1000) as job_started,
-to_timestamp((jobinfo->>'StoppedAt')::float/1000) as job_stopped,
-jobinfo
-from landsat_mgrs_log WHERE jobinfo IS NOT NULL;
 
 ALTER TABLE sentinel_log ADD COLUMN IF NOT EXISTS historic BOOLEAN;
 ALTER TABLE landsat_ac_log ADD COLUMN IF NOT EXISTS historic BOOLEAN;
 ALTER TABLE landsat_mgrs_log ADD COLUMN IF NOT EXISTS historic BOOLEAN;
+
+
+ALTER TABLE sentinel_log ADD COLUMN IF NOT EXISTS succeeded BOOLEAN;
+ALTER TABLE sentinel_log ADD COLUMN IF NOT EXISTS expected_error BOOLEAN;
+ALTER TABLE sentinel_log ADD COLUMN IF NOT EXISTS unexpected_error BOOLEAN;
 """
 
 
