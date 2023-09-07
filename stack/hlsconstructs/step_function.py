@@ -1,6 +1,6 @@
-import json
+from typing import Any, Mapping
 
-from aws_cdk import aws_iam, aws_stepfunctions, core
+from aws_cdk import aws_iam, core
 from hlsconstructs.lambdafunc import Lambda
 
 
@@ -18,8 +18,7 @@ class StepFunction(core.Construct):
             assumed_by=aws_iam.ServicePrincipal("states.amazonaws.com"),
         )
 
-    def addLambdasToRole(self, arguments):
-        for key in arguments:
-            arg = arguments[key]
-            if type(arg) == Lambda:
+    def addLambdasToRole(self, arguments: Mapping[str, Any]):
+        for arg in arguments.values():
+            if isinstance(arg, Lambda):
                 self.steps_role.add_to_policy(arg.invoke_policy_statement)
