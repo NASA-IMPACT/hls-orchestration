@@ -18,7 +18,7 @@ class StepFunction(core.Construct):
             assumed_by=aws_iam.ServicePrincipal("states.amazonaws.com"),
         )
 
-    def addLambdasToRole(self, arguments: Mapping[str, Any]):
+    def add_lambdas_to_role(self, arguments: Mapping[str, Any]):
         for arg in arguments.values():
             if isinstance(arg, Lambda):
                 self.steps_role.add_to_policy(arg.invoke_policy_statement)

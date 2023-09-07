@@ -153,4 +153,4 @@ class SentinelStepFunction(BatchStepFunction):
             role_arn=self.steps_role.role_arn,
         )
 
-        self.addLambdasToRole(locals())
+        self.add_lambdas_to_role(locals())
