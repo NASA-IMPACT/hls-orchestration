@@ -9,14 +9,14 @@ jobs:
   unit-tests:
     runs-on: ubuntu-20.04
     env:
-      AWS_DEFAULT_REGION: us-west-2
+      AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
     strategy:
       matrix:
         python: [3.8]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
       - name: Install Tox
@@ -33,15 +33,15 @@ jobs:
     environment:
       name: mcp-dev
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
       - name: Install tox
         run: pip install tox
       - name: Configure awscli
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v3
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
