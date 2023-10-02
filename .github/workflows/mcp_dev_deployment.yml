@@ -1,0 +1,76 @@
+name: mcp dev deployment
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-20.04
+    env:
+      AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
+    strategy:
+      matrix:
+        python: [3.8]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install Tox
+        run: pip install tox
+      - name: Run Tox test environment
+        # Run tox using the version of Python in `PATH`
+        run: tox -e py
+  dev-deployment:
+    strategy:
+      matrix:
+        python: [3.8]
+    runs-on: ubuntu-20.04
+    needs: [unit-tests]
+    environment:
+      name: mcp-dev
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install tox
+        run: pip install tox
+      - name: Configure awscli
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+      - name: Convert secrets to environment variables
+        env:
+          SECRETS_JSON: ${{ toJson(secrets) }}
+        run: |
+          while read -rd $'' line; do
+            echo "$line" >> $GITHUB_ENV
+          done < <(
+            jq -r <<<"$SECRETS_JSON" 'to_entries|map("\(.key)=\(.value)\u0000")[]'
+          )
+      - name: Convert vars to environment variables
+        env:
+          VARS_JSON: ${{ toJson(vars) }}
+        run: |
+          while read -rd $'' line; do
+            echo "$line" >> $GITHUB_ENV
+          done < <(
+            jq -r <<<"$VARS_JSON" 'to_entries|map("\(.key)=\(.value)\u0000")[]'
+          )
+      - name: Deploy with tox
+        run: tox -e dev -r -- deploy --require-approval never
+      - name: Run DB setup
+        run: |
+          setupdb=$(aws cloudformation describe-stacks \
+            --stack-name $HLS_STACKNAME \
+            --query "Stacks[0].Outputs[?OutputKey=='setupdbexport'].OutputValue" \
+            --output=text
+          )
+          aws lambda invoke --function-name=$setupdb response.json
