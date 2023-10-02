@@ -8,8 +8,6 @@ on:
 jobs:
   unit-tests:
     runs-on: ubuntu-20.04
-    env:
-      AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
     strategy:
       matrix:
         python: [3.8]
@@ -22,6 +20,8 @@ jobs:
       - name: Install Tox
         run: pip install tox
       - name: Run Tox test environment
+        env:
+          AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
         # Run tox using the version of Python in `PATH`
         run: tox -e py
   dev-deployment:
