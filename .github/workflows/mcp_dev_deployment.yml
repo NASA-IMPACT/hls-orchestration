@@ -5,6 +5,9 @@ on:
     branches: [dev]
   workflow_dispatch:
 
+env:
+  AWS_DEFAULT_REGION: us-west-2
+
 jobs:
   unit-tests:
     runs-on: ubuntu-20.04
@@ -20,8 +23,6 @@ jobs:
       - name: Install Tox
         run: pip install tox
       - name: Run Tox test environment
-        env:
-          AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
         # Run tox using the version of Python in `PATH`
         run: tox -e py
   dev-deployment:
@@ -45,7 +46,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+          aws-region: us-west-2
       - name: Convert secrets to environment variables
         env:
           SECRETS_JSON: ${{ toJson(secrets) }}
