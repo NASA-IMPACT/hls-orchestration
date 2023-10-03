@@ -1,15 +1,11 @@
-import json
 import os
 
 from aws_cdk import (
-    aws_events,
-    aws_events_targets,
     aws_iam,
     aws_lambda,
     aws_s3,
     aws_sns,
     aws_ssm,
-    aws_stepfunctions,
     core,
 )
 from hlsconstructs.batch import Batch
@@ -136,7 +132,7 @@ class HlsStack(core.Stack):
             ).string_value
             from permission_boundary import PermissionBoundaryAspect
 
-            self.node.apply_aspect(PermissionBoundaryAspect(boundary_arn))
+            core.Aspects.of(self).add(PermissionBoundaryAspect(boundary_arn))
         else:
             vpcid = None
             image_id = None
