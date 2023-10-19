@@ -71,7 +71,24 @@ jobs:
             jq -r <<<"$VARS_JSON" 'to_entries|map("\(.key)=\(.value)\u0000")[]'
           )
       - name: Deploy with tox
-        run: tox -v -e dev -r -- deploy --require-approval never
+        run: |
+          # NOTICES
+          #
+          # 19836	AWS CDK v1 End-of-Support June 1, 2023
+          #
+          #       Overview: AWS CDK v1 is currently in maintenance mode. Support for AWS
+          #                 CDK v1 will end entirely on June 1, 2023. Migrate to AWS CDK
+          #                 v2 to continue to get the latest features and fixes!
+          #
+          #       Affected versions: framework: 1.*, cli: 1.*
+          #
+          #       More information at: https://github.com/aws/aws-cdk/issues/19836
+          #
+          #
+          # If you don’t want to see a notice anymore, use "cdk acknowledge <id>".
+          # For example, "cdk acknowledge 19836".
+          cdk acknowledge 19836
+          tox -v -e dev -r -- deploy --require-approval never
       - name: Run DB setup
         run: |
           setupdb=$(aws cloudformation describe-stacks \
