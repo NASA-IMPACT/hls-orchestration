@@ -30,7 +30,7 @@ jobs:
       - name: Run Tox test environment
         # Run tox using the version of Python in `PATH`
         run: tox -e py
-  dev-deployment:
+  mcp-dev-deployment:
     strategy:
       matrix:
         python: [3.8]
@@ -71,7 +71,7 @@ jobs:
             jq -r <<<"$VARS_JSON" 'to_entries|map("\(.key)=\(.value)\u0000")[]'
           )
       - name: Deploy with tox
-        run: tox -e dev -r -- deploy --require-approval never
+        run: tox -v -e dev -r -- deploy --require-approval never
       - name: Run DB setup
         run: |
           setupdb=$(aws cloudformation describe-stacks \
