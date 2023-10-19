@@ -1,12 +1,10 @@
 """Setup for hls-orchestration"""
-import os
-import subprocess
-import sys
+
 
 from setuptools import find_packages, setup
 
 # Runtime requirements.
-aws_cdk_version = "1.65.0"
+aws_cdk_version = "1.203.0"
 aws_cdk_reqs = [
     "core",
     "aws-s3",
@@ -31,9 +29,8 @@ aws_cdk_reqs = [
 
 inst_reqs = [
     "boto3",
+    *[f"aws_cdk.{x}=={aws_cdk_version}" for x in aws_cdk_reqs],
 ]
-
-inst_reqs.append([f"aws_cdk.{x}=={aws_cdk_version}" for x in aws_cdk_reqs])
 
 extra_reqs = {
     "test": [
