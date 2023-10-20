@@ -46,6 +46,7 @@ extra_reqs = {
         "flake8",
         "nodeenv",
         "isort",
+        "mypy",
         "pre-commit",
         "pre-commit-hooks",
     ],
