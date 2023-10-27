@@ -59,7 +59,7 @@ class Rds(core.Construct):
             "RdsCluster",
             engine="aurora-postgresql",
             engine_mode="serverless",
-            engine_version="10.7",
+            engine_version="11.18",
             database_name="hls",
             db_subnet_group_name=self.subnet_group.ref,
             enable_http_endpoint=True,
