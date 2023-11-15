@@ -760,15 +760,15 @@ class HlsStack(core.Stack):
             self, "LandsatHistoricSNSTopic", topic_arn=LANDSAT_HISTORIC_SNS_TOPIC
         )
 
-        # self.landsat_step_function_trigger = StepFunctionTrigger(
-        #     self,
-        #     "LandsatStepFunctionTrigger",
-        #     state_machine=self.landsat_step_function.state_machine.ref,
-        #     code_file="execute_landsat_step_function.py",
-        #     timeout=180,
-        #     input_sns=self.landsat_sns_topic,
-        #     layers=[self.hls_lambda_layer],
-        # )
+        self.landsat_step_function_trigger = StepFunctionTrigger(
+            self,
+            "LandsatStepFunctionTrigger",
+            state_machine=self.landsat_step_function.state_machine.ref,
+            code_file="execute_landsat_step_function.py",
+            timeout=180,
+            input_sns=self.landsat_sns_topic,
+            layers=[self.hls_lambda_layer],
+        )
 
         # self.landsat_step_function_historic_trigger = StepFunctionTrigger(
         #     self,
