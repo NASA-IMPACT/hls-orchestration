@@ -20,7 +20,7 @@ response = client.register_job_definition(
     containerProperties={
         "image": f"018923174646.dkr.ecr.us-west-2.amazonaws.com/{image}:{pr_number}",
         "vcpus": 2,
-        "memory": 10000,
+        "memory": 20000,
         "command": [],
         "jobRoleArn": role_arn,
         "volumes": [

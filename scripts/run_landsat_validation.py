@@ -44,8 +44,10 @@ else:
     ac_jobdefinition = os.getenv("HLSSTACK_LANDSATJOBDEFINITION")
 if args.use_viirs:
     aux_dir = "/var/lasrc_aux/viirs"
+    viirs_aux_starting_date = "20210101"
 else:
     aux_dir = "/var/lasrc_aux"
+    viirs_aux_starting_date = "20990101"
 
 ac_jobids = {}
 
@@ -67,7 +69,7 @@ def submit_ac_job(scene_id, path, row, year):
                 {"name": "INPUT_BUCKET", "value": inputbucket},
                 {"name": "OMP_NUM_THREADS", "value": "2"},
                 {"name": "REPLACE_EXISTING", "value": "replace"},
-                {"name": "USE_ORIG_AERO", "value": "--use_orig_aero"},
+                {"name": "VIIRS_AUX_STARTING_DATE", "value": viirs_aux_starting_date},
             ],
         },
     )
@@ -158,7 +160,7 @@ if os.path.isfile(granules):
         row = components[2][3:6]
         date = components[3]
         result = handler.handler({"path": path, "row": row}, {})
-        process_mgrs(result["mgrs"][0], date)
+        process_mgrs(result["mgrs"][0], date, ignore)
 
 else:
     components = granules.split("_")

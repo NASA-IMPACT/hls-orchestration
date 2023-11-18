@@ -29,8 +29,10 @@ else:
     jobdefinition = os.getenv("HLSSTACK_SENTINELJOBDEFINITION")
 if args.use_viirs:
     aux_dir = "/var/lasrc_aux/viirs"
+    viirs_aux_starting_date = "20210101"
 else:
     aux_dir = "/var/lasrc_aux"
+    viirs_aux_starting_date = "20990101"
 
 
 def submit_job(granule_id):
@@ -51,6 +53,7 @@ def submit_job(granule_id):
                     "name": "GCC_ROLE_ARN",
                     "value": "arn:aws:iam::611670965994:role/hls-gcc-xaccount-s3-access",
                 },
+                {"name": "VIIRS_AUX_STARTING_DATE", "value": viirs_aux_starting_date},
             ],
         },
     )
