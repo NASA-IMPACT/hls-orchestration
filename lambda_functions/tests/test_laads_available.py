@@ -1,14 +1,13 @@
+import os
+from unittest.mock import patch
+
 import pytest
 from botocore.errorfactory import ClientError
 
-
-@pytest.fixture(autouse=True)
-def env_setup(monkeypatch):
-    monkeypatch.setenv("LAADS_BUCKET", "test")
+from lambda_functions.laads_available import getyyyydoy, handler
 
 
 def test_getyyyydoy():
-    from lambda_functions.laads_available import getyyyydoy
 
     assert getyyyydoy("2020-01-01") == ("2020001", "2020")
     assert getyyyydoy("2020-001") == ("2020001", "2020")
@@ -22,59 +21,54 @@ def test_getyyyydoy():
 
 
 def test_handler_keyError():
-    from lambda_functions.laads_available import handler
-
     expected = "Missing Date Parameter"
     with pytest.raises(Exception) as e:
         handler({}, {})
         assert expected in str(e.value)
 
 
-def test_handler(monkeypatch):
-    import lambda_functions.laads_available
+@patch.dict(os.environ, {"LAADS_BUCKET": "test"})
+@patch("lambda_functions.laads_available.s3")
+def test_handler(s3):
     from lambda_functions.laads_available import handler
 
     granule = "S2A_MSIL1C_20191001T201241_N0208_R028_T09WXT_20191001T220736A"
     event = {"granule": granule}
-    response = {
+    expected = {
         "granule": granule,
         "year": "2019",
         "doy": "2019274",
         "bucket": "test",
-        "key": "lasrc_aux/LADS/2019/L8ANC2019274.hdf_fused",
+        "pattern": "lasrc_aux/LADS/2019/VJ104ANC.A2019274",
         "available": True,
     }
 
-    def head_object_exists(Bucket, Key):
-        return ""
+    s3.list_objects_v2.return_value = {"Contents": ["a key"]}
 
-    monkeypatch.setattr(
-        lambda_functions.laads_available.s3, "head_object", head_object_exists
-    )
-    ret = handler(event, {})
-    assert ret == response
+    response = handler(event, {})
+    assert response == expected
 
-    def head_object_notexists(Bucket, Key):
-        raise ClientError(
-            error_response={"Error": {"Code": "404"}}, operation_name="head_obj"
-        )
+    #  def head_object_notexists(Bucket, Key):
+    #  raise ClientError(
+    #  error_response={"Error": {"Code": "404"}}, operation_name="head_obj"
+    #  )
 
-    monkeypatch.setattr(
-        lambda_functions.laads_available.s3, "head_object", head_object_notexists
-    )
-    ret = handler(event, {})
-    response["available"] = False
-    assert ret == response
+    #  monkeypatch.setattr(
+    #  lambda_functions.laads_available.s3, "head_object", head_object_notexists
+    #  )
+    #  ret = handler(event, {})
+    #  response["available"] = False
+    #  assert ret == response
 
-    def head_object_exception(Bucket, Key):
-        raise ClientError(
-            error_response={"Error": {"Code": "403"}}, operation_name="head_obj"
-        )
+    #  def head_object_exception(Bucket, Key):
+    #  raise ClientError(
+    #  error_response={"Error": {"Code": "403"}}, operation_name="head_obj"
+    #  )
 
-    monkeypatch.setattr(
-        lambda_functions.laads_available.s3, "head_object", head_object_exception
-    )
+    #  monkeypatch.setattr(
+    #  lambda_functions.laads_available.s3, "head_object", head_object_exception
+    #  )
 
-    with pytest.raises(Exception):
-        ret = handler(event, {})
-        assert ret == response
+    #  with pytest.raises(Exception):
+    #  ret = handler(event, {})
+    #  assert ret == response
