@@ -1,13 +1,6 @@
 import os
 
-from aws_cdk import (
-    aws_iam,
-    aws_lambda,
-    aws_s3,
-    aws_sns,
-    aws_ssm,
-    core,
-)
+from aws_cdk import aws_iam, aws_lambda, aws_s3, aws_sns, aws_ssm, core
 from hlsconstructs.batch import Batch
 from hlsconstructs.batch_cron import BatchCron
 from hlsconstructs.docker_batchjob import DockerBatchJob
@@ -544,9 +537,25 @@ class HlsStack(core.Stack):
             job=self.laads_task,
             env={
                 "LAADS_BUCKET": LAADS_BUCKET,
-                "L8_AUX_DIR": "/var/lasrc_aux",
+                "LASRC_AUX_DIR": "/var/lasrc_aux",
                 "LAADS_TOKEN": LAADS_TOKEN,
-                "LAADS_BUCKET_BOOTSTRAP": LAADS_BUCKET_BOOTSTRAP,
+                "LAADS_FLAG": "--today",
+            },
+        )
+
+        self.laads_climatology_cron = BatchCron(
+            self,
+            "LaadsClimatologyCron",
+            cron_str="cron(0 0 1-6 * ? *)",
+            code_file="laads_submit_climatology_job.py",
+            queue=self.batch.laads_jobqueue.ref,
+            job=self.laads_task,
+            env={
+                "LAADS_BUCKET": LAADS_BUCKET,
+                "LASRC_AUX_DIR": "/var/lasrc_aux",
+                "LAADS_TOKEN": LAADS_TOKEN,
+                "JOB_QUEUE": self.batch.laads_jobqueue.ref,
+                "JOB_DEFINITION": self.laads_task.job.ref,
             },
         )
 

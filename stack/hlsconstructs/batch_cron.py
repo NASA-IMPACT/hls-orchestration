@@ -1,3 +1,4 @@
+import inspect
 from typing import Dict
 
 from aws_cdk import aws_events, aws_events_targets, aws_iam, aws_lambda, core
@@ -18,7 +19,7 @@ class BatchCron(Lambda):
         timeout: int = 10,
         **kwargs,
     ) -> None:
-        if "code_file" not in kwargs:
+        if "code_file" not in inspect.signature(BatchCron.__init__).parameters:
             jobdef = job.job.ref
             env_str = aws_env(env)
             code_str = f"""
@@ -43,7 +44,7 @@ class BatchCron(Lambda):
             code_str = align(code_str)
             self.code = aws_lambda.InlineCode(code=code_str)
 
-        super().__init__(scope, id, **kwargs)
+        super().__init__(scope, id, env=env, **kwargs)
 
         self.rule = aws_events.Rule(
             self,
