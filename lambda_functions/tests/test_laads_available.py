@@ -47,28 +47,3 @@ def test_handler(s3):
 
     response = handler(event, {})
     assert response == expected
-
-    #  def head_object_notexists(Bucket, Key):
-    #  raise ClientError(
-    #  error_response={"Error": {"Code": "404"}}, operation_name="head_obj"
-    #  )
-
-    #  monkeypatch.setattr(
-    #  lambda_functions.laads_available.s3, "head_object", head_object_notexists
-    #  )
-    #  ret = handler(event, {})
-    #  response["available"] = False
-    #  assert ret == response
-
-    #  def head_object_exception(Bucket, Key):
-    #  raise ClientError(
-    #  error_response={"Error": {"Code": "403"}}, operation_name="head_obj"
-    #  )
-
-    #  monkeypatch.setattr(
-    #  lambda_functions.laads_available.s3, "head_object", head_object_exception
-    #  )
-
-    #  with pytest.raises(Exception):
-    #  ret = handler(event, {})
-    #  assert ret == response
