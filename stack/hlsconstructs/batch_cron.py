@@ -7,8 +7,6 @@ from utils import align, aws_env
 
 
 class BatchCron(Lambda):
-    """AWS Batch Event Construct to Run Batch Jobs on a Cron using Lambda."""
-
     def __init__(
         self,
         scope: core.Construct,
@@ -20,32 +18,30 @@ class BatchCron(Lambda):
         timeout: int = 10,
         **kwargs,
     ) -> None:
+        if "code_file" not in kwargs:
+            jobdef = job.job.ref
+            env_str = aws_env(env)
+            code_str = f"""
+                import boto3
+                import json
+                batch_client = boto3.client('batch')
 
-        jobdef = job.job.ref
-
-        env_str = aws_env(env)
-
-        code_str = f"""
-            import boto3
-            import json
-            batch_client = boto3.client('batch')
-
-            def handler(event, context):
-                print(event)
-                print({env_str})
-                response = batch_client.submit_job(
-                    jobName="{id}-job",
-                    jobQueue="{queue}",
-                    jobDefinition="{jobdef}",
-                    containerOverrides={{
-                        'environment': {env_str}
-                    }}
-                )
-                print(response)
-                return response
-            """
-        code_str = align(code_str)
-        self.code = aws_lambda.InlineCode(code=code_str)
+                def handler(event, context):
+                    print(event)
+                    print({env_str})
+                    response = batch_client.submit_job(
+                        jobName="{id}-job",
+                        jobQueue="{queue}",
+                        jobDefinition="{jobdef}",
+                        containerOverrides={{
+                            'environment': {env_str}
+                        }}
+                    )
+                    print(response)
+                    return response
+                """
+            code_str = align(code_str)
+            self.code = aws_lambda.InlineCode(code=code_str)
 
         super().__init__(scope, id, **kwargs)
 
