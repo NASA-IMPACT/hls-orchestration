@@ -17,7 +17,7 @@ laads_bucket = os.getenv("LAADS_BUCKET")
 def handler(event, context):
     current_date = datetime.datetime.now()
     response = batch_client.submit_job(
-        jobName="laads_cron",
+        jobName="laads_climatology",
         jobQueue=jobQueue,
         jobDefinition=jobDefinition,
         containerOverrides={
