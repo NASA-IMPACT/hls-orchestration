@@ -64,15 +64,21 @@ def handler(event: Dict, context: Dict):
     if bucket is None:
         raise Exception("No Bucket set")
     ydoy, year = getyyyydoy(date_str)
-    pattern = f"lasrc_aux/LADS/{year}/VJ104ANC.A{ydoy}"
-    print(f"------{bucket}    {pattern} ------")
-    exists = key_pattern_exists(bucket, pattern)
+    vj_pattern = f"lasrc_aux/LADS/{year}/VJ104ANC.A{ydoy}"
+    print(f"------{bucket}    {vj_pattern} ------")
+    vj_exists = key_pattern_exists(bucket, vj_pattern)
+    vnp_pattern = f"lasrc_aux/LADS/{year}/VNP04ANC.A{ydoy}"
+    vnp_exists = key_pattern_exists(bucket, vnp_pattern)
+    if vj_exists or vnp_exists:
+        exists = True
+    else:
+        exists = False
     output = {
         "granule": date_str,
         "year": year,
         "doy": ydoy,
         "bucket": bucket,
-        "pattern": pattern,
+        "pattern": f"{vj_pattern} {vnp_pattern}",
         "available": False,
     }
     if exists:

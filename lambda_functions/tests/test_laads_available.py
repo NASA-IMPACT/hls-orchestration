@@ -39,7 +39,7 @@ def test_handler(s3):
         "year": "2019",
         "doy": "2019274",
         "bucket": "test",
-        "pattern": "lasrc_aux/LADS/2019/VJ104ANC.A2019274",
+        "pattern": "lasrc_aux/LADS/2019/VJ104ANC.A2019274 lasrc_aux/LADS/2019/VNP04ANC.A2019274",
         "available": True,
     }
 
