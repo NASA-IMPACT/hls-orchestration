@@ -28,7 +28,7 @@ def handler(event, context):
                 {"name": "CLIM_YEAR", "value": str(current_date.year)},
                 {"name": "CLIM_MONTH", "value": str(current_date.month)},
             ],
-            "command": ["sh", "-c", "climatologies.sh"],
+            "command": ["./usr/local/climatologies.sh"],
         },
     )
     return response
