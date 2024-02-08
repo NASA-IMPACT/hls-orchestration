@@ -219,7 +219,7 @@ class HlsStack(core.Stack):
             dockeruri=SENTINEL_ECR_URI,
             mountpath="/var/lasrc_aux",
             timeout=7200,
-            memory=15000,
+            memory=20000,
             vcpus=2,
         )
 
@@ -229,7 +229,7 @@ class HlsStack(core.Stack):
             dockeruri=LANDSAT_ECR_URI,
             mountpath="/var/lasrc_aux",
             timeout=5400,
-            memory=15000,
+            memory=20000,
             vcpus=2,
         )
 
