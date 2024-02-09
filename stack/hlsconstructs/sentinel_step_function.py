@@ -86,6 +86,7 @@ class SentinelStepFunction(BatchStepFunction):
                             "Environment": [
                                 {"Name": "GRANULE_LIST", "Value.$": "$.granule"},
                                 {"Name": "OUTPUT_BUCKET", "Value": outputbucket},
+                                {"Name": "DEBUG_BUCKET", "Value": outputbucket},
                                 {"Name": "INPUT_BUCKET", "Value": inputbucket},
                                 {"Name": "LASRC_AUX_DIR", "Value": "/var/lasrc_aux"},
                                 {
