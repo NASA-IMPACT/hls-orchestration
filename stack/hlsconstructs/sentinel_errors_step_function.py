@@ -71,6 +71,10 @@ class SentinelErrorsStepFunction(BatchStepFunction, StateMachineStepFunction):
                                                 "Value": outputbucket,
                                             },
                                             {
+                                                "Name": "DEBUG_BUCKET",
+                                                "Value": outputbucket,
+                                            },
+                                            {
                                                 "Name": "INPUT_BUCKET",
                                                 "Value": inputbucket,
                                             },
