@@ -85,6 +85,9 @@ SSH_KEYNAME = getenv("HLS_SSH_KEYNAME", "hls-mount")
 LANDSAT_SNS_TOPIC = getenv(
     "HLS_LANDSAT_SNS_TOPIC", "arn:aws:sns:us-west-2:673253540267:public-c2-notify-v2"
 )
+LANDSAT_SNS_TOPIC_ENABLED = (
+    getenv("HLS_LANDSAT_SNS_TOPIC_ENABLED", "true").lower() == "true"
+)
 
 DOWNLOADER_FUNCTION_ARN = getenv("HLS_DOWNLOADER_FUNCTION_ARN", None)
 LAADS_BUCKET_BOOTSTRAP = getenv(
@@ -752,23 +755,24 @@ class HlsStack(core.Stack):
             input_bucket=self.sentinel_input_bucket_historic,
         )
 
-        self.landsat_sns_topic = aws_sns.Topic.from_topic_arn(
-            self, "LandsatSNSTopc", topic_arn=LANDSAT_SNS_TOPIC
-        )
+        if LANDSAT_SNS_TOPIC_ENABLED:
+            self.landsat_sns_topic = aws_sns.Topic.from_topic_arn(
+                self, "LandsatSNSTopc", topic_arn=LANDSAT_SNS_TOPIC
+            )
 
-        self.landsat_historic_sns_topic = aws_sns.Topic.from_topic_arn(
-            self, "LandsatHistoricSNSTopic", topic_arn=LANDSAT_HISTORIC_SNS_TOPIC
-        )
+            self.landsat_step_function_trigger = StepFunctionTrigger(
+                self,
+                "LandsatStepFunctionTrigger",
+                state_machine=self.landsat_step_function.state_machine.ref,
+                code_file="execute_landsat_step_function.py",
+                timeout=180,
+                input_sns=self.landsat_sns_topic,
+                layers=[self.hls_lambda_layer],
+            )
 
-        self.landsat_step_function_trigger = StepFunctionTrigger(
-            self,
-            "LandsatStepFunctionTrigger",
-            state_machine=self.landsat_step_function.state_machine.ref,
-            code_file="execute_landsat_step_function.py",
-            timeout=180,
-            input_sns=self.landsat_sns_topic,
-            layers=[self.hls_lambda_layer],
-        )
+        # self.landsat_historic_sns_topic = aws_sns.Topic.from_topic_arn(
+        #     self, "LandsatHistoricSNSTopic", topic_arn=LANDSAT_HISTORIC_SNS_TOPIC
+        # )
 
         # self.landsat_step_function_historic_trigger = StepFunctionTrigger(
         #     self,
