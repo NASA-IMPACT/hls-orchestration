@@ -1,15 +1,11 @@
-import json
 import os
 
 from aws_cdk import (
-    aws_events,
-    aws_events_targets,
     aws_iam,
     aws_lambda,
     aws_s3,
     aws_sns,
     aws_ssm,
-    aws_stepfunctions,
     core,
 )
 from hlsconstructs.batch import Batch
@@ -45,12 +41,7 @@ LANDSAT_HISTORIC_SNS_TOPIC = os.environ["HLS_LANDASAT_HISTORIC_SNS_TOPIC"]
 
 def getenv(key, default):
     value = os.getenv(key, default)
-    if value is None:
-        value = default
-    elif type(value) == str:
-        if len(value) == 0:
-            value = default
-    return value
+    return default if value == "" else value
 
 
 # Optional env settings
@@ -92,7 +83,10 @@ SENTINEL_RETRY_LIMIT = getenv("HLS_SENTINEL_RETRY_LIMIT", "3")
 LANDSAT_RETRY_LIMIT = getenv("HLS_LANDSAT_RETRY_LIMIT", "3")
 SSH_KEYNAME = getenv("HLS_SSH_KEYNAME", "hls-mount")
 LANDSAT_SNS_TOPIC = getenv(
-    "HLS_LANDSAT_SNS_TOPIC", "arn:aws:sns:us-west-2:673253540267:public-c2-notify"
+    "HLS_LANDSAT_SNS_TOPIC", "arn:aws:sns:us-west-2:673253540267:public-c2-notify-v2"
+)
+LANDSAT_SNS_TOPIC_ENABLED = (
+    getenv("HLS_LANDSAT_SNS_TOPIC_ENABLED", "true").lower() == "true"
 )
 
 DOWNLOADER_FUNCTION_ARN = getenv("HLS_DOWNLOADER_FUNCTION_ARN", None)
@@ -114,34 +108,25 @@ try:
 except ValueError:
     MAXV_CPUS = 1200
 
-if getenv("HLS_REPLACE_EXISTING", "true") == "true":
-    REPLACE_EXISTING = True
-else:
-    REPLACE_EXISTING = False
-
-if getenv("HLS_USE_CLOUD_WATCH", "false") == "true":
-    USE_CLOUD_WATCH = True
-else:
-    USE_CLOUD_WATCH = False
-
-if getenv("GCC", None) == "true":
-    GCC = True
-else:
-    GCC = False
+REPLACE_EXISTING = getenv("HLS_REPLACE_EXISTING", "true") == "true"
+USE_CLOUD_WATCH = getenv("HLS_USE_CLOUD_WATCH", "false") == "true"
+GCC = getenv("GCC", None) == "true"
 
 
 class HlsStack(core.Stack):
     def __init__(self, scope: core.Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
+
         if GCC:
+            from permission_boundary import PermissionBoundaryAspect
+
             vpcid = os.environ["HLS_GCC_VPCID"]
             boundary_arn = os.environ["HLS_GCC_BOUNDARY_ARN"]
             image_id = aws_ssm.StringParameter.from_string_parameter_attributes(
                 self, "gcc_ami", parameter_name="/mcp/amis/aml2-ecs"
             ).string_value
-            from permission_boundary import PermissionBoundaryAspect
 
-            self.node.apply_aspect(PermissionBoundaryAspect(boundary_arn))
+            core.Aspects.of(self).add(PermissionBoundaryAspect(boundary_arn))
         else:
             vpcid = None
             image_id = None
@@ -160,31 +145,38 @@ class HlsStack(core.Stack):
 
         # Must be created as part of the stack due to trigger requirements
         self.sentinel_input_bucket = aws_s3.Bucket(
-            self, "SentinelInputBucket", bucket_name=SENTINEL_INPUT_BUCKET
+            self,
+            "SentinelInputBucket",
+            bucket_name=SENTINEL_INPUT_BUCKET,
+            removal_policy=core.RemovalPolicy.DESTROY,
         )
 
         self.sentinel_input_bucket_historic = aws_s3.Bucket(
             self,
             "SentinelInputBucketHistoric",
             bucket_name=SENTINEL_INPUT_BUCKET_HISTORIC,
+            removal_policy=core.RemovalPolicy.DESTROY,
         )
 
         self.landsat_input_bucket_historic = aws_s3.Bucket(
             self,
             "LandsatInputBucketHistoric",
             bucket_name=LANDSAT_INPUT_BUCKET_HISTORIC,
+            removal_policy=core.RemovalPolicy.DESTROY,
         )
 
         self.landsat_intermediate_output_bucket = aws_s3.Bucket(
             self,
             "LandsatIntermediateBucket",
             bucket_name=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
+            removal_policy=core.RemovalPolicy.DESTROY,
         )
 
         self.gibs_intermediate_output_bucket = aws_s3.Bucket(
             self,
             "GibsIntermediateBucket",
             bucket_name=GIBS_INTERMEDIATE_OUTPUT_BUCKET,
+            removal_policy=core.RemovalPolicy.DESTROY,
         )
 
         self.efs = Efs(self, "Efs", network=self.network)
@@ -763,36 +755,37 @@ class HlsStack(core.Stack):
             input_bucket=self.sentinel_input_bucket_historic,
         )
 
-        self.landsat_sns_topic = aws_sns.Topic.from_topic_arn(
-            self, "LandsatSNSTopc", topic_arn=LANDSAT_SNS_TOPIC
-        )
+        if LANDSAT_SNS_TOPIC_ENABLED:
+            self.landsat_sns_topic = aws_sns.Topic.from_topic_arn(
+                self, "LandsatSNSTopc", topic_arn=LANDSAT_SNS_TOPIC
+            )
 
-        self.landsat_historic_sns_topic = aws_sns.Topic.from_topic_arn(
-            self, "LandsatHistoricSNSTopic", topic_arn=LANDSAT_HISTORIC_SNS_TOPIC
-        )
+            self.landsat_step_function_trigger = StepFunctionTrigger(
+                self,
+                "LandsatStepFunctionTrigger",
+                state_machine=self.landsat_step_function.state_machine.ref,
+                code_file="execute_landsat_step_function.py",
+                timeout=180,
+                input_sns=self.landsat_sns_topic,
+                layers=[self.hls_lambda_layer],
+            )
 
-        self.landsat_step_function_trigger = StepFunctionTrigger(
-            self,
-            "LandsatStepFunctionTrigger",
-            state_machine=self.landsat_step_function.state_machine.ref,
-            code_file="execute_landsat_step_function.py",
-            timeout=180,
-            input_sns=self.landsat_sns_topic,
-            layers=[self.hls_lambda_layer],
-        )
+        # self.landsat_historic_sns_topic = aws_sns.Topic.from_topic_arn(
+        #     self, "LandsatHistoricSNSTopic", topic_arn=LANDSAT_HISTORIC_SNS_TOPIC
+        # )
 
-        self.landsat_step_function_historic_trigger = StepFunctionTrigger(
-            self,
-            "LandsatStepFunctionHistoricTrigger",
-            state_machine=self.landsat_step_function_historic.state_machine.ref,
-            code_file="execute_landsat_step_function.py",
-            timeout=180,
-            input_sns=self.landsat_historic_sns_topic,
-            layers=[self.hls_lambda_layer],
-            env_vars={
-                "HISTORIC": "historic",
-            },
-        )
+        # self.landsat_step_function_historic_trigger = StepFunctionTrigger(
+        #     self,
+        #     "LandsatStepFunctionHistoricTrigger",
+        #     state_machine=self.landsat_step_function_historic.state_machine.ref,
+        #     code_file="execute_landsat_step_function.py",
+        #     timeout=180,
+        #     input_sns=self.landsat_historic_sns_topic,
+        #     layers=[self.hls_lambda_layer],
+        #     env_vars={
+        #         "HISTORIC": "historic",
+        #     },
+        # )
 
         self.landsat_incomplete_step_function_trigger = StepFunctionTrigger(
             self,
