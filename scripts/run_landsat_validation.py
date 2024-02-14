@@ -89,7 +89,6 @@ def submit_tile_job(
             "environment": [
                 {"name": "PATHROW_LIST", "value": ",".join(valid_pathrows)},
                 {"name": "OUTPUT_BUCKET", "value": f"hls-debug-output/{run_id}"},
-                {"name": "DEBUG_BUCKET", "value": f"hls-debug-output/{run_id}"},
                 {"name": "INPUT_BUCKET", "value": f"hls-debug-output/{run_id}"},
                 {"name": "DATE", "value": separated_date},
                 {"name": "MGRS", "value": mgrs_tile},
