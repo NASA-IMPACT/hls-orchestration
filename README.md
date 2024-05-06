@@ -104,3 +104,5 @@ To run unit test for all included Lambda functions
 ```plain
 tox -r
 ```
+
+VIIRS deployment.
