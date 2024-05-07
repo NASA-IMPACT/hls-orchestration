@@ -1,4 +1,5 @@
 import json
+from typing import Union
 
 from aws_cdk import aws_iam, aws_stepfunctions, core
 from hlsconstructs.batch_step_function import BatchStepFunction
@@ -22,6 +23,7 @@ class SentinelStepFunction(BatchStepFunction):
         check_exit_code: Lambda,
         replace_existing: bool,
         gibs_outputbucket: str,
+        debug_bucket: Union[bool, str],
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -145,6 +147,11 @@ class SentinelStepFunction(BatchStepFunction):
                 "Error": {"Type": "Fail"},
             },
         }
+
+        if debug_bucket:
+            sentinel_state_definition["States"]["ProcessSentinel"]["Parameters"][
+                "ContainerOverrides"
+            ]["Environment"].append({"Name": "DEBUG_BUCKET", "Value": debug_bucket})
 
         self.sentinel_state_machine = aws_stepfunctions.CfnStateMachine(
             self,

@@ -1,4 +1,5 @@
 import json
+from typing import Union
 
 from aws_cdk import aws_iam, aws_stepfunctions, core
 from hlsconstructs.batch_step_function import BatchStepFunction
@@ -20,6 +21,7 @@ class LandsatMGRSStepFunction(BatchStepFunction):
         mgrs_logger: Lambda,
         get_random_wait: Lambda,
         gibs_outputbucket: str,
+        debug_bucket: Union[bool, str],
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -126,6 +128,41 @@ class LandsatMGRSStepFunction(BatchStepFunction):
                 "Done": {"Type": "Succeed"},
             },
         }
+        if debug_bucket:
+            updated_environment = [
+                {
+                    "Name": "PATHROW_LIST",
+                    "Value.$": "$.mgrs_metadata.pathrows_string",
+                },
+                {
+                    "Name": "INPUT_BUCKET",
+                    "Value": debug_bucket,
+                },
+                {"Name": "OUTPUT_BUCKET", "Value": debug_bucket},
+                {
+                    "Name": "GCC_ROLE_ARN",
+                    "Value": outputbucket_role_arn,
+                },
+                {"Name": "DATE", "Value.$": "$.date"},
+                {"Name": "MGRS", "Value.$": "$.MGRS"},
+                {"Name": "LANDSAT_PATH", "Value.$": "$.path"},
+                {
+                    "Name": "MGRS_ULX",
+                    "Value.$": "$.mgrs_metadata.mgrs_ulx",
+                },
+                {
+                    "Name": "MGRS_ULY",
+                    "Value.$": "$.mgrs_metadata.mgrs_uly",
+                },
+                {
+                    "Name": "GIBS_OUTPUT_BUCKET",
+                    "Value": gibs_outputbucket,
+                },
+            ]
+
+            state_definition["States"]["RunLandsatTile"]["Parameters"][
+                "ContainerOverrides"
+            ]["Environment"] = updated_environment
 
         self.state_machine = aws_stepfunctions.CfnStateMachine(
             self,

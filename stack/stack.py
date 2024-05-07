@@ -1,13 +1,6 @@
 import os
 
-from aws_cdk import (
-    aws_iam,
-    aws_lambda,
-    aws_s3,
-    aws_sns,
-    aws_ssm,
-    core,
-)
+from aws_cdk import aws_iam, aws_lambda, aws_s3, aws_sns, aws_ssm, core
 from hlsconstructs.batch import Batch
 from hlsconstructs.batch_cron import BatchCron
 from hlsconstructs.docker_batchjob import DockerBatchJob
@@ -64,6 +57,7 @@ LAADS_ECR_URI = getenv(
 )
 RDS_MIN_CAPACITY = int(getenv("HLS_RDS_MIN_CAPACITY", 4))
 RDS_MAX_CAPACITY = int(getenv("HLS_RDS_MAX_CAPACITY", 8))
+DEBUG_BUCKET = getenv("HLS_DEBUG_BUCKET", False)
 
 
 # Cron settings
@@ -570,6 +564,7 @@ class HlsStack(core.Stack):
             outputbucket_role_arn=OUTPUT_BUCKET_ROLE_ARN,
             replace_existing=REPLACE_EXISTING,
             gibs_outputbucket=GIBS_OUTPUT_BUCKET,
+            debug_bucket=DEBUG_BUCKET,
         )
 
         self.sentinel_step_function_historic = SentinelStepFunction(
@@ -628,6 +623,7 @@ class HlsStack(core.Stack):
             mgrs_logger=self.mgrs_logger,
             get_random_wait=self.get_random_wait,
             gibs_outputbucket=GIBS_OUTPUT_BUCKET,
+            debug_bucket=DEBUG_BUCKET,
         )
 
         self.landsat_mgrs_partials_step_function = LandsatMGRSPartialsStepFunction(
@@ -643,6 +639,7 @@ class HlsStack(core.Stack):
             mgrs_logger=self.mgrs_logger,
             get_random_wait=self.get_random_wait,
             gibs_outputbucket=GIBS_OUTPUT_BUCKET,
+            debug_bucket=DEBUG_BUCKET,
         )
 
         self.landsat_mgrs_step_function_historic = LandsatMGRSStepFunction(
@@ -693,6 +690,7 @@ class HlsStack(core.Stack):
             get_random_wait=self.get_random_wait,
             replace_existing=REPLACE_EXISTING,
             landsat_mgrs_step_function_arn=self.landsat_mgrs_step_function.state_machine.ref,
+            debug_bucket=DEBUG_BUCKET,
         )
 
         self.landsat_step_function_historic = LandsatStepFunction(
