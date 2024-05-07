@@ -595,6 +595,7 @@ class HlsStack(core.Stack):
             outputbucket_role_arn=OUTPUT_BUCKET_ROLE_ARN,
             gibs_outputbucket=GIBS_OUTPUT_BUCKET,
             get_random_wait=self.get_random_wait,
+            debug_bucket=DEBUG_BUCKET,
         )
 
         self.sentinel_errors_step_function_historic = SentinelErrorsStepFunction(
@@ -638,8 +639,6 @@ class HlsStack(core.Stack):
             pr2mgrs=self.pr2mgrs_lambda,
             mgrs_logger=self.mgrs_logger,
             get_random_wait=self.get_random_wait,
-            gibs_outputbucket=GIBS_OUTPUT_BUCKET,
-            debug_bucket=DEBUG_BUCKET,
         )
 
         self.landsat_mgrs_step_function_historic = LandsatMGRSStepFunction(
@@ -654,7 +653,6 @@ class HlsStack(core.Stack):
             pr2mgrs=self.pr2mgrs_lambda,
             mgrs_logger=self.mgrs_logger,
             get_random_wait=self.get_random_wait,
-            gibs_outputbucket=GIBS_OUTPUT_BUCKET_HISTORIC,
         )
 
         self.landsat_mgrs_partials_step_function_historic = (
@@ -670,7 +668,6 @@ class HlsStack(core.Stack):
                 pr2mgrs=self.pr2mgrs_lambda,
                 mgrs_logger=self.mgrs_logger,
                 get_random_wait=self.get_random_wait,
-                gibs_outputbucket=GIBS_OUTPUT_BUCKET_HISTORIC,
             )
         )
 

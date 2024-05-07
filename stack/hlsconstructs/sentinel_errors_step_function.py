@@ -20,7 +20,7 @@ class SentinelErrorsStepFunction(BatchStepFunction, StateMachineStepFunction):
         update_sentinel_failure: Lambda,
         get_random_wait: Lambda,
         gibs_outputbucket: str,
-        debug_bucket: Union[bool, str],
+        debug_bucket: Union[bool, str] = False,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)

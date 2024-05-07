@@ -25,7 +25,7 @@ class LandsatStepFunction(BatchStepFunction, StateMachineStepFunction):
         get_random_wait: Lambda,
         replace_existing: bool,
         landsat_mgrs_step_function_arn: str,
-        debug_bucket: Union[bool, str],
+        debug_bucket: Union[bool, str] = False,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)

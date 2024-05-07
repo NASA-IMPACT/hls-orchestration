@@ -23,7 +23,7 @@ class SentinelStepFunction(BatchStepFunction):
         check_exit_code: Lambda,
         replace_existing: bool,
         gibs_outputbucket: str,
-        debug_bucket: Union[bool, str],
+        debug_bucket: Union[bool, str] = False,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
