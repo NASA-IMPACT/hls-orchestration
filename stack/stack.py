@@ -639,6 +639,7 @@ class HlsStack(core.Stack):
             pr2mgrs=self.pr2mgrs_lambda,
             mgrs_logger=self.mgrs_logger,
             get_random_wait=self.get_random_wait,
+            gibs_outputbucket=GIBS_OUTPUT_BUCKET,
         )
 
         self.landsat_mgrs_step_function_historic = LandsatMGRSStepFunction(
@@ -653,6 +654,7 @@ class HlsStack(core.Stack):
             pr2mgrs=self.pr2mgrs_lambda,
             mgrs_logger=self.mgrs_logger,
             get_random_wait=self.get_random_wait,
+            gibs_outputbucket=GIBS_OUTPUT_BUCKET,
         )
 
         self.landsat_mgrs_partials_step_function_historic = (
@@ -668,6 +670,7 @@ class HlsStack(core.Stack):
                 pr2mgrs=self.pr2mgrs_lambda,
                 mgrs_logger=self.mgrs_logger,
                 get_random_wait=self.get_random_wait,
+                gibs_outputbucket=GIBS_OUTPUT_BUCKET,
             )
         )
 
