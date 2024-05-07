@@ -124,9 +124,11 @@ class SentinelErrorsStepFunction(BatchStepFunction, StateMachineStepFunction):
         }
 
         if debug_bucket:
-            state_definition["States"]["ProcessErrors"]["Parameters"][
-                "ContainerOverrides"
-            ]["Environment"].append({"Name": "DEBUG_BUCKET", "Value": debug_bucket})
+            state_definition["States"]["ProcessErrors"]["Iterator"]["States"][
+                "ProcessSentinel"
+            ]["Parameters"]["ContainerOverrides"]["Environment"].append(
+                {"Name": "DEBUG_BUCKET", "Value": debug_bucket}
+            )
         self.state_machine = aws_stepfunctions.CfnStateMachine(
             self,
             "SentineErrorsStateMachine",
