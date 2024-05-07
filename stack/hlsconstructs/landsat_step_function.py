@@ -1,4 +1,5 @@
 import json
+from typing import Union
 
 from aws_cdk import aws_iam, aws_stepfunctions, core
 from hlsconstructs.batch_step_function import BatchStepFunction
@@ -24,6 +25,7 @@ class LandsatStepFunction(BatchStepFunction, StateMachineStepFunction):
         get_random_wait: Lambda,
         replace_existing: bool,
         landsat_mgrs_step_function_arn: str,
+        debug_bucket: Union[bool, str],
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -238,6 +240,10 @@ class LandsatStepFunction(BatchStepFunction, StateMachineStepFunction):
             },
         }
 
+        if debug_bucket:
+            state_definition["States"]["RunLandsatAc"]["Parameters"][
+                "ContainerOverrides"
+            ]["Environment"].append({"Name": "DEBUG_BUCKET", "Value": debug_bucket})
         self.state_machine = aws_stepfunctions.CfnStateMachine(
             self,
             "LandsatStateMachine",
