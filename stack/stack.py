@@ -170,6 +170,7 @@ class HlsStack(core.Stack):
             "LandsatIntermediateBucket",
             bucket_name=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
             removal_policy=core.RemovalPolicy.DESTROY,
+            lifecycle_rules=[aws_s3.LifecycleRule(expiration=core.Duration.days(60))],
         )
 
         self.gibs_intermediate_output_bucket = aws_s3.Bucket(
@@ -177,6 +178,7 @@ class HlsStack(core.Stack):
             "GibsIntermediateBucket",
             bucket_name=GIBS_INTERMEDIATE_OUTPUT_BUCKET,
             removal_policy=core.RemovalPolicy.DESTROY,
+            lifecycle_rules=[aws_s3.LifecycleRule(expiration=core.Duration.days(60))],
         )
 
         self.efs = Efs(self, "Efs", network=self.network)
