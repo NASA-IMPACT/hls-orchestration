@@ -91,6 +91,10 @@ class SentinelStepFunction(BatchStepFunction):
                                 {"Name": "INPUT_BUCKET", "Value": inputbucket},
                                 {"Name": "LASRC_AUX_DIR", "Value": "/var/lasrc_aux"},
                                 {
+                                    "Name": "VIIRS_AUX_STARTING_DATE",
+                                    "Value": "20210101",
+                                },
+                                {
                                     "Name": "GCC_ROLE_ARN",
                                     "Value": outputbucket_role_arn,
                                 },

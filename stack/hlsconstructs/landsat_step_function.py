@@ -127,6 +127,10 @@ class LandsatStepFunction(BatchStepFunction, StateMachineStepFunction):
                                     "Value": intermediate_output_bucket,
                                 },
                                 {"Name": "LASRC_AUX_DIR", "Value": "/var/lasrc_aux"},
+                                {
+                                    "Name": "VIIRS_AUX_STARTING_DATE",
+                                    "Value": "20210101",
+                                },
                                 {"Name": "REPLACE_EXISTING", "Value": replace},
                                 {"Name": "OMP_NUM_THREADS", "Value": "2"},
                             ],

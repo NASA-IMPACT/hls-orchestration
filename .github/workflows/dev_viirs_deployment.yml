@@ -1,17 +1,12 @@
-name: mcp development deployment
+name: uah dev viirs deployment
 
 on:
   push:
-    branches: [dev]
+    branches: [viirs_orchestration]
   workflow_dispatch:
 
 env:
   AWS_DEFAULT_REGION: us-west-2
-
-# See https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services#updating-your-github-actions-workflow
-permissions:
-  id-token: write # required for requesting the JWT
-  contents: read  # required for actions/checkout
 
 jobs:
   unit-tests:
@@ -30,14 +25,14 @@ jobs:
       - name: Run Tox test environment
         # Run tox using the version of Python in `PATH`
         run: tox -e py
-  mcp-development-deployment:
+  dev-viirs-deployment:
     strategy:
       matrix:
         python: [3.8]
     runs-on: ubuntu-20.04
     needs: [unit-tests]
     environment:
-      name: mcp-dev
+      name: dev-viirs
     steps:
       - uses: actions/checkout@v4
       - name: Setup Python
@@ -46,14 +41,16 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: Install tox
         run: pip install tox
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v3
+      - name: Configure awscli
+        uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME_ARN }}
-          role-session-name: ${{ github.actor }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-west-2
       - name: Convert secrets to environment variables
         env:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           SECRETS_JSON: ${{ toJson(secrets) }}
         run: |
           while read -rd $'' line; do

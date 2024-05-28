@@ -225,7 +225,7 @@ class HlsStack(core.Stack):
             dockeruri=SENTINEL_ECR_URI,
             mountpath="/var/lasrc_aux",
             timeout=7200,
-            memory=15000,
+            memory=20000,
             vcpus=2,
         )
 
@@ -235,7 +235,7 @@ class HlsStack(core.Stack):
             dockeruri=LANDSAT_ECR_URI,
             mountpath="/var/lasrc_aux",
             timeout=5400,
-            memory=15000,
+            memory=20000,
             vcpus=2,
         )
 
@@ -543,9 +543,25 @@ class HlsStack(core.Stack):
             job=self.laads_task,
             env={
                 "LAADS_BUCKET": LAADS_BUCKET,
-                "L8_AUX_DIR": "/var/lasrc_aux",
+                "LASRC_AUX_DIR": "/var/lasrc_aux",
                 "LAADS_TOKEN": LAADS_TOKEN,
-                "LAADS_BUCKET_BOOTSTRAP": LAADS_BUCKET_BOOTSTRAP,
+                "LAADS_FLAG": "--today",
+            },
+        )
+
+        self.laads_climatology_cron = BatchCron(
+            self,
+            "LaadsClimatologyCron",
+            cron_str="cron(0 0 1-6 * ? *)",
+            code_file="laads_submit_climatology_job.py",
+            queue=self.batch.laads_jobqueue.ref,
+            job=self.laads_task,
+            env={
+                "LAADS_BUCKET": LAADS_BUCKET,
+                "LASRC_AUX_DIR": "/var/lasrc_aux",
+                "LAADS_TOKEN": LAADS_TOKEN,
+                "JOB_QUEUE": self.batch.laads_jobqueue.ref,
+                "JOB_DEFINITION": self.laads_task.job.ref,
             },
         )
 

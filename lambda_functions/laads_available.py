@@ -17,22 +17,17 @@ import boto3
 from botocore.errorfactory import ClientError
 
 s3 = boto3.client("s3")
-bucket = os.getenv("LAADS_BUCKET", None)
-print(bucket)
-if bucket is None:
-    raise Exception("No Bucket set")
 
 
-def key_exists(bucket: str, key: str):
+def key_pattern_exists(bucket: str, key_pattern: str):
     try:
-        s3.head_object(Bucket=bucket, Key=key)
+        response = s3.list_objects_v2(Bucket=bucket, Prefix=key_pattern)
+        if "Contents" in response:
+            return True
+        else:
+            return False
     except ClientError as e:
         print(e)
-        if e.response["Error"]["Code"] == "404":
-            return False
-        else:
-            raise Exception(e)
-    return True
 
 
 def getyyyydoy(date_str: str):
@@ -65,16 +60,25 @@ def handler(event: Dict, context: Dict):
     if date_str is None:
         raise Exception("Missing Date Parameter")
 
+    bucket = os.getenv("LAADS_BUCKET", None)
+    if bucket is None:
+        raise Exception("No Bucket set")
     ydoy, year = getyyyydoy(date_str)
-    key = f"lasrc_aux/LADS/{year}/L8ANC{ydoy}.hdf_fused"
-    print(f"------{bucket}    {key} ------")
-    exists = key_exists(bucket, key)
+    vj_pattern = f"lasrc_aux/LADS/{year}/VJ104ANC.A{ydoy}"
+    print(f"------{bucket}    {vj_pattern} ------")
+    vj_exists = key_pattern_exists(bucket, vj_pattern)
+    vnp_pattern = f"lasrc_aux/LADS/{year}/VNP04ANC.A{ydoy}"
+    vnp_exists = key_pattern_exists(bucket, vnp_pattern)
+    if vj_exists or vnp_exists:
+        exists = True
+    else:
+        exists = False
     output = {
         "granule": date_str,
         "year": year,
         "doy": ydoy,
         "bucket": bucket,
-        "key": key,
+        "pattern": f"{vj_pattern} {vnp_pattern}",
         "available": False,
     }
     if exists:
