@@ -256,7 +256,7 @@ class HlsStack(core.Stack):
                     os.path.dirname(__file__), "..", "layers", "hls_lambda_layer"
                 )
             ),
-            compatible_runtimes=[aws_lambda.Runtime.PYTHON_3_7],
+            compatible_runtimes=[aws_lambda.Runtime.PYTHON_3_8],
         )
 
         self.pr2mgrs_lambda = Lambda(
