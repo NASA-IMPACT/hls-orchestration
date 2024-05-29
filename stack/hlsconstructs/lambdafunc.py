@@ -26,7 +26,7 @@ class Lambda(core.Construct):
         code_str: str = None,
         package_code_dir: str = None,
         env: Dict = None,
-        runtime: aws_lambda.Runtime = aws_lambda.Runtime.PYTHON_3_7,
+        runtime: aws_lambda.Runtime = aws_lambda.Runtime.PYTHON_3_8,
         handler: str = "index.handler",
         layers: list = None,
         cron_str: str = None,
