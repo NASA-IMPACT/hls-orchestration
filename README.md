@@ -12,7 +12,7 @@ For more details about all of the HLS project's components see
 
 ## Requirements
 
-- Python>=3.7
+- Python>=3.9
 - tox
 - aws-cli
 - jq
