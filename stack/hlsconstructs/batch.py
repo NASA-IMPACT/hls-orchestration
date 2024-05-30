@@ -1,15 +1,16 @@
 import os
 
-from aws_cdk import aws_batch, aws_ec2, aws_ecs, aws_efs, aws_iam, aws_ssm, core
+from aws_cdk import Fn, aws_batch, aws_ec2, aws_ecs, aws_efs, aws_iam, aws_ssm
+from constructs import Construct
 from hlsconstructs.network import Network
 
 dirname = os.path.dirname(os.path.realpath(__file__))
 
 
-class Batch(core.Construct):
+class Batch(Construct):
     def __init__(
         self,
-        scope: core.Construct,
+        scope: Construct,
         id: str,
         network: Network,
         instance_types: list,
@@ -120,7 +121,7 @@ class Batch(core.Construct):
         user_data_str = "\n".join(user_data.render().split("\n")[1:])
 
         launch_template_data = aws_ec2.CfnLaunchTemplate.LaunchTemplateDataProperty(
-            user_data=core.Fn.base64(user_data_str),
+            user_data=Fn.base64(user_data_str),
             key_name=ssh_keyname,
         )
 

@@ -1,7 +1,8 @@
 import json
 from typing import Union
 
-from aws_cdk import aws_iam, aws_stepfunctions, core
+from aws_cdk import aws_iam, aws_stepfunctions
+from constructs import Construct
 from hlsconstructs.batch_step_function import BatchStepFunction
 from hlsconstructs.lambdafunc import Lambda
 
@@ -9,7 +10,7 @@ from hlsconstructs.lambdafunc import Lambda
 class LandsatMGRSStepFunction(BatchStepFunction):
     def __init__(
         self,
-        scope: core.Construct,
+        scope: Construct,
         id: str,
         outputbucket: str,
         outputbucket_role_arn: str,

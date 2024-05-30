@@ -1,14 +1,15 @@
 import os
 
-from aws_cdk import aws_batch, aws_ecr_assets, aws_ecs, aws_iam, aws_s3, core
+from aws_cdk import aws_batch, aws_ecr_assets, aws_ecs, aws_iam, aws_s3
+from constructs import Construct
 
 dirname = os.path.dirname(os.path.realpath(__file__))
 
 
-class DockerBatchJob(core.Construct):
+class DockerBatchJob(Construct):
     def __init__(
         self,
-        scope: core.Construct,
+        scope: Construct,
         id: str,
         dockerdir: str = None,
         dockeruri: str = None,

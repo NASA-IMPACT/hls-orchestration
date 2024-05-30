@@ -1,6 +1,7 @@
 import json
 
-from aws_cdk import aws_iam, aws_stepfunctions, core
+from aws_cdk import aws_iam, aws_stepfunctions
+from constructs import Construct
 from hlsconstructs.lambdafunc import Lambda
 from hlsconstructs.state_machine_step_function import StateMachineStepFunction
 
@@ -8,7 +9,7 @@ from hlsconstructs.state_machine_step_function import StateMachineStepFunction
 class LandsatIncompleteStepFunction(StateMachineStepFunction):
     def __init__(
         self,
-        scope: core.Construct,
+        scope: Construct,
         id: str,
         landsat_mgrs_step_function_arn: str,
         get_random_wait: Lambda,

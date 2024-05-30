@@ -1,6 +1,18 @@
 import os
 
-from aws_cdk import aws_iam, aws_lambda, aws_s3, aws_sns, aws_ssm, core
+from aws_cdk import (
+    Aspects,
+    CfnOutput,
+    Duration,
+    RemovalPolicy,
+    Stack,
+    aws_iam,
+    aws_lambda,
+    aws_s3,
+    aws_sns,
+    aws_ssm,
+)
+from constructs import Construct
 from hlsconstructs.batch import Batch
 from hlsconstructs.batch_cron import BatchCron
 from hlsconstructs.docker_batchjob import DockerBatchJob
@@ -107,8 +119,8 @@ USE_CLOUD_WATCH = getenv("HLS_USE_CLOUD_WATCH", "false") == "true"
 GCC = getenv("GCC", None) == "true"
 
 
-class HlsStack(core.Stack):
-    def __init__(self, scope: core.Construct, id: str, **kwargs) -> None:
+class HlsStack(Stack):
+    def __init__(self, scope: Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
 
         if GCC:
@@ -120,7 +132,7 @@ class HlsStack(core.Stack):
                 self, "gcc_ami", parameter_name="/mcp/amis/aml2-ecs"
             ).string_value
 
-            core.Aspects.of(self).add(PermissionBoundaryAspect(boundary_arn))
+            Aspects.of(self).add(PermissionBoundaryAspect(boundary_arn))
         else:
             vpcid = None
             image_id = None
@@ -142,37 +154,37 @@ class HlsStack(core.Stack):
             self,
             "SentinelInputBucket",
             bucket_name=SENTINEL_INPUT_BUCKET,
-            removal_policy=core.RemovalPolicy.DESTROY,
+            removal_policy=RemovalPolicy.DESTROY,
         )
 
         self.sentinel_input_bucket_historic = aws_s3.Bucket(
             self,
             "SentinelInputBucketHistoric",
             bucket_name=SENTINEL_INPUT_BUCKET_HISTORIC,
-            removal_policy=core.RemovalPolicy.DESTROY,
+            removal_policy=RemovalPolicy.DESTROY,
         )
 
         self.landsat_input_bucket_historic = aws_s3.Bucket(
             self,
             "LandsatInputBucketHistoric",
             bucket_name=LANDSAT_INPUT_BUCKET_HISTORIC,
-            removal_policy=core.RemovalPolicy.DESTROY,
+            removal_policy=RemovalPolicy.DESTROY,
         )
 
         self.landsat_intermediate_output_bucket = aws_s3.Bucket(
             self,
             "LandsatIntermediateBucket",
             bucket_name=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
-            removal_policy=core.RemovalPolicy.DESTROY,
-            lifecycle_rules=[aws_s3.LifecycleRule(expiration=core.Duration.days(60))],
+            removal_policy=RemovalPolicy.DESTROY,
+            lifecycle_rules=[aws_s3.LifecycleRule(expiration=Duration.days(60))],
         )
 
         self.gibs_intermediate_output_bucket = aws_s3.Bucket(
             self,
             "GibsIntermediateBucket",
             bucket_name=GIBS_INTERMEDIATE_OUTPUT_BUCKET,
-            removal_policy=core.RemovalPolicy.DESTROY,
-            lifecycle_rules=[aws_s3.LifecycleRule(expiration=core.Duration.days(60))],
+            removal_policy=RemovalPolicy.DESTROY,
+            lifecycle_rules=[aws_s3.LifecycleRule(expiration=Duration.days(60))],
         )
 
         self.efs = Efs(self, "Efs", network=self.network)
@@ -1085,73 +1097,73 @@ class HlsStack(core.Stack):
         self.sentinel_step_function.steps_role.add_managed_policy(cw_events_full)
 
         # Stack exports
-        core.CfnOutput(
+        CfnOutput(
             self,
             "sentineljobqueueexport",
             export_name=f"{STACKNAME}-sentineljobqueue",
             value=self.batch.sentinel_jobqueue.ref,
         )
-        core.CfnOutput(
+        CfnOutput(
             self,
             "landsatacjobqueueexport",
             export_name=f"{STACKNAME}-landsatacjobqueue",
             value=self.batch.landsatac_jobqueue.ref,
         )
-        core.CfnOutput(
+        CfnOutput(
             self,
             "landsattilejobqueueexport",
             export_name=f"{STACKNAME}-landsattilejobqueue",
             value=self.batch.landsattile_jobqueue.ref,
         )
-        core.CfnOutput(
+        CfnOutput(
             self,
             "sentinelstatemachineexport",
             export_name=f"{STACKNAME}-setinelstatemachine",
             value=self.sentinel_step_function.sentinel_state_machine.ref,
         )
-        core.CfnOutput(
+        CfnOutput(
             self,
             "setupdbexport",
             export_name=f"{STACKNAME}-setupdb",
             value=self.rds_bootstrap.function.function_arn,
         )
-        core.CfnOutput(
+        CfnOutput(
             self,
             "sentineloutputexport",
             export_name=f"{STACKNAME}-sentineloutput",
             value=self.sentinel_output_bucket.bucket_name,
         )
-        core.CfnOutput(
+        CfnOutput(
             self,
             "sentinelinputexport",
             export_name=f"{STACKNAME}-sentinelinput",
             value=self.sentinel_input_bucket.bucket_name,
         )
-        core.CfnOutput(
+        CfnOutput(
             self,
             "sentineljobdefinition",
             export_name=f"{STACKNAME}-sentineljobdefinition",
             value=self.sentinel_task.job.ref,
         )
-        core.CfnOutput(
+        CfnOutput(
             self,
             "landsatintermediateoutput",
             export_name=f"{STACKNAME}-landsatintermediateoutput",
             value=self.landsat_intermediate_output_bucket.bucket_name,
         )
-        core.CfnOutput(
+        CfnOutput(
             self,
             "landsatjobdefinition",
             export_name=f"{STACKNAME}-landsatjobdefinition",
             value=self.landsat_task.job.ref,
         )
-        core.CfnOutput(
+        CfnOutput(
             self,
             "landsattilejobdefinition",
             export_name=f"{STACKNAME}-landsattilejobdefinition",
             value=self.landsat_tile_task.job.ref,
         )
-        core.CfnOutput(
+        CfnOutput(
             self,
             "gibsintermediateoutput",
             export_name=f"{STACKNAME}-gibsintermediateoutput",

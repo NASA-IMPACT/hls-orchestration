@@ -9,15 +9,15 @@ from aws_cdk import (
     aws_s3,
     aws_sns,
     aws_stepfunctions,
-    core,
 )
+from constructs import Construct
 from hlsconstructs.lambdafunc import Lambda
 
 
-class StepFunctionTrigger(core.Construct):
+class StepFunctionTrigger(Construct):
     def __init__(
         self,
-        scope: core.Construct,
+        scope: Construct,
         id: str,
         state_machine: str,
         code_file: str,

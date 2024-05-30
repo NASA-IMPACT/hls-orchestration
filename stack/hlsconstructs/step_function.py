@@ -1,13 +1,14 @@
 from typing import Any, Mapping
 
-from aws_cdk import aws_iam, core
+from aws_cdk import aws_iam
+from constructs import Construct
 from hlsconstructs.lambdafunc import Lambda
 
 
-class StepFunction(core.Construct):
+class StepFunction(Construct):
     def __init__(
         self,
-        scope: core.Construct,
+        scope: Construct,
         id: str,
         **kwargs,
     ) -> None:

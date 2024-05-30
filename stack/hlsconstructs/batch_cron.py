@@ -1,7 +1,8 @@
 import inspect
 from typing import Dict
 
-from aws_cdk import aws_events, aws_events_targets, aws_iam, aws_lambda, core
+from aws_cdk import aws_events, aws_events_targets, aws_iam, aws_lambda
+from constructs import Construct
 from hlsconstructs.docker_batchjob import DockerBatchJob
 from hlsconstructs.lambdafunc import Lambda
 from utils import align, aws_env
@@ -10,7 +11,7 @@ from utils import align, aws_env
 class BatchCron(Lambda):
     def __init__(
         self,
-        scope: core.Construct,
+        scope: Construct,
         id: str,
         cron_str: str,
         queue: str,
