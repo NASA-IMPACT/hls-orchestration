@@ -44,7 +44,6 @@ class StepFunctionTrigger(Construct):
             timeout=timeout,
             env=env,
             layers=layers,
-            runtime=aws_lambda.Runtime.PYTHON_3_8,
         )
 
         if input_bucket is not None:
