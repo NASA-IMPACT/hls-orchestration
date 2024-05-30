@@ -31,7 +31,7 @@ jobs:
   mcp-production-viirs-deployment:
     strategy:
       matrix:
-        python: [3.8]
+        python: [3.9]
     runs-on: ubuntu-20.04
     needs: [unit-tests]
     environment:
