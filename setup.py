@@ -3,7 +3,11 @@
 from setuptools import find_packages, setup
 
 # Runtime requirements.
-aws_cdk_extras = ["aws-cdk-lib>=2.0.0", "constructs>=10.0.0"]
+aws_cdk_extras = [
+    "aws-cdk-lib>=2.0.0",
+    "aws-cdk.aws-lambda-python-alpha",
+    "constructs>=10.0.0",
+]
 
 install_requires: list[str] = []
 
