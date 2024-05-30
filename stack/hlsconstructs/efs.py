@@ -1,11 +1,12 @@
-from aws_cdk import aws_ec2, aws_efs, aws_iam, core
+from aws_cdk import aws_ec2, aws_efs, aws_iam
+from constructs import Construct
 from hlsconstructs.network import Network
 
 
-class Efs(core.Construct):
+class Efs(Construct):
     def __init__(
         self,
-        scope: core.Construct,
+        scope: Construct,
         id: str,
         network: Network,
         **kwargs,

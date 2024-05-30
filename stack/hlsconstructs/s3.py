@@ -1,13 +1,14 @@
 import boto3
 import botocore
-from aws_cdk import aws_iam, aws_s3, core
+from aws_cdk import aws_iam, aws_s3
+from constructs import Construct
 
 
 # Creates new S3 bucket. If bucket already exists will connect to existing bucket.
-class S3(core.Construct):
+class S3(Construct):
     def __init__(
         self,
-        scope: core.Construct,
+        scope: Construct,
         id: str,
         bucket_name: str = None,
         **kwargs,

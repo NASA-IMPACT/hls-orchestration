@@ -2,22 +2,23 @@ import os
 from typing import Dict
 
 from aws_cdk import (
+    Duration,
     aws_events,
     aws_events_targets,
     aws_iam,
     aws_lambda,
-    aws_lambda_python,
-    core,
+    aws_lambda_python_alpha,
 )
+from constructs import Construct
 from utils import align
 
 
-class Lambda(core.Construct):
+class Lambda(Construct):
     """AWS Lambda Construct."""
 
     def __init__(
         self,
-        scope: core.Construct,
+        scope: Construct,
         id: str,
         memory: int = 512,
         timeout: int = 5,
@@ -43,13 +44,13 @@ class Lambda(core.Construct):
                 "lambda_functions",
                 package_code_dir,
             )
-            self.function = aws_lambda_python.PythonFunction(
+            self.function = aws_lambda_python_alpha.PythonFunction(
                 self,
                 "function",
                 entry=absolute_path,
                 index="index.py",
                 memory_size=memory,
-                timeout=core.Duration.seconds(timeout),
+                timeout=Duration.seconds(timeout),
                 runtime=runtime,
                 environment=env,
             )
@@ -87,7 +88,7 @@ class Lambda(core.Construct):
                 code=self.code,
                 handler=self.handler,
                 memory_size=memory,
-                timeout=core.Duration.seconds(timeout),
+                timeout=Duration.seconds(timeout),
                 runtime=runtime,
                 environment=env,
             )

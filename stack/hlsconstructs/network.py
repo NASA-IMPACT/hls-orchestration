@@ -1,8 +1,9 @@
-from aws_cdk import aws_ec2, core
+from aws_cdk import aws_ec2
+from constructs import Construct
 
 
-class Network(core.Construct):
-    def __init__(self, scope: core.Construct, id: str, vpcid=None, **kwargs) -> None:
+class Network(Construct):
+    def __init__(self, scope: Construct, id: str, vpcid=None, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
         if vpcid:
             self.vpc = aws_ec2.Vpc.from_lookup(self, "Vpc", vpc_id=vpcid)

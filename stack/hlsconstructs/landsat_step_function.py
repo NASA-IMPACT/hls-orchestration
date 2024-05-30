@@ -1,7 +1,8 @@
 import json
 from typing import Union
 
-from aws_cdk import aws_iam, aws_stepfunctions, core
+from aws_cdk import aws_iam, aws_stepfunctions
+from constructs import Construct
 from hlsconstructs.batch_step_function import BatchStepFunction
 from hlsconstructs.lambdafunc import Lambda
 from hlsconstructs.state_machine_step_function import StateMachineStepFunction
@@ -10,7 +11,7 @@ from hlsconstructs.state_machine_step_function import StateMachineStepFunction
 class LandsatStepFunction(BatchStepFunction, StateMachineStepFunction):
     def __init__(
         self,
-        scope: core.Construct,
+        scope: Construct,
         id: str,
         laads_available: Lambda,
         intermediate_output_bucket: str,

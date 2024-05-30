@@ -1,10 +1,11 @@
-from aws_cdk import aws_cloudwatch, aws_cloudwatch_actions, aws_sns, core
+from aws_cdk import Duration, aws_cloudwatch, aws_cloudwatch_actions, aws_sns
+from constructs import Construct
 
 
-class StepFunctionAlarm(core.Construct):
+class StepFunctionAlarm(Construct):
     def __init__(
         self,
-        scope: core.Construct,
+        scope: Construct,
         id: str,
         state_machine: str,
         root_name: str,
@@ -15,9 +16,9 @@ class StepFunctionAlarm(core.Construct):
         self.step_function_metric = aws_cloudwatch.Metric(
             namespace="AWS/States",
             metric_name="ExecutionsFailed",
-            period=core.Duration.minutes(20),
+            period=Duration.minutes(20),
             statistic="avg",
-            dimensions={"StateMachineArn": state_machine},
+            dimensions_map={"StateMachineArn": state_machine},
         )
 
         self.step_function_alarm = aws_cloudwatch.Alarm(
