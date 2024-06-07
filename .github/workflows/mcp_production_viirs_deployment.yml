@@ -1,6 +1,8 @@
 name: mcp production viirs deployment
 
 on:
+  release:
+    types: [ published ]
   workflow_dispatch:
 
 env:

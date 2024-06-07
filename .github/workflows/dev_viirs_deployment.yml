@@ -2,7 +2,7 @@ name: uah dev viirs deployment
 
 on:
   push:
-    branches: [viirs_orchestration]
+    branches: [dev]
   workflow_dispatch:
 
 env:
