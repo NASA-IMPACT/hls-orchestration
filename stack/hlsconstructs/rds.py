@@ -1,13 +1,14 @@
 import os
 
-from aws_cdk import aws_ec2, aws_iam, aws_rds, aws_secretsmanager, core
+from aws_cdk import Aws, Fn, aws_ec2, aws_iam, aws_rds, aws_secretsmanager
+from constructs import Construct
 from hlsconstructs.network import Network
 
 
-class Rds(core.Construct):
+class Rds(Construct):
     def __init__(
         self,
-        scope: core.Construct,
+        scope: Construct,
         id: str,
         network: Network,
         min_capacity: int,
@@ -59,12 +60,12 @@ class Rds(core.Construct):
             "RdsCluster",
             engine="aurora-postgresql",
             engine_mode="serverless",
-            engine_version="11.18",
+            engine_version="13.12",
             database_name="hls",
             db_subnet_group_name=self.subnet_group.ref,
             enable_http_endpoint=True,
             db_cluster_identifier=f"rds-{os.getenv('HLS_STACKNAME')}",
-            master_username=core.Fn.join(
+            master_username=Fn.join(
                 "",
                 [
                     "{{resolve:secretsmanager:",
@@ -72,7 +73,7 @@ class Rds(core.Construct):
                     ":SecretString:username}}",
                 ],
             ),
-            master_user_password=core.Fn.join(
+            master_user_password=Fn.join(
                 "",
                 [
                     "{{resolve:secretsmanager:",
@@ -89,9 +90,9 @@ class Rds(core.Construct):
             ),
         )
 
-        region = core.Aws.REGION
-        accountid = core.Aws.ACCOUNT_ID
-        self.arn = core.Fn.join(
+        region = Aws.REGION
+        accountid = Aws.ACCOUNT_ID
+        self.arn = Fn.join(
             ":", ["arn:aws:rds", region, accountid, "cluster", self.database.ref]
         )
 

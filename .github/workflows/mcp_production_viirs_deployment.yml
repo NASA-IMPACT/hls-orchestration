@@ -1,0 +1,82 @@
+name: mcp production viirs deployment
+
+on:
+  release:
+    types: [ published ]
+  workflow_dispatch:
+
+env:
+  AWS_DEFAULT_REGION: us-west-2
+
+# See https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services#updating-your-github-actions-workflow
+permissions:
+  id-token: write # required for requesting the JWT
+  contents: read  # required for actions/checkout
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        python: [3.9]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install Tox
+        run: pip install tox
+      - name: Run Tox test environment
+        # Run tox using the version of Python in `PATH`
+        run: tox -e py
+  mcp-production-viirs-deployment:
+    strategy:
+      matrix:
+        python: [3.9]
+    runs-on: ubuntu-20.04
+    needs: [unit-tests]
+    environment:
+      name: mcp-production-viirs
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install tox
+        run: pip install tox
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME_ARN }}
+          role-session-name: ${{ github.actor }}
+          aws-region: us-west-2
+      - name: Convert secrets to environment variables
+        env:
+          SECRETS_JSON: ${{ toJson(secrets) }}
+        run: |
+          while read -rd $'' line; do
+            echo "$line" >> $GITHUB_ENV
+          done < <(
+            jq -r <<<"$SECRETS_JSON" 'to_entries|map("\(.key)=\(.value)\u0000")[]'
+          )
+      - name: Convert vars to environment variables
+        env:
+          VARS_JSON: ${{ toJson(vars) }}
+        run: |
+          while read -rd $'' line; do
+            echo "$line" >> $GITHUB_ENV
+          done < <(
+            jq -r <<<"$VARS_JSON" 'to_entries|map("\(.key)=\(.value)\u0000")[]'
+          )
+      - name: Deploy with tox
+        run: tox -v -e dev -r -- deploy --require-approval never
+      - name: Run DB setup
+        run: |
+          setupdb=$(aws cloudformation describe-stacks \
+            --stack-name $HLS_STACKNAME \
+            --query "Stacks[0].Outputs[?OutputKey=='setupdbexport'].OutputValue" \
+            --output=text
+          )
+          aws lambda invoke --function-name=$setupdb response.json

@@ -1,6 +1,8 @@
 import json
+from typing import Union
 
-from aws_cdk import aws_iam, aws_stepfunctions, core
+from aws_cdk import aws_iam, aws_stepfunctions
+from constructs import Construct
 from hlsconstructs.batch_step_function import BatchStepFunction
 from hlsconstructs.lambdafunc import Lambda
 from hlsconstructs.state_machine_step_function import StateMachineStepFunction
@@ -9,7 +11,7 @@ from hlsconstructs.state_machine_step_function import StateMachineStepFunction
 class SentinelErrorsStepFunction(BatchStepFunction, StateMachineStepFunction):
     def __init__(
         self,
-        scope: core.Construct,
+        scope: Construct,
         id: str,
         outputbucket: str,
         outputbucket_role_arn: str,
@@ -19,6 +21,7 @@ class SentinelErrorsStepFunction(BatchStepFunction, StateMachineStepFunction):
         update_sentinel_failure: Lambda,
         get_random_wait: Lambda,
         gibs_outputbucket: str,
+        debug_bucket: Union[bool, str] = False,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -79,6 +82,10 @@ class SentinelErrorsStepFunction(BatchStepFunction, StateMachineStepFunction):
                                                 "Value": "/var/lasrc_aux",
                                             },
                                             {
+                                                "Name": "VIIRS_AUX_STARTING_DATE",
+                                                "Value": "20210101",
+                                            },
+                                            {
                                                 "Name": "GCC_ROLE_ARN",
                                                 "Value": outputbucket_role_arn,
                                             },
@@ -121,6 +128,12 @@ class SentinelErrorsStepFunction(BatchStepFunction, StateMachineStepFunction):
             },
         }
 
+        if debug_bucket:
+            state_definition["States"]["ProcessErrors"]["Iterator"]["States"][
+                "ProcessSentinel"
+            ]["Parameters"]["ContainerOverrides"]["Environment"].append(
+                {"Name": "DEBUG_BUCKET", "Value": debug_bucket}
+            )
         self.state_machine = aws_stepfunctions.CfnStateMachine(
             self,
             "SentineErrorsStateMachine",

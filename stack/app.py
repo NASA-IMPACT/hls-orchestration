@@ -1,6 +1,6 @@
 import os
 
-from aws_cdk import core
+from aws_cdk import App
 
 from stack import HlsStack
 
@@ -13,7 +13,7 @@ if os.getenv("GCC", None) == "true":
 else:
     GCC = False
 
-app = core.App()
+app = App()
 if GCC:
     region = os.environ["AWS_DEFAULT_REGION"]
     account = os.environ["HLS_GCC_ACCOUNT"]

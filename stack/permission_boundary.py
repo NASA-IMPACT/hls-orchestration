@@ -1,12 +1,13 @@
 from typing import Union
 
 import jsii
-from aws_cdk import aws_iam, core
+from aws_cdk import IAspect, aws_iam
+from constructs import IConstruct
 from jsii._reference_map import _refs
 from jsii._utils import Singleton
 
 
-@jsii.implements(core.IAspect)
+@jsii.implements(IAspect)
 class PermissionBoundaryAspect:
     """
     This aspect finds all aws_iam.Role objects in a node (ie. CDK stack) and sets permission boundary to the given ARN.
@@ -18,7 +19,7 @@ class PermissionBoundaryAspect:
         """
         self.permission_boundary = permission_boundary
 
-    def visit(self, construct_ref: core.IConstruct) -> None:
+    def visit(self, construct_ref: IConstruct) -> None:
         """
         construct_ref only contains a string reference to an object. To get the actual object, we need to resolve it using JSII mapping.
         :param construct_ref: ObjRef object with string reference to the actual object.

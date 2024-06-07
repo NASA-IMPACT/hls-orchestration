@@ -1,6 +1,8 @@
 import json
+from typing import Union
 
-from aws_cdk import aws_iam, aws_stepfunctions, core
+from aws_cdk import aws_iam, aws_stepfunctions
+from constructs import Construct
 from hlsconstructs.batch_step_function import BatchStepFunction
 from hlsconstructs.lambdafunc import Lambda
 from hlsconstructs.state_machine_step_function import StateMachineStepFunction
@@ -9,7 +11,7 @@ from hlsconstructs.state_machine_step_function import StateMachineStepFunction
 class LandsatStepFunction(BatchStepFunction, StateMachineStepFunction):
     def __init__(
         self,
-        scope: core.Construct,
+        scope: Construct,
         id: str,
         laads_available: Lambda,
         intermediate_output_bucket: str,
@@ -24,6 +26,7 @@ class LandsatStepFunction(BatchStepFunction, StateMachineStepFunction):
         get_random_wait: Lambda,
         replace_existing: bool,
         landsat_mgrs_step_function_arn: str,
+        debug_bucket: Union[bool, str] = False,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -125,6 +128,10 @@ class LandsatStepFunction(BatchStepFunction, StateMachineStepFunction):
                                     "Value": intermediate_output_bucket,
                                 },
                                 {"Name": "LASRC_AUX_DIR", "Value": "/var/lasrc_aux"},
+                                {
+                                    "Name": "VIIRS_AUX_STARTING_DATE",
+                                    "Value": "20210101",
+                                },
                                 {"Name": "REPLACE_EXISTING", "Value": replace},
                                 {"Name": "OMP_NUM_THREADS", "Value": "2"},
                             ],
@@ -238,6 +245,10 @@ class LandsatStepFunction(BatchStepFunction, StateMachineStepFunction):
             },
         }
 
+        if debug_bucket:
+            state_definition["States"]["RunLandsatAc"]["Parameters"][
+                "ContainerOverrides"
+            ]["Environment"].append({"Name": "DEBUG_BUCKET", "Value": debug_bucket})
         self.state_machine = aws_stepfunctions.CfnStateMachine(
             self,
             "LandsatStateMachine",
