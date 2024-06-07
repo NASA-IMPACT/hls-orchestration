@@ -1,4 +1,4 @@
-name: Tox tests
+name: tox tests
 
 on: [push]
 
