@@ -1,8 +1,6 @@
 name: mcp dev viirs deployment
 
 on:
-  push:
-    branches: [dev]
   workflow_dispatch:
 
 env:
