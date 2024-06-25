@@ -143,7 +143,8 @@ class Batch(Construct):
             )
 
         compute_resources = aws_batch.CfnComputeEnvironment.ComputeResourcesProperty(
-            allocation_strategy="BEST_FIT_PROGRESSIVE",
+            #  allocation_strategy="BEST_FIT_PROGRESSIVE",
+            allocation_strategy="SPOT_CAPACITY_OPTIMIZED",
             desiredv_cpus=0,
             image_id=image_id,
             instance_role=ecs_instance_profile.ref,
