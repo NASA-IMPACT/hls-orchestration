@@ -74,7 +74,7 @@ DEBUG_BUCKET = getenv("HLS_DEBUG_BUCKET", False)
 
 # Cron settings
 LAADS_CRON = getenv("HLS_LAADS_CRON", "cron(0 0/12 * * ? *)")
-LANDSAT_INCOMPLETE_CRON = getenv("HLS_LANDSAT_INCOMPLETE_CRON", "cron(0 12 * * ? *)")
+LANDSAT_INCOMPLETE_CRON = getenv("HLS_LANDSAT_INCOMPLETE_CRON", "cron(0 0/6 * * ? *)")
 LANDSAT_HISTORIC_INCOMPLETE_CRON = getenv(
     "HLS_LANDSAT_HISTORIC_INCOMPLETE_CRON", "cron(0 0/6 * * ? *)"
 )
