@@ -9,7 +9,9 @@ aws_cdk_extras = [
     "constructs>=10.0.0",
 ]
 
-install_requires: list[str] = []
+install_requires: list[str] = [
+    "setuptools>=64",
+]
 
 extras_require_test = [
     *aws_cdk_extras,
