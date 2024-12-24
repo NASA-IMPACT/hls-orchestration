@@ -17,6 +17,7 @@ from hlsconstructs.batch import Batch
 from hlsconstructs.batch_cron import BatchCron
 from hlsconstructs.docker_batchjob import DockerBatchJob
 from hlsconstructs.efs import Efs
+from hlsconstructs.l30_reprocess_step_function import L30_Reprocess_StepFunction
 from hlsconstructs.lambdafunc import Lambda
 from hlsconstructs.landsat_ac_errors_step_function import LandsatACErrorsStepFunction
 from hlsconstructs.landsat_incomplete_step_function import LandsatIncompleteStepFunction
@@ -475,6 +476,13 @@ class HlsStack(Stack):
             timeout=900,
         )
 
+        self.landsat_scene_lookup = Lambda(
+            self,
+            "LandatSceneLookup",
+            code_file="landsat_scene_lookup.py",
+            timeout=120,
+        )
+
         #  self.put_landsat_task_cw_metric = Lambda(
         #  self,
         #  "PutLandsatTaskCWMetric",
@@ -718,6 +726,25 @@ class HlsStack(Stack):
             get_random_wait=self.get_random_wait,
             replace_existing=REPLACE_EXISTING,
             landsat_mgrs_step_function_arn=self.landsat_mgrs_step_function.state_machine.ref,
+            debug_bucket=DEBUG_BUCKET,
+        )
+
+        self.l30_reprocess_step_function = L30_Reprocess_StepFunction(
+            self,
+            "L30ReprocessStateMAchine",
+            laads_available=self.laads_available,
+            intermediate_output_bucket=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
+            ac_job_definition=self.landsat_task.job.ref,
+            acjobqueue=self.batch.landsatac_jobqueue.ref,
+            pr2mgrs=self.pr2mgrs_lambda,
+            get_landsat_scenes=self.landsat_scene_lookup,
+            check_landsat_tiling_exit_code=self.check_landsat_tiling_exit_code,
+            check_landsat_ac_exit_code=self.check_exit_code,
+            get_random_wait=self.get_random_wait,
+            replace_existing=REPLACE_EXISTING,
+            tile_job_definition=self.landsat_tile_task.job.ref,
+            tilejobqueue=self.batch.landsattile_historic_jobqueue.ref,
+            gibs_outputbucket=GIBS_OUTPUT_BUCKET,
             debug_bucket=DEBUG_BUCKET,
         )
 
@@ -1074,6 +1101,18 @@ class HlsStack(Stack):
                 resources=[
                     self.landsat_intermediate_output_bucket.bucket_arn,
                     f"{self.landsat_intermediate_output_bucket.bucket_arn}/*",
+                ],
+                actions=[
+                    "s3:Get*",
+                    "s3:List*",
+                ],
+            )
+        )
+        self.landsat_scene_lookup.function.role.add_to_policy(
+            aws_iam.PolicyStatement(
+                resources=[
+                    "arn:aws:s3:::usgs-landsat",
+                    "arn:aws:s3:::usgs-landsat/*",
                 ],
                 actions=[
                     "s3:Get*",

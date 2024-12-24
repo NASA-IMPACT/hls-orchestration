@@ -1,4 +1,5 @@
 """Lambda function for omnipotent setup and modification of HLS logging database"""
+
 import json
 import os
 
@@ -89,6 +90,13 @@ ALTER TABLE landsat_mgrs_log ADD COLUMN IF NOT EXISTS historic BOOLEAN;
 ALTER TABLE sentinel_log ADD COLUMN IF NOT EXISTS succeeded BOOLEAN;
 ALTER TABLE sentinel_log ADD COLUMN IF NOT EXISTS expected_error BOOLEAN;
 ALTER TABLE sentinel_log ADD COLUMN IF NOT EXISTS unexpected_error BOOLEAN;
+
+CREATE TABLE IF NOT EXISTS l30_reprocess_log (
+    id bigserial primary key,
+    ts timestamptz default now() not null,
+    date date,
+    mgrs varchar(5)
+);
 """
 
 

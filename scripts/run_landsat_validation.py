@@ -18,8 +18,10 @@ s3_client = boto3.client("s3")
 batch_client = boto3.client("batch")
 
 ac_jobqueue = os.getenv("HLSSTACK_LANDSATACJOBQUEUEEXPORT")
+
 tile_jobqueue = os.getenv("HLSSTACK_LANDSATTILEJOBQUEUEEXPORT")
-tile_jobdefinition = os.getenv("HLSSTACK_LANDSATTILEJOBDEFINITION")
+# tile_jobdefinition = os.getenv("HLSSTACK_LANDSATTILEJOBDEFINITION")
+tile_jobdefinition = "arn:aws:batch:us-west-2:018923174646:job-definition/LandsatTaskBatchJob1274-673e2c2a2411740:6"
 inputbucket = "usgs-landsat"
 s3_basepath = "collection02/level-1/standard/oli-tirs"
 
@@ -50,8 +52,9 @@ else:
 ac_jobids = {}
 
 
-def submit_ac_job(scene_id, path, row, year):
+def submit_ac_job(scene_id, path, row, year, run_id):
     prefix = f"{s3_basepath}/{year}/{path}/{row}/{scene_id}"
+    print(ac_jobdefinition)
     response = batch_client.submit_job(
         jobName=str(random.randint(1, 200)),
         jobQueue=ac_jobqueue,
@@ -75,7 +78,13 @@ def submit_ac_job(scene_id, path, row, year):
 
 
 def submit_tile_job(
-    valid_pathrows, mgrs_tile, mgrs_result, landsat_path, ac_job_dependencies, date
+    valid_pathrows,
+    mgrs_tile,
+    mgrs_result,
+    landsat_path,
+    ac_job_dependencies,
+    date,
+    run_id,
 ):
     separated_date = f"{date[:4]}-{date[4:6]}-{date[6:8]}"
     response = batch_client.submit_job(
@@ -89,6 +98,7 @@ def submit_tile_job(
             "environment": [
                 {"name": "PATHROW_LIST", "value": ",".join(valid_pathrows)},
                 {"name": "OUTPUT_BUCKET", "value": f"hls-debug-output/{run_id}"},
+                {"name": "DEBUG_BUCKET", "value": f"hls-debug-output/{run_id}"},
                 {"name": "INPUT_BUCKET", "value": f"hls-debug-output/{run_id}"},
                 {"name": "DATE", "value": separated_date},
                 {"name": "MGRS", "value": mgrs_tile},
@@ -103,7 +113,7 @@ def submit_tile_job(
     return response
 
 
-def process_mgrs(mgrs_tile, date, ignore):
+def process_mgrs(mgrs_tile, date, ignore, run_id):
     print(mgrs_tile)
     event = {"MGRS": mgrs_tile}
     mgrs_result = handler.handler(event, {})
@@ -134,7 +144,9 @@ def process_mgrs(mgrs_tile, date, ignore):
                     valid_pathrows.append(pathrow)
                     date_pathrow = f"{date}_{pathrow}"
                     if date_pathrow not in ac_jobids:
-                        batch_response = submit_ac_job(scene_id, path, row, year)
+                        batch_response = submit_ac_job(
+                            scene_id, path, row, year, run_id
+                        )
                         ac_jobids[date_pathrow] = batch_response.get("jobId")
                     ac_job_dependencies.append(
                         {"jobId": ac_jobids[date_pathrow], "type": "N_TO_N"}
@@ -145,24 +157,41 @@ def process_mgrs(mgrs_tile, date, ignore):
     print(valid_pathrows)
     landsat_path = valid_pathrows[0][:3]
     submit_tile_job(
-        valid_pathrows, mgrs_tile, mgrs_result, landsat_path, ac_job_dependencies, date
+        valid_pathrows,
+        mgrs_tile,
+        mgrs_result,
+        landsat_path,
+        ac_job_dependencies,
+        date,
+        run_id,
     )
 
 
-if os.path.isfile(granules):
-    scenes = open(granules, "r").read().splitlines()
-    for line in scenes:
-        components = line.split("_")
+directory = "/Users/seanharkins/Downloads/missing_S30/missing/"
+files = os.listdir(directory)
+
+for file in files[35:40]:
+    print(file)
+    file_path = os.path.join(directory, file)
+
+    if os.path.isfile(file_path):
+        scenes = open(file_path, "r").read().splitlines()
+        for line in scenes:
+            components = line.split(",")
+            # path = components[0][0:3]
+            # row = components[0][3:6]
+            mgrs = components[0]
+            date = components[1]
+            print(mgrs, date)
+            # result = handler.handler({"path": path, "row": row}, {})
+            # process_mgrs(result["mgrs"][0], date)
+            id = file.split(".")[0]
+            process_mgrs(mgrs, date, ignore, f"hansen/{id}")
+
+    else:
+        components = granules.split("_")
         path = components[2][0:3]
         row = components[2][3:6]
         date = components[3]
         result = handler.handler({"path": path, "row": row}, {})
-        process_mgrs(result["mgrs"][0], date)
-
-else:
-    components = granules.split("_")
-    path = components[2][0:3]
-    row = components[2][3:6]
-    date = components[3]
-    result = handler.handler({"path": path, "row": row}, {})
-    process_mgrs(result["mgrs"][0], date, ignore)
+        process_mgrs(result["mgrs"][0], date, ignore)
