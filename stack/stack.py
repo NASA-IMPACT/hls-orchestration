@@ -149,12 +149,23 @@ class HlsStack(Stack):
             self, "landsat_output_bucket", OUTPUT_BUCKET
         )
 
+        sentinel_input_bucket_expiration_days = int(
+            os.environ["HLS_SENTINEL_INPUT_BUCKET_EXPIRATION_DAYS"]
+        )
+
         # Must be created as part of the stack due to trigger requirements
         self.sentinel_input_bucket = aws_s3.Bucket(
             self,
             "SentinelInputBucket",
             bucket_name=SENTINEL_INPUT_BUCKET,
             removal_policy=RemovalPolicy.DESTROY,
+            lifecycle_rules=[
+                aws_s3.LifecycleRule(
+                    expiration=Duration.days(sentinel_input_bucket_expiration_days),
+                    expired_object_delete_marker=True,
+                    noncurrent_version_expiration=Duration.days(1),
+                )
+            ],
         )
 
         self.sentinel_input_bucket_historic = aws_s3.Bucket(
@@ -162,6 +173,13 @@ class HlsStack(Stack):
             "SentinelInputBucketHistoric",
             bucket_name=SENTINEL_INPUT_BUCKET_HISTORIC,
             removal_policy=RemovalPolicy.DESTROY,
+            lifecycle_rules=[
+                aws_s3.LifecycleRule(
+                    expiration=Duration.days(sentinel_input_bucket_expiration_days),
+                    expired_object_delete_marker=True,
+                    noncurrent_version_expiration=Duration.days(1),
+                )
+            ],
         )
 
         self.landsat_input_bucket_historic = aws_s3.Bucket(
