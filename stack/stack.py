@@ -160,12 +160,15 @@ class HlsStack(Stack):
             bucket_name=SENTINEL_INPUT_BUCKET,
             removal_policy=RemovalPolicy.DESTROY,
             lifecycle_rules=[
+                # Setting expired_object_delete_marker cannot be done within a
+                # lifecycle rule that also specifies expiration, expiration_date, or
+                # tag_filters.
+                aws_s3.LifecycleRule(expired_object_delete_marker=True),
                 aws_s3.LifecycleRule(
                     abort_incomplete_multipart_upload_after=Duration.days(1),
                     expiration=Duration.days(sentinel_input_bucket_expiration_days),
-                    expired_object_delete_marker=True,
                     noncurrent_version_expiration=Duration.days(1),
-                )
+                ),
             ],
         )
 
@@ -175,12 +178,15 @@ class HlsStack(Stack):
             bucket_name=SENTINEL_INPUT_BUCKET_HISTORIC,
             removal_policy=RemovalPolicy.DESTROY,
             lifecycle_rules=[
+                # Setting expired_object_delete_marker cannot be done within a
+                # lifecycle rule that also specifies expiration, expiration_date, or
+                # tag_filters.
+                aws_s3.LifecycleRule(expired_object_delete_marker=True),
                 aws_s3.LifecycleRule(
                     abort_incomplete_multipart_upload_after=Duration.days(1),
                     expiration=Duration.days(sentinel_input_bucket_expiration_days),
-                    expired_object_delete_marker=True,
                     noncurrent_version_expiration=Duration.days(1),
-                )
+                ),
             ],
         )
 
