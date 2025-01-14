@@ -161,6 +161,7 @@ class HlsStack(Stack):
             removal_policy=RemovalPolicy.DESTROY,
             lifecycle_rules=[
                 aws_s3.LifecycleRule(
+                    abort_incomplete_multipart_upload_after=Duration.days(1),
                     expiration=Duration.days(sentinel_input_bucket_expiration_days),
                     expired_object_delete_marker=True,
                     noncurrent_version_expiration=Duration.days(1),
@@ -175,6 +176,7 @@ class HlsStack(Stack):
             removal_policy=RemovalPolicy.DESTROY,
             lifecycle_rules=[
                 aws_s3.LifecycleRule(
+                    abort_incomplete_multipart_upload_after=Duration.days(1),
                     expiration=Duration.days(sentinel_input_bucket_expiration_days),
                     expired_object_delete_marker=True,
                     noncurrent_version_expiration=Duration.days(1),
@@ -194,7 +196,12 @@ class HlsStack(Stack):
             "LandsatIntermediateBucket",
             bucket_name=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
             removal_policy=RemovalPolicy.DESTROY,
-            lifecycle_rules=[aws_s3.LifecycleRule(expiration=Duration.days(60))],
+            lifecycle_rules=[
+                aws_s3.LifecycleRule(
+                    abort_incomplete_multipart_upload_after=Duration.days(1),
+                    expiration=Duration.days(60),
+                )
+            ],
         )
 
         self.gibs_intermediate_output_bucket = aws_s3.Bucket(
@@ -202,7 +209,12 @@ class HlsStack(Stack):
             "GibsIntermediateBucket",
             bucket_name=GIBS_INTERMEDIATE_OUTPUT_BUCKET,
             removal_policy=RemovalPolicy.DESTROY,
-            lifecycle_rules=[aws_s3.LifecycleRule(expiration=Duration.days(60))],
+            lifecycle_rules=[
+                aws_s3.LifecycleRule(
+                    abort_incomplete_multipart_upload_after=Duration.days(1),
+                    expiration=Duration.days(60),
+                )
+            ],
         )
 
         self.efs = Efs(self, "Efs", network=self.network)
