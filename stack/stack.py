@@ -149,12 +149,27 @@ class HlsStack(Stack):
             self, "landsat_output_bucket", OUTPUT_BUCKET
         )
 
+        sentinel_input_bucket_expiration_days = int(
+            os.environ["HLS_SENTINEL_INPUT_BUCKET_EXPIRATION_DAYS"]
+        )
+
         # Must be created as part of the stack due to trigger requirements
         self.sentinel_input_bucket = aws_s3.Bucket(
             self,
             "SentinelInputBucket",
             bucket_name=SENTINEL_INPUT_BUCKET,
             removal_policy=RemovalPolicy.DESTROY,
+            lifecycle_rules=[
+                # Setting expired_object_delete_marker cannot be done within a
+                # lifecycle rule that also specifies expiration, expiration_date, or
+                # tag_filters.
+                aws_s3.LifecycleRule(expired_object_delete_marker=True),
+                aws_s3.LifecycleRule(
+                    abort_incomplete_multipart_upload_after=Duration.days(1),
+                    expiration=Duration.days(sentinel_input_bucket_expiration_days),
+                    noncurrent_version_expiration=Duration.days(1),
+                ),
+            ],
         )
 
         self.sentinel_input_bucket_historic = aws_s3.Bucket(
@@ -162,6 +177,17 @@ class HlsStack(Stack):
             "SentinelInputBucketHistoric",
             bucket_name=SENTINEL_INPUT_BUCKET_HISTORIC,
             removal_policy=RemovalPolicy.DESTROY,
+            lifecycle_rules=[
+                # Setting expired_object_delete_marker cannot be done within a
+                # lifecycle rule that also specifies expiration, expiration_date, or
+                # tag_filters.
+                aws_s3.LifecycleRule(expired_object_delete_marker=True),
+                aws_s3.LifecycleRule(
+                    abort_incomplete_multipart_upload_after=Duration.days(1),
+                    expiration=Duration.days(sentinel_input_bucket_expiration_days),
+                    noncurrent_version_expiration=Duration.days(1),
+                ),
+            ],
         )
 
         self.landsat_input_bucket_historic = aws_s3.Bucket(
@@ -176,7 +202,12 @@ class HlsStack(Stack):
             "LandsatIntermediateBucket",
             bucket_name=LANDSAT_INTERMEDIATE_OUTPUT_BUCKET,
             removal_policy=RemovalPolicy.DESTROY,
-            lifecycle_rules=[aws_s3.LifecycleRule(expiration=Duration.days(60))],
+            lifecycle_rules=[
+                aws_s3.LifecycleRule(
+                    abort_incomplete_multipart_upload_after=Duration.days(1),
+                    expiration=Duration.days(60),
+                )
+            ],
         )
 
         self.gibs_intermediate_output_bucket = aws_s3.Bucket(
@@ -184,7 +215,12 @@ class HlsStack(Stack):
             "GibsIntermediateBucket",
             bucket_name=GIBS_INTERMEDIATE_OUTPUT_BUCKET,
             removal_policy=RemovalPolicy.DESTROY,
-            lifecycle_rules=[aws_s3.LifecycleRule(expiration=Duration.days(60))],
+            lifecycle_rules=[
+                aws_s3.LifecycleRule(
+                    abort_incomplete_multipart_upload_after=Duration.days(1),
+                    expiration=Duration.days(60),
+                )
+            ],
         )
 
         self.efs = Efs(self, "Efs", network=self.network)
