@@ -492,6 +492,14 @@ class HlsStack(Stack):
             layers=[self.hls_lambda_layer],
         )
 
+        self.cleanup_sentinel2_granule = Lambda(
+            self,
+            "CleanupSentinelSuccesses",
+            code_file="remove_sentinel2_granules.py",
+            env={"SENTINEL_INPUT_BUCKET": SENTINEL_INPUT_BUCKET},
+            timeout=120,
+        )
+
         self.get_random_wait = Lambda(
             self,
             "GetRandomWait",
@@ -625,6 +633,7 @@ class HlsStack(Stack):
             sentinel_ac_logger=self.sentinel_ac_logger,
             sentinel_logger=self.sentinel_logger,
             check_exit_code=self.check_exit_code,
+            cleanup_granule=self.cleanup_sentinel2_granule,
             outputbucket_role_arn=OUTPUT_BUCKET_ROLE_ARN,
             replace_existing=REPLACE_EXISTING,
             gibs_outputbucket=GIBS_OUTPUT_BUCKET,
@@ -643,6 +652,9 @@ class HlsStack(Stack):
             sentinel_ac_logger=self.sentinel_ac_logger,
             sentinel_logger=self.sentinel_logger_historic,
             check_exit_code=self.check_exit_code,
+            # Do not cleanup granules for historic workflow to avoid
+            # twin granule race condition
+            cleanup_granule=None,
             outputbucket_role_arn=OUTPUT_BUCKET_ROLE_ARN,
             replace_existing=REPLACE_EXISTING,
             gibs_outputbucket=GIBS_OUTPUT_BUCKET_HISTORIC,
