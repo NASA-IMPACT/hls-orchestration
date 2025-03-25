@@ -1054,6 +1054,20 @@ class HlsStack(Stack):
             self.sentinel_input_bucket_historic_policy
         )
 
+        self.cleanup_sentinel_input_bucket_policy = aws_iam.PolicyStatement(
+            resources=[
+                self.sentinel_input_bucket.bucket_arn,
+                f"{self.sentinel_input_bucket.bucket_arn}/*",
+            ],
+            actions=[
+                "s3:List*",
+                "s3:DeleteObject",
+            ],
+        )
+        self.cleanup_sentinel2_granule.function.add_to_role_policy(
+            self.cleanup_sentinel_input_bucket_policy
+        )
+
         self.laads_task.role.add_to_policy(
             aws_iam.PolicyStatement(
                 resources=[
