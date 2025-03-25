@@ -70,6 +70,6 @@ def handler(event: dict, context: dict):
     else:
         print(
             "Twin granule case detected but this workflow did not process it. "
-            "Skipping deletion (IDs={granules}, zips={granule_zips})"
+            f"Skipping deletion (IDs={granules}, zips={granule_zips})"
         )
         return []

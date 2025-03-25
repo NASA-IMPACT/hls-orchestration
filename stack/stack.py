@@ -495,7 +495,7 @@ class HlsStack(Stack):
         self.cleanup_sentinel2_granule = Lambda(
             self,
             "CleanupSentinelSuccesses",
-            code_file="remove_sentinel2_granules.py",
+            code_file="cleanup_sentinel2_granules.py",
             env={"SENTINEL_INPUT_BUCKET": SENTINEL_INPUT_BUCKET},
             timeout=120,
         )
