@@ -164,7 +164,7 @@ class SentinelStepFunction(BatchStepFunction):
                 "Type": "Task",
                 "Resource": cleanup_granule.function.function_arn,
                 "Next": "Done",
-                "InputPath": "$.granule",
+                "InputPath": "$",
                 "Retry": [retry],
             }
             sentinel_state_definition["States"]["HadSentinelFailure"]["Choices"][0][
