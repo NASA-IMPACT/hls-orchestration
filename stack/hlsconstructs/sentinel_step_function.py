@@ -167,7 +167,7 @@ class SentinelStepFunction(BatchStepFunction):
                 "InputPath": "$.granule",
                 "Retry": [retry],
             }
-            sentinel_state_definition["States"]["CheckSentinelExitCode"]["Choices"][0][
+            sentinel_state_definition["States"]["HadSentinelFailure"]["Choices"][0][
                 "Next"
             ] = "CleanupGranule"
 
