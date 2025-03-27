@@ -82,12 +82,19 @@ class Rds(Construct):
                 ],
             ),
             vpc_security_group_ids=[self.security_group.ref],
-            scaling_configuration=aws_rds.CfnDBCluster.ScalingConfigurationProperty(
-                auto_pause=True,
+            serverless_v2_scaling_configuration=aws_rds.CfnDBCluster.ServerlessV2ScalingConfigurationProperty(
                 max_capacity=max_capacity,
                 min_capacity=min_capacity,
                 seconds_until_auto_pause=600,
             ),
+        )
+
+        self.database_instance = aws_rds.CfnDBInstance(
+            self,
+            "AuroraPostgresV2Instance",
+            db_cluster_identifier=self.database.ref,
+            engine="aurora-postgresql",
+            db_instance_class="db.serverless",  # Required for Serverless v2
         )
 
         region = Aws.REGION
