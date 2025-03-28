@@ -1,6 +1,6 @@
 import os
 
-from aws_cdk import aws_ec2, aws_iam, aws_rds, aws_secretsmanager
+from aws_cdk import RemovalPolicy, SecretValue, aws_ec2, aws_iam, aws_rds, aws_secretsmanager
 from constructs import Construct
 from hlsconstructs.network import Network
 
@@ -60,7 +60,7 @@ class Rds(Construct):
             self,
             "RdsCluster",
             engine=aws_rds.DatabaseClusterEngine.aurora_postgres(
-                version=aws_rds.AuroraPostgresEngineVersion.VER_13_12
+                version=aws_rds.AuroraPostgresEngineVersion.VER_13_12,
             ),
             default_database_name=self.database_name,
             enable_data_api=True,
@@ -71,18 +71,20 @@ class Rds(Construct):
                 id="instance-1",
                 instance_identifier=f"rds-{os.getenv('HLS_STACKNAME')}-instance-1",
             ),
-            credentials=aws_rds.Credentials.from_secret(
-                secret=self.secret,
+            credentials=aws_rds.Credentials.from_password(
+                username="master",
+                password=SecretValue.secrets_manager(secret_id=self.secret.secret_arn),
             ),
             vpc=network.vpc,
             subnet_group=self.subnet_group,
             security_groups=[self.security_group],
+            removal_policy=RemovalPolicy.RETAIN,
         )
 
         self.arn = self.database.cluster_arn
 
         self.policy_statement = aws_iam.PolicyStatement(
-            resources=[self.database.cluster_arn, self.secret.secret_arn],
+            resources=[self.arn, self.secret.secret_arn],
             actions=[
                 "secretsmanager:GetSecretValue",
                 "secretsmanager:CreateSecret",
