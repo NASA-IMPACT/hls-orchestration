@@ -68,8 +68,8 @@ class Rds(Construct):
             serverless_v2_min_capacity=min_capacity,
             serverless_v2_max_capacity=max_capacity,
             writer=aws_rds.ClusterInstance.serverless_v2(
-                id="instance-1",
-                instance_identifier=f"rds-{os.getenv('HLS_STACKNAME')}-instance-1",
+                id="serverless-1",
+                instance_identifier=f"rds-{os.getenv('HLS_STACKNAME')}-serverless-1",
             ),
             credentials=aws_rds.Credentials.from_password(
                 username="master",
