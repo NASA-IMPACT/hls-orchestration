@@ -239,7 +239,7 @@ class HlsStack(Stack):
             code_file="setupdb.py",
             env={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
-                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_NAME": self.rds.database_name,
                 "HLS_DB_ARN": self.rds.arn,
             },
             timeout=300,
@@ -345,7 +345,7 @@ class HlsStack(Stack):
             code_file="landsat_mgrs_logger.py",
             env={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
-                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_NAME": self.rds.database_name,
                 "HLS_DB_ARN": self.rds.arn,
             },
             timeout=120,
@@ -357,7 +357,7 @@ class HlsStack(Stack):
             code_file="landsat_mgrs_logger.py",
             env={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
-                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_NAME": self.rds.database_name,
                 "HLS_DB_ARN": self.rds.arn,
                 "HISTORIC": "historic",
             },
@@ -370,7 +370,7 @@ class HlsStack(Stack):
             code_file="mgrs_logger.py",
             env={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
-                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_NAME": self.rds.database_name,
                 "HLS_DB_ARN": self.rds.arn,
             },
             timeout=120,
@@ -383,7 +383,7 @@ class HlsStack(Stack):
             code_file="landsat_ac_logger.py",
             env={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
-                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_NAME": self.rds.database_name,
                 "HLS_DB_ARN": self.rds.arn,
             },
             timeout=120,
@@ -396,7 +396,7 @@ class HlsStack(Stack):
             code_file="landsat_logger.py",
             env={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
-                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_NAME": self.rds.database_name,
                 "HLS_DB_ARN": self.rds.arn,
             },
             timeout=120,
@@ -408,7 +408,7 @@ class HlsStack(Stack):
             code_file="landsat_logger.py",
             env={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
-                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_NAME": self.rds.database_name,
                 "HLS_DB_ARN": self.rds.arn,
                 "HISTORIC": "historic",
             },
@@ -421,7 +421,7 @@ class HlsStack(Stack):
             code_file="landsat_pathrow_status.py",
             env={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
-                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_NAME": self.rds.database_name,
                 "HLS_DB_ARN": self.rds.arn,
             },
             timeout=120,
@@ -447,7 +447,7 @@ class HlsStack(Stack):
             code_file="sentinel_logger.py",
             env={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
-                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_NAME": self.rds.database_name,
                 "HLS_DB_ARN": self.rds.arn,
             },
             timeout=120,
@@ -459,7 +459,7 @@ class HlsStack(Stack):
             code_file="sentinel_logger.py",
             env={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
-                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_NAME": self.rds.database_name,
                 "HLS_DB_ARN": self.rds.arn,
                 "HISTORIC": "historic",
             },
@@ -472,7 +472,7 @@ class HlsStack(Stack):
             code_file="sentinel_ac_logger.py",
             env={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
-                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_NAME": self.rds.database_name,
                 "HLS_DB_ARN": self.rds.arn,
             },
             timeout=800,
@@ -485,7 +485,7 @@ class HlsStack(Stack):
             code_file="sentinel_ac_logger.py",
             env={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
-                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_NAME": self.rds.database_name,
                 "HLS_DB_ARN": self.rds.arn,
             },
             timeout=800,
@@ -505,7 +505,7 @@ class HlsStack(Stack):
             code_file="check_landsat_pathrow_complete.py",
             env={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
-                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_NAME": self.rds.database_name,
                 "HLS_DB_ARN": self.rds.arn,
             },
             timeout=900,
@@ -517,7 +517,7 @@ class HlsStack(Stack):
         #  code_file="put_exit_code_cw_metric.py",
         #  env={
         #  "HLS_SECRETS": self.rds.secret.secret_arn,
-        #  "HLS_DB_NAME": self.rds.database.database_name,
+        #  "HLS_DB_NAME": self.rds.database_name,
         #  "HLS_DB_ARN": self.rds.arn,
         #  "JOB_ID": f"{STACKNAME}_landsat_ac",
         #  "TABLE_NAME": "landsat_ac_granule_log",
@@ -530,7 +530,7 @@ class HlsStack(Stack):
         #  code_file="put_exit_code_cw_metric.py",
         #  env={
         #  "HLS_SECRETS": self.rds.secret.secret_arn,
-        #  "HLS_DB_NAME": self.rds.database.database_name,
+        #  "HLS_DB_NAME": self.rds.database_name,
         #  "HLS_DB_ARN": self.rds.arn,
         #  "JOB_ID": f"{STACKNAME}_landsat_tile",
         #  "TABLE_NAME": "landsat_mgrs_granule_log",
@@ -543,7 +543,7 @@ class HlsStack(Stack):
         #  code_file="put_exit_code_cw_metric.py",
         #  env={
         #  "HLS_SECRETS": self.rds.secret.secret_arn,
-        #  "HLS_DB_NAME": self.rds.database.database_name,
+        #  "HLS_DB_NAME": self.rds.database_name,
         #  "HLS_DB_ARN": self.rds.arn,
         #  "JOB_ID": f"{STACKNAME}_sentinel",
         #  "TABLE_NAME": "sentinel_granule_log",
@@ -862,7 +862,7 @@ class HlsStack(Stack):
             cron_str=LANDSAT_INCOMPLETE_CRON,
             env_vars={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
-                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_NAME": self.rds.database_name,
                 "HLS_DB_ARN": self.rds.arn,
                 "DAYS_PRIOR": LANDSAT_DAYS_PRIOR,
                 "RETRY_LIMIT": LANDSAT_RETRY_LIMIT,
@@ -880,7 +880,7 @@ class HlsStack(Stack):
             cron_str=LANDSAT_HISTORIC_INCOMPLETE_CRON,
             env_vars={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
-                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_NAME": self.rds.database_name,
                 "HLS_DB_ARN": self.rds.arn,
                 "HOURS_PRIOR": LANDSAT_HISTORIC_HOURS_PRIOR,
                 "RETRY_LIMIT": LANDSAT_RETRY_LIMIT,
@@ -899,7 +899,7 @@ class HlsStack(Stack):
             cron_str=LANDSAT_AC_ERRORS_CRON,
             env_vars={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
-                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_NAME": self.rds.database_name,
                 "HLS_DB_ARN": self.rds.arn,
                 "RETRY_LIMIT": LANDSAT_RETRY_LIMIT,
             },
@@ -916,7 +916,7 @@ class HlsStack(Stack):
             cron_str=LANDSAT_HISTORIC_AC_ERRORS_CRON,
             env_vars={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
-                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_NAME": self.rds.database_name,
                 "HLS_DB_ARN": self.rds.arn,
                 "RETRY_LIMIT": LANDSAT_RETRY_LIMIT,
                 "HISTORIC": "historic",
@@ -933,7 +933,7 @@ class HlsStack(Stack):
             cron_str=SENTINEL_ERRORS_CRON,
             env_vars={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
-                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_NAME": self.rds.database_name,
                 "HLS_DB_ARN": self.rds.arn,
                 "RETRY_LIMIT": SENTINEL_RETRY_LIMIT,
                 "HISTORIC": "no",
@@ -950,7 +950,7 @@ class HlsStack(Stack):
             cron_str=SENTINEL_ERRORS_CRON,
             env_vars={
                 "HLS_SECRETS": self.rds.secret.secret_arn,
-                "HLS_DB_NAME": self.rds.database.database_name,
+                "HLS_DB_NAME": self.rds.database_name,
                 "HLS_DB_ARN": self.rds.arn,
                 "RETRY_LIMIT": SENTINEL_RETRY_LIMIT,
                 "HISTORIC": "historic",

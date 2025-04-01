@@ -1,6 +1,6 @@
 import os
 
-from aws_cdk import Aws, Fn, aws_ec2, aws_iam, aws_rds, aws_secretsmanager
+from aws_cdk import RemovalPolicy, SecretValue, aws_ec2, aws_iam, aws_rds, aws_secretsmanager
 from constructs import Construct
 from hlsconstructs.network import Network
 
@@ -55,53 +55,45 @@ class Rds(Construct):
             ),
         )
 
-        self.database = aws_rds.CfnDBCluster(
+        self.database_name = "hls"
+        self.database = aws_rds.DatabaseCluster(
             self,
             "RdsCluster",
-            engine="aurora-postgresql",
-            engine_mode="serverless",
-            engine_version="13.12",
-            database_name="hls",
-            db_subnet_group_name=self.subnet_group.ref,
-            enable_http_endpoint=True,
-            db_cluster_identifier=f"rds-{os.getenv('HLS_STACKNAME')}",
-            master_username=Fn.join(
-                "",
-                [
-                    "{{resolve:secretsmanager:",
-                    self.secret.secret_arn,
-                    ":SecretString:username}}",
-                ],
+            engine=aws_rds.DatabaseClusterEngine.aurora_postgres(
+                version=aws_rds.AuroraPostgresEngineVersion.VER_13_12,
             ),
-            master_user_password=Fn.join(
-                "",
-                [
-                    "{{resolve:secretsmanager:",
-                    self.secret.secret_arn,
-                    ":SecretString:password}}",
-                ],
+            default_database_name=self.database_name,
+            enable_data_api=True,
+            cluster_identifier=f"rds-{os.getenv('HLS_STACKNAME')}",
+            serverless_v2_min_capacity=min_capacity,
+            serverless_v2_max_capacity=max_capacity,
+            writer=aws_rds.ClusterInstance.serverless_v2(
+                id="serverless-1",
+                instance_identifier=f"rds-{os.getenv('HLS_STACKNAME')}-serverless-1",
             ),
-            vpc_security_group_ids=[self.security_group.ref],
-            serverless_v2_scaling_configuration=aws_rds.CfnDBCluster.ServerlessV2ScalingConfigurationProperty(
-                max_capacity=max_capacity,
-                min_capacity=min_capacity,
-                seconds_until_auto_pause=600,
+            credentials=aws_rds.Credentials.from_password(
+                username="master",
+                password=SecretValue.secrets_manager(secret_id=self.secret.secret_arn),
             ),
+            vpc=network.vpc,
+            subnet_group=self.subnet_group,
+            security_groups=[self.security_group],
+            removal_policy=RemovalPolicy.RETAIN,
         )
 
-        self.database_instance = aws_rds.CfnDBInstance(
-            self,
-            "AuroraPostgresV2Instance",
-            db_cluster_identifier=self.database.ref,
-            engine="aurora-postgresql",
-            db_instance_class="db.serverless",  # Required for Serverless v2
-        )
+        # Only set auto-pause if min_capacity is 0 as Aurora Serverless v2 doesn't
+        # support auto-pausing with >0 min capacity
+        if min_capacity == 0:
+            # CDK doesn't yet support "SecondsUntilAutoPause" but there is work in
+            # progress to add it,
+            #   issue: https://github.com/aws/aws-cdk/issues/32280
+            #   PR: https://github.com/aws/aws-cdk/pull/32787
+            self.database.node.default_child.add_property_override(
+                "ServerlessV2ScalingConfiguration.SecondsUntilAutoPause",
+                600,
+            )
 
-        region = Aws.REGION
-        accountid = Aws.ACCOUNT_ID
-        self.arn = Fn.join(
-            ":", ["arn:aws:rds", region, accountid, "cluster", self.database.ref]
-        )
+        self.arn = self.database.cluster_arn
 
         self.policy_statement = aws_iam.PolicyStatement(
             resources=[self.arn, self.secret.secret_arn],
