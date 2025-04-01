@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   unit-tests:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         python: [3.9]
@@ -34,7 +34,7 @@ jobs:
     strategy:
       matrix:
         python: [3.9]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: [unit-tests]
     environment:
       name: mcp-production-viirs
