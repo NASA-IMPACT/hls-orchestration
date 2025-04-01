@@ -81,6 +81,18 @@ class Rds(Construct):
             removal_policy=RemovalPolicy.RETAIN,
         )
 
+        # Only set auto-pause if min_capacity is 0 as Aurora Serverless v2 doesn't
+        # support auto-pausing with >0 min capacity
+        if min_capacity == 0:
+            # CDK doesn't yet support "SecondsUntilAutoPause" but there is work in
+            # progress to add it,
+            #   issue: https://github.com/aws/aws-cdk/issues/32280
+            #   PR: https://github.com/aws/aws-cdk/pull/32787
+            self.database.node.default_child.add_property_override(
+                "ServerlessV2ScalingConfiguration.SecondsUntilAutoPause",
+                600,
+            )
+
         self.arn = self.database.cluster_arn
 
         self.policy_statement = aws_iam.PolicyStatement(
