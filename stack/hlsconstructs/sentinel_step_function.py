@@ -1,7 +1,7 @@
 import json
-from typing import Union
+from typing import Optional, Union
 
-from aws_cdk import aws_iam, aws_stepfunctions
+from aws_cdk import aws_stepfunctions
 from constructs import Construct
 from hlsconstructs.batch_step_function import BatchStepFunction
 from hlsconstructs.lambdafunc import Lambda
@@ -22,6 +22,7 @@ class SentinelStepFunction(BatchStepFunction):
         sentinel_ac_logger: Lambda,
         sentinel_logger: Lambda,
         check_exit_code: Lambda,
+        cleanup_granule: Optional[Lambda],
         replace_existing: bool,
         gibs_outputbucket: str,
         debug_bucket: Union[bool, str] = False,
@@ -124,24 +125,27 @@ class SentinelStepFunction(BatchStepFunction):
                     "Type": "Task",
                     "Resource": sentinel_ac_logger.function.function_arn,
                     "Next": "CheckSentinelExitCode",
+                    "ResultPath": "$.exitCode",
                     "Retry": [retry],
                 },
                 "CheckSentinelExitCode": {
                     "Type": "Task",
                     "Resource": check_exit_code.function.function_arn,
                     "Next": "HadSentinelFailure",
+                    "InputPath": "$.exitCode",
+                    "ResultPath": "$.success",
                     "Retry": [retry],
                 },
                 "HadSentinelFailure": {
                     "Type": "Choice",
                     "Choices": [
                         {
-                            "Variable": "$",
+                            "Variable": "$.success",
                             "BooleanEquals": True,
                             "Next": "Done",
                         },
                         {
-                            "Variable": "$",
+                            "Variable": "$.success",
                             "BooleanEquals": False,
                             "Next": "Error",
                         },
@@ -152,6 +156,20 @@ class SentinelStepFunction(BatchStepFunction):
                 "Error": {"Type": "Fail"},
             },
         }
+
+        # Add "cleanup" step to delete successfully processed granules for
+        # forward processing, but not historic
+        if cleanup_granule is not None:
+            sentinel_state_definition["States"]["CleanupGranule"] = {
+                "Type": "Task",
+                "Resource": cleanup_granule.function.function_arn,
+                "Next": "Done",
+                "InputPath": "$",
+                "Retry": [retry],
+            }
+            sentinel_state_definition["States"]["HadSentinelFailure"]["Choices"][0][
+                "Next"
+            ] = "CleanupGranule"
 
         if debug_bucket:
             sentinel_state_definition["States"]["ProcessSentinel"]["Parameters"][
