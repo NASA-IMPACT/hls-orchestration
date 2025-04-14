@@ -51,6 +51,10 @@ def handler(event: dict, context: dict):
         Prefix=prefix,
     )
 
+    if "Contents" not in response:
+        print(f"Found 0 granule zip files for prefix={prefix}, aborting.")
+        return
+
     granule_zips = [obj["Key"] for obj in response["Contents"]]
 
     # We have three possible cases,
