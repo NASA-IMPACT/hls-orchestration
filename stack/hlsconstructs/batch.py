@@ -8,7 +8,6 @@ dirname = os.path.dirname(os.path.realpath(__file__))
 
 
 class Batch(Construct):
-
     def __init__(
         self,
         scope: Construct,
@@ -17,7 +16,7 @@ class Batch(Construct):
         instance_types: list,
         maxv_cpus: int,
         ssh_keyname: str,
-        efs: aws_efs.CfnFileSystem | None = None,
+        efs: aws_efs.CfnFileSystem,
         use_cw: bool = True,
         image_id: str | None = None,
         **kwargs,
