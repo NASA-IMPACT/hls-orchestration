@@ -16,9 +16,9 @@ class Batch(Construct):
         instance_types: list,
         maxv_cpus: int,
         ssh_keyname: str,
-        efs: aws_efs.CfnFileSystem = None,
+        efs: aws_efs.CfnFileSystem,
         use_cw: bool = True,
-        image_id=None,
+        image_id: str | None = None,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -120,8 +120,14 @@ class Batch(Construct):
         user_data.add_commands(user_data_string)
         user_data_str = "\n".join(user_data.render().split("\n")[1:])
 
+        if image_id is None:
+            image_id = (
+                aws_ecs.EcsOptimizedImage.amazon_linux2().get_image(self).image_id
+            )
+
         launch_template_data = aws_ec2.CfnLaunchTemplate.LaunchTemplateDataProperty(
             user_data=Fn.base64(user_data_str),
+            image_id=image_id,
             key_name=ssh_keyname,
         )
 
@@ -137,16 +143,11 @@ class Batch(Construct):
                 version=launch_template.attr_latest_version_number,
             )
         )
-        if image_id is None:
-            image_id = (
-                aws_ecs.EcsOptimizedImage.amazon_linux2().get_image(self).image_id
-            )
 
         compute_resources = aws_batch.CfnComputeEnvironment.ComputeResourcesProperty(
             #  allocation_strategy="BEST_FIT_PROGRESSIVE",
             allocation_strategy="SPOT_CAPACITY_OPTIMIZED",
             desiredv_cpus=0,
-            image_id=image_id,
             instance_role=ecs_instance_profile.ref,
             instance_types=instance_types,
             launch_template=launch_template_props,
