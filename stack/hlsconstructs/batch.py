@@ -1,5 +1,7 @@
 import os
 
+from typing import Optional
+
 from aws_cdk import Fn, aws_batch, aws_ec2, aws_ecs, aws_efs, aws_iam, aws_ssm
 from constructs import Construct
 from hlsconstructs.network import Network
@@ -18,7 +20,7 @@ class Batch(Construct):
         ssh_keyname: str,
         efs: aws_efs.CfnFileSystem,
         use_cw: bool = True,
-        image_id: str | None = None,
+        image_id: Optional[str] = None,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
