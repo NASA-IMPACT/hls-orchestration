@@ -48,6 +48,9 @@ class Batch(Construct):
                 aws_iam.ManagedPolicy.from_aws_managed_policy_name(
                     "service-role/AWSBatchServiceRole"
                 ),
+                aws_iam.ManagedPolicy.from_aws_managed_policy_name(
+                    "AmazonSSMReadOnlyAccess"
+                ),
             ],
         )
 
