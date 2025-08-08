@@ -8,7 +8,6 @@ packages:
 - mdadm
 
 runcmd:
-- yum update -y --exclude="chrony*"
 - ephemeral_disks=$(realpath -P  /dev/disk/by-id/nvme*Instance_Storage* | uniq)
 - ephemeral_disks_count=$(echo "$ephemeral_disks" | wc -w)
 - scratch_fs=ext4
