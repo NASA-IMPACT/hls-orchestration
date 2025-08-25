@@ -128,9 +128,12 @@ class HlsStack(Stack):
 
             vpcid = os.environ["HLS_GCC_VPCID"]
             boundary_arn = os.environ["HLS_GCC_BOUNDARY_ARN"]
+            # NOTE: This environment variable should usually look like `resolve:ssm:/mcp/amis/aml2023-ecs`
+            #       so we can lookup the latest AMI each time we launch an Ec2 instance.
+            #       We require the `resolve:ssm` in the variable so that we can also override the AMI ID
+            #       manually (e.g., if the SSM parameter wasn't updated).
             # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-launch-template.html#use-an-ssm-parameter-instead-of-an-ami-id
-            mcp_ami_ssm_param = os.environ["HLS_MCP_AMI_SSM_PARAMETER"]
-            image_id = f"resolve:ssm:{mcp_ami_ssm_param}"
+            image_id = os.environ["HLS_MCP_AMI_ID"]
             Aspects.of(self).add(PermissionBoundaryAspect(boundary_arn))
         else:
             vpcid = None
