@@ -129,7 +129,8 @@ class HlsStack(Stack):
             vpcid = os.environ["HLS_GCC_VPCID"]
             boundary_arn = os.environ["HLS_GCC_BOUNDARY_ARN"]
             # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-launch-template.html#use-an-ssm-parameter-instead-of-an-ami-id
-            image_id = "resolve:ssm:/mcp/amis/aml2023-ecs"
+            mcp_ami_ssm_param = os.environ["HLS_MCP_AMI_SSM_PARAMETER"]
+            image_id = f"resolve:ssm:{mcp_ami_ssm_param}"
             Aspects.of(self).add(PermissionBoundaryAspect(boundary_arn))
         else:
             vpcid = None
