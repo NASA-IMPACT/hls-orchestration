@@ -46,7 +46,6 @@ cloud-init-per once create_swap
 # Mount /efs
 # https://docs.aws.amazon.com/linux/al2023/ug/efs.html
 cloud-init-per once mount_efs mount -t efs {} /mnt/efs
-mount -a
 
 --==MYBOUNDARY==
 Content-Type: text/x-shellscript; charset="us-ascii"
