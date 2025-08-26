@@ -33,18 +33,16 @@ runcmd:
 
 --==MYBOUNDARY==
 Content-Type: text/cloud-boothook; charset="us-ascii"
+#!/bin/bash -xe
 
+# ===== Mount /efs
+# See: https://docs.aws.amazon.com/linux/al2023/ug/efs.html
 # Install amazon-efs-utils
-cloud-init-per once install_amazon-efs-utils yum install -y amazon-efs-utils
+cloud-init-per once install_amazon-efs-utils dnf install -y amazon-efs-utils
 
 # Create /efs folder
 cloud-init-per once mkdir_efs mkdir /mnt/efs
-
-# Create a 16GB swapfile (128M * 128)
-cloud-init-per once create_swap
-
-# Mount /efs
-# https://docs.aws.amazon.com/linux/al2023/ug/efs.html
+# Mount
 cloud-init-per once mount_efs mount -t efs {} /mnt/efs
 
 --==MYBOUNDARY==
