@@ -103,11 +103,11 @@ class Batch(Construct):
             cloudwatch_config_param = aws_ssm.StringParameter(
                 self,
                 "CloudWatchAgentConfigParam",
-                description="Configruation of Cloudwatch Agent for Amazon Linux 2",
+                description="Configuration of Cloudwatch Agent for Amazon Linux 2",
                 parameter_name=cloudwatch_ssm_param,
                 string_value=cloudwatch_config_string,
             )
-            # Grant ssm:GetParameters to ECS Instnace role.
+            # Grant ssm:GetParameters to ECS Instance role.
             cloudwatch_config_param.grant_read(self.ecs_instance_role)
 
             userdata_file = open(os.path.join(dirname, "userdata.txt"), "rb").read()
