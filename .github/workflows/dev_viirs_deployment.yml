@@ -13,16 +13,20 @@ jobs:
       matrix:
         python: [3.9]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
+
       - name: Install Tox
         run: pip install tox
+
       - name: Run Tox test environment
         # Run tox using the version of Python in `PATH`
         run: tox -e py
+
   dev-viirs-deployment:
     strategy:
       matrix:
@@ -32,41 +36,46 @@ jobs:
     environment:
       name: dev-viirs
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
+
       - name: Install tox
         run: pip install tox
+
       - name: Configure awscli
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-west-2
-      - name: Convert secrets to environment variables
-        env:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          SECRETS_JSON: ${{ toJson(secrets) }}
+
+      - name: Convert secrets and vars to environment variables
+        shell: python
         run: |
-          while read -rd $'' line; do
-            echo "$line" >> $GITHUB_ENV
-          done < <(
-            jq -r <<<"$SECRETS_JSON" 'to_entries|map("\(.key)=\(.value)\u0000")[]'
-          )
-      - name: Convert vars to environment variables
-        env:
-          VARS_JSON: ${{ toJson(vars) }}
-        run: |
-          while read -rd $'' line; do
-            echo "$line" >> $GITHUB_ENV
-          done < <(
-            jq -r <<<"$VARS_JSON" 'to_entries|map("\(.key)=\(.value)\u0000")[]'
-          )
+          import os
+
+          secrets_and_vars = {
+              **${{ toJson(secrets) }},
+              **${{ toJson(vars) }},
+          }
+
+          with open(os.environ["GITHUB_ENV"], "a") as env_file:
+              for name, value in secrets_and_vars.items():
+                  # If the value contains a newline, use the delimiter syntax
+                  # https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#multiline-strings
+                  if "\n" in value:
+                      print(f"{name}<<EOF\n{value}\nEOF", file=env_file)
+                  else:
+                      # Standard format for single lines
+                      print(f"{name}={value}", file=env_file)
+
       - name: Deploy with tox
         run: tox -v -e dev -r -- deploy --require-approval never
+
       - name: Run DB setup
         run: |
           setupdb=$(aws cloudformation describe-stacks \
