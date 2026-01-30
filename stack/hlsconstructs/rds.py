@@ -56,7 +56,6 @@ class Rds(Construct):
         )
 
         self.database_name = "hls"
-
         self.database = aws_rds.DatabaseCluster(
             self,
             "RdsCluster",
