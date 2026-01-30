@@ -56,11 +56,12 @@ class Rds(Construct):
         )
 
         self.database_name = "hls"
+
         self.database = aws_rds.DatabaseCluster(
             self,
             "RdsCluster",
             engine=aws_rds.DatabaseClusterEngine.aurora_postgres(
-                version=aws_rds.AuroraPostgresEngineVersion.VER_13_12,
+                version=aws_rds.AuroraPostgresEngineVersion.of("13", "13"),
             ),
             default_database_name=self.database_name,
             enable_data_api=True,
