@@ -35,7 +35,7 @@ class Efs(Construct):
         for subnet in network.vpc.select_subnets(one_per_az=True).subnets:
             mount_target = aws_efs.CfnMountTarget(
                 self,
-                f"MountTarget{len(mount_targets)+1}",
+                f"MountTarget{len(mount_targets) + 1}",
                 file_system_id=self.filesystem.ref,
                 security_groups=[self.mount_target_security_group.ref],
                 subnet_id=subnet.subnet_id,
