@@ -17,6 +17,7 @@ class DockerBatchJob(Construct):
         memory: int = 10000,
         vcpus: int = 4,
         mountpath: str = "/efs",
+        environment: dict[str, str] | None = None,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -66,6 +67,10 @@ class DockerBatchJob(Construct):
             container_path="/var/scratch",
             read_only=False,
         )
+        env_props = [
+            aws_batch.CfnJobDefinition.KeyValuePairProperty(name=k, value=v)
+            for k, v in (environment or {}).items()
+        ]
         container_properties = aws_batch.CfnJobDefinition.ContainerPropertiesProperty(
             image=image_uri,
             job_role_arn=self.role.role_arn,
@@ -73,6 +78,7 @@ class DockerBatchJob(Construct):
             mount_points=[mount_point, scratch_mount_point],
             vcpus=vcpus,
             volumes=[volume, scratch_volume],
+            environment=env_props or None,
         )
 
         job = aws_batch.CfnJobDefinition(

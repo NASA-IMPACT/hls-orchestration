@@ -8,6 +8,7 @@ from aws_cdk import (
     Stack,
     aws_iam,
     aws_lambda,
+    aws_logs,
     aws_s3,
     aws_sns,
     aws_ssm,
@@ -42,6 +43,7 @@ OUTPUT_BUCKET_HISTORIC = os.environ["HLS_OUTPUT_BUCKET_HISTORIC"]
 GIBS_OUTPUT_BUCKET = os.environ["HLS_GIBS_OUTPUT_BUCKET"]
 GIBS_OUTPUT_BUCKET_HISTORIC = os.environ["HLS_GIBS_OUTPUT_BUCKET_HISTORIC"]
 LANDSAT_HISTORIC_SNS_TOPIC = os.environ["HLS_LANDASAT_HISTORIC_SNS_TOPIC"]
+METRIC_LOG_GROUP_NAME = os.environ["HLS_METRIC_LOG_GROUP_NAME"]
 
 
 def getenv(key, default):
@@ -117,6 +119,12 @@ except ValueError:
 REPLACE_EXISTING = getenv("HLS_REPLACE_EXISTING", "true") == "true"
 USE_CLOUD_WATCH = getenv("HLS_USE_CLOUD_WATCH", "false") == "true"
 GCC = getenv("GCC", None) == "true"
+INSTRUMENT_SCIENCE_CONTAINER = (
+    getenv("HLS_INSTRUMENT_SCIENCE_CONTAINER", "false") == "true"
+)
+EXPERIMENT_ENV = {
+    k: v for k, v in os.environ.items() if k.startswith("HLS_EXPERIMENT_")
+}
 
 
 class HlsStack(Stack):
@@ -140,6 +148,14 @@ class HlsStack(Stack):
             image_id = None
 
         self.network = Network(self, "Network", vpcid=vpcid)
+
+        self.metrics_log_group = aws_logs.LogGroup(
+            self,
+            "MetricsLogGroup",
+            log_group_name=METRIC_LOG_GROUP_NAME,
+            retention=aws_logs.RetentionDays.THREE_MONTHS,
+            removal_policy=RemovalPolicy.RETAIN,
+        )
 
         self.laads_bucket = S3(self, "LaadsBucket", bucket_name=LAADS_BUCKET)
 
@@ -269,6 +285,10 @@ class HlsStack(Stack):
             vcpus=2,
         )
 
+        task_env = None
+        if INSTRUMENT_SCIENCE_CONTAINER:
+            task_env = {"METRIC_LOG_GROUP_NAME": METRIC_LOG_GROUP_NAME, **EXPERIMENT_ENV}
+
         self.sentinel_task = DockerBatchJob(
             self,
             "SentinelTask",
@@ -277,6 +297,7 @@ class HlsStack(Stack):
             timeout=7200,
             memory=20000,
             vcpus=2,
+            environment=task_env,
         )
 
         self.landsat_task = DockerBatchJob(
@@ -287,6 +308,7 @@ class HlsStack(Stack):
             timeout=5400,
             memory=20000,
             vcpus=2,
+            environment=task_env,
         )
 
         self.landsat_tile_task = DockerBatchJob(
@@ -296,7 +318,17 @@ class HlsStack(Stack):
             timeout=5400,
             memory=16000,
             vcpus=2,
+            environment=task_env,
         )
+
+        if INSTRUMENT_SCIENCE_CONTAINER:
+            for task in [self.sentinel_task, self.landsat_task, self.landsat_tile_task]:
+                task.role.add_to_policy(
+                    aws_iam.PolicyStatement(
+                        actions=["logs:PutLogEvents"],
+                        resources=[f"{self.metrics_log_group.log_group_arn}:*"],
+                    )
+                )
 
         self.hls_lambda_layer = aws_lambda.LayerVersion(
             self,

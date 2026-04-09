@@ -17,6 +17,9 @@ set -a
 # LAADS DAAC Token
 HLS_LAADS_TOKEN="<your token>"
 
+# CloudWatch Logs log group for per-task EMF metrics
+HLS_METRIC_LOG_GROUP_NAME=/hls/nextgen/metrics
+
 # Bucket used for processing output
 HLS_OUTPUT_BUCKET=hls-global
 HLS_OUTPUT_BUCKET_HISTORIC=hls-gobal-historic
@@ -87,6 +90,15 @@ HLS_GCC_VPCID=vpcid
 HLS_GCC_BOUNDARY_ARN=boudary_policy_arn
 # Use Cloudwatch metrics for containers
 # HLS_USE_CLOUD_WATCH=true
+
+# Set to true to forward METRIC_LOG_GROUP_NAME to science containers and grant logs:PutLogEvents
+# HLS_INSTRUMENT_SCIENCE_CONTAINER=true
+
+# Experiment dimensions baked into container metrics when instrumentation is enabled.
+# Any number of HLS_EXPERIMENT_* variables can be defined; the prefix is stripped to form the
+# CloudWatch dimension name (e.g. HLS_EXPERIMENT_FMASK_VERSION=v5 → dimension fmask_version=v5).
+# HLS_EXPERIMENT_FMASK_VERSION=v5
+# HLS_EXPERIMENT_LASRC_VERSION=2.1
 
 # end of allexport mode
 set +a
