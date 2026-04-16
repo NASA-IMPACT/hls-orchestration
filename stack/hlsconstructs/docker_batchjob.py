@@ -68,7 +68,7 @@ class DockerBatchJob(Construct):
             read_only=False,
         )
         env_props = [
-            aws_batch.CfnJobDefinition.KeyValuePairProperty(name=k, value=v)
+            aws_batch.CfnJobDefinition.EnvironmentProperty(name=k, value=v)
             for k, v in (environment or {}).items()
         ]
         container_properties = aws_batch.CfnJobDefinition.ContainerPropertiesProperty(
