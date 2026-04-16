@@ -5,6 +5,8 @@ from constructs import Construct
 
 dirname = os.path.dirname(os.path.realpath(__file__))
 
+_CONTAINER_ENV_PREFIX = "HLS_CONTAINER_"
+
 
 class DockerBatchJob(Construct):
     def __init__(
@@ -68,7 +70,16 @@ class DockerBatchJob(Construct):
             read_only=False,
         )
 
-        env_vars = {"AWS_DEFAULT_REGION": Stack.of(self).region, **(environment or {})}
+        forwarded = {
+            k.removeprefix(_CONTAINER_ENV_PREFIX): v
+            for k, v in os.environ.items()
+            if k.startswith(_CONTAINER_ENV_PREFIX)
+        }
+        env_vars = {
+            "AWS_DEFAULT_REGION": Stack.of(self).region,
+            **forwarded,
+            **(environment or {}),
+        }
         env_props = [
             aws_batch.CfnJobDefinition.EnvironmentProperty(name=k, value=v)
             for k, v in env_vars.items()
