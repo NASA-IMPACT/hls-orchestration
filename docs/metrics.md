@@ -24,9 +24,10 @@ Setting `HLS_METRIC_LOG_GROUP_NAME` without enabling `HLS_INSTRUMENT_SCIENCE_CON
 ensures the log group exists before instrumentation is turned on, so there is no "log group already exists" conflict
 when toggling.
 
-The log stream for each job is the `AWS_BATCH_JOB_ID`. The log group and stream must exist before metrics can be emitted
-— the science container will not create them. The log group is managed by the CDK stack with a 90-day retention policy
-and `RemovalPolicy.RETAIN` (it will not be deleted on stack teardown).
+The log stream for each job is the `AWS_BATCH_JOB_ID`. The log group must exist before metrics can be emitted — the
+science container will create the log stream automatically on startup (and silently reuse it if it already exists). The
+log group is managed by the CDK stack with a 90-day retention policy and `RemovalPolicy.RETAIN` (it will not be deleted
+on stack teardown).
 
 ### Experiment Dimensions
 
