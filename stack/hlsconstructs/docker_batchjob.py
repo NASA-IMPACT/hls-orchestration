@@ -1,6 +1,6 @@
 import os
 
-from aws_cdk import aws_batch, aws_ecr_assets, aws_ecs, aws_iam, aws_s3
+from aws_cdk import Stack, aws_batch, aws_ecr_assets, aws_ecs, aws_iam, aws_s3
 from constructs import Construct
 
 dirname = os.path.dirname(os.path.realpath(__file__))
@@ -67,9 +67,11 @@ class DockerBatchJob(Construct):
             container_path="/var/scratch",
             read_only=False,
         )
+
+        env_vars = {"AWS_DEFAULT_REGION": Stack.of(self).region, **(environment or {})}
         env_props = [
             aws_batch.CfnJobDefinition.EnvironmentProperty(name=k, value=v)
-            for k, v in (environment or {}).items()
+            for k, v in env_vars.items()
         ]
         container_properties = aws_batch.CfnJobDefinition.ContainerPropertiesProperty(
             image=image_uri,
@@ -78,7 +80,7 @@ class DockerBatchJob(Construct):
             mount_points=[mount_point, scratch_mount_point],
             vcpus=vcpus,
             volumes=[volume, scratch_volume],
-            environment=env_props or None,
+            environment=env_props,
         )
 
         job = aws_batch.CfnJobDefinition(
