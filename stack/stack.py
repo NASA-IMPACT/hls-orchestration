@@ -325,7 +325,7 @@ class HlsStack(Stack):
             for task in [self.sentinel_task, self.landsat_task, self.landsat_tile_task]:
                 task.role.add_to_policy(
                     aws_iam.PolicyStatement(
-                        actions=["logs:PutLogEvents"],
+                        actions=["logs:CreateLogStream", "logs:PutLogEvents"],
                         resources=[f"{self.metrics_log_group.log_group_arn}:*"],
                     )
                 )
