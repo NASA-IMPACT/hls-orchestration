@@ -167,6 +167,18 @@ class HlsStack(Stack):
             self, "landsat_output_bucket", OUTPUT_BUCKET
         )
 
+        self.output_bucket_historic = aws_s3.Bucket.from_bucket_name(
+            self, "output_bucket_historic", OUTPUT_BUCKET_HISTORIC
+        )
+
+        self.gibs_output_bucket = aws_s3.Bucket.from_bucket_name(
+            self, "gibs_output_bucket", GIBS_OUTPUT_BUCKET
+        )
+
+        self.gibs_output_bucket_historic = aws_s3.Bucket.from_bucket_name(
+            self, "gibs_output_bucket_historic", GIBS_OUTPUT_BUCKET_HISTORIC
+        )
+
         sentinel_input_bucket_expiration_days = int(
             os.environ["HLS_SENTINEL_INPUT_BUCKET_EXPIRATION_DAYS"]
         )
@@ -1175,6 +1187,31 @@ class HlsStack(Stack):
                     "s3:Get*",
                     "s3:List*",
                 ],
+            )
+        )
+        # Direct output bucket access for new job definitions (task role credentials).
+        # Old job definitions continue to use the instance role + GCC_ROLE_ARN path below.
+        _output_bucket_resources = [
+            self.sentinel_output_bucket.bucket_arn,
+            f"{self.sentinel_output_bucket.bucket_arn}/*",
+            self.output_bucket_historic.bucket_arn,
+            f"{self.output_bucket_historic.bucket_arn}/*",
+            self.gibs_output_bucket.bucket_arn,
+            f"{self.gibs_output_bucket.bucket_arn}/*",
+            self.gibs_output_bucket_historic.bucket_arn,
+            f"{self.gibs_output_bucket_historic.bucket_arn}/*",
+        ]
+        _output_bucket_actions = ["s3:Get*", "s3:Put*", "s3:List*", "s3:AbortMultipartUpload"]
+        self.sentinel_task.role.add_to_policy(
+            aws_iam.PolicyStatement(
+                resources=_output_bucket_resources,
+                actions=_output_bucket_actions,
+            )
+        )
+        self.landsat_tile_task.role.add_to_policy(
+            aws_iam.PolicyStatement(
+                resources=_output_bucket_resources,
+                actions=_output_bucket_actions,
             )
         )
         # Cross account role assumption for GCC bucket
