@@ -1,10 +1,9 @@
-import os
-from unittest.mock import patch
+from unittest.mock import MagicMock
 
 import pytest
-from botocore.errorfactory import ClientError
 
-from lambda_functions.laads_available import getyyyydoy, handler
+from hls_lambda_layer.laads_utils import getyyyydoy
+from lambda_functions.laads_available import handler
 
 
 def test_getyyyydoy():
@@ -27,10 +26,12 @@ def test_handler_keyError():
         assert expected in str(e.value)
 
 
-@patch.dict(os.environ, {"LAADS_BUCKET": "test"})
-@patch("lambda_functions.laads_available.s3")
-def test_handler(s3):
-    from lambda_functions.laads_available import handler
+def test_handler(monkeypatch):
+    monkeypatch.setenv("LAADS_BUCKET", "test")
+
+    mock_s3 = MagicMock()
+    mock_s3.list_objects_v2.return_value = {"Contents": ["a key"]}
+    monkeypatch.setattr("hls_lambda_layer.laads_utils.s3", mock_s3)
 
     granule = "S2A_MSIL1C_20191001T201241_N0208_R028_T09WXT_20191001T220736A"
     event = {"granule": granule}
@@ -43,7 +44,4 @@ def test_handler(s3):
         "available": True,
     }
 
-    s3.list_objects_v2.return_value = {"Contents": ["a key"]}
-
-    response = handler(event, {})
-    assert response == expected
+    assert handler(event, {}) == expected

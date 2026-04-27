@@ -95,6 +95,12 @@ LANDSAT_SNS_TOPIC_ENABLED = (
     getenv("HLS_LANDSAT_SNS_TOPIC_ENABLED", "true").lower() == "true"
 )
 
+LAADS_ALERT_WEBHOOK = getenv("HLS_SLACK_ALERT_WEBHOOK", None)
+LAADS_ALERT_CHECK_CRON = getenv("HLS_LAADS_ALERT_CHECK_CRON", "cron(0/30 * * * ? *)")
+LAADS_LOOKBACK_DAYS = getenv("HLS_LAADS_LOOKBACK_DAYS", "14")
+LAADS_ALERT_INTERVAL_HOURS = getenv("HLS_LAADS_ALERT_INTERVAL_HOURS", "12")
+LAADS_LAG_HOURS = getenv("HLS_LAADS_LAG_HOURS", "30")
+
 DOWNLOADER_FUNCTION_ARN = getenv("HLS_DOWNLOADER_FUNCTION_ARN", None)
 LAADS_BUCKET_BOOTSTRAP = getenv(
     "HLS_LAADS_BUCKET_BOOTSTRAP", "hls-development-laads-bucket"
@@ -323,6 +329,24 @@ class HlsStack(Stack):
             code_file="laads_available.py",
             env={"LAADS_BUCKET": LAADS_BUCKET},
             timeout=120,
+            layers=[self.hls_lambda_layer],
+        )
+
+        self.laads_alert = Lambda(
+            self,
+            "LaadsAlert",
+            code_file="laads_alert.py",
+            env={
+                "LAADS_BUCKET": LAADS_BUCKET,
+                "HLS_SLACK_ALERT_WEBHOOK": LAADS_ALERT_WEBHOOK,
+                "LAADS_ALERT_STATE_SSM_PATH": f"/{STACKNAME}/laads-alert-state",
+                "LAADS_LOOKBACK_DAYS": LAADS_LOOKBACK_DAYS,
+                "LAADS_ALERT_INTERVAL_HOURS": LAADS_ALERT_INTERVAL_HOURS,
+                "LAADS_LAG_HOURS": LAADS_LAG_HOURS,
+            },
+            timeout=120,
+            layers=[self.hls_lambda_layer],
+            cron_str=LAADS_ALERT_CHECK_CRON,
         )
 
         self.check_twin_granule = Lambda(
@@ -1009,6 +1033,15 @@ class HlsStack(Stack):
         )
         self.laads_cron.function.add_to_role_policy(self.laads_bucket_read_policy)
         self.laads_available.function.add_to_role_policy(self.laads_bucket_read_policy)
+        self.laads_alert.function.add_to_role_policy(self.laads_bucket_read_policy)
+        self.laads_alert.function.add_to_role_policy(
+            aws_iam.PolicyStatement(
+                resources=[
+                    f"arn:aws:ssm:{self.region}:{self.account}:parameter/{STACKNAME}/laads-alert-state"
+                ],
+                actions=["ssm:GetParameter", "ssm:PutParameter"],
+            )
+        )
 
         if DOWNLOADER_FUNCTION_ARN:
             self.downloader_function = aws_lambda.Function.from_function_arn(
