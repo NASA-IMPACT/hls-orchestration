@@ -144,12 +144,10 @@ def _handle_outage(
         )
         return new_state, False
 
-    earliest_missing = missing_days[-1]  # list is newest-first
-    latest_missing = missing_days[0]
     message = (
         f":warning: [{stackname}] LAADS data is missing for {len(missing_days)} day(s) "
         f"within the past {lookback.days} days. "
-        f"Earliest missing: {earliest_missing}, most recent missing: {latest_missing}."
+        f"Missing dates: {', '.join(sorted(missing_days))}."
     )
     print(message)
     new_state.last_alert_sent = now

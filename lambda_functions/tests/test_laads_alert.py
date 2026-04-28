@@ -23,6 +23,7 @@ def _iso_hours_ago(hours: float) -> str:
 
 @pytest.fixture
 def laads_env(monkeypatch):
+    monkeypatch.setenv("STACKNAME", "test")
     monkeypatch.setenv("LAADS_BUCKET", BUCKET)
     monkeypatch.setenv("LAADS_ALERT_STATE_SSM_PATH", SSM_PATH)
     monkeypatch.setenv("LAADS_LOOKBACK_DAYS", "3")
