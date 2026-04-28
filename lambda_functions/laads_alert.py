@@ -21,6 +21,7 @@ Environment variables:
                                 buffer). The most recent date checked is today minus this lag,
                                 so we don't false-alert on data that simply hasn't been published
                                 yet.
+  STACKNAME                   - Deployment stage name (e.g. dev / prod), included in alert text.
 """
 
 import dataclasses
@@ -129,6 +130,7 @@ def _handle_outage(
     alert_interval: dt.timedelta,
     now: dt.datetime,
     webhook_url: str | None,
+    stackname: str,
 ) -> tuple[AlertState, bool]:
     new_state = AlertState(
         status="missing",
@@ -145,7 +147,7 @@ def _handle_outage(
     earliest_missing = missing_days[-1]  # list is newest-first
     latest_missing = missing_days[0]
     message = (
-        f":warning: LAADS data is missing for {len(missing_days)} day(s) "
+        f":warning: [{stackname}] LAADS data is missing for {len(missing_days)} day(s) "
         f"within the past {lookback.days} days. "
         f"Earliest missing: {earliest_missing}, most recent missing: {latest_missing}."
     )
@@ -161,6 +163,7 @@ def _handle_recovery_or_ok(
     lookback: dt.timedelta,
     now: dt.datetime,
     webhook_url: str | None,
+    stackname: str,
 ) -> tuple[AlertState, bool]:
     new_state = AlertState(status="available", last_alert_sent=now)
     if state.status != "missing":
@@ -170,7 +173,7 @@ def _handle_recovery_or_ok(
         return new_state, False
 
     message = (
-        f":white_check_mark: LAADS data has recovered. "
+        f":white_check_mark: [{stackname}] LAADS data has recovered. "
         f"Data was missing since {state.missing_since or 'unknown'}."
     )
     print(message)
@@ -184,6 +187,7 @@ def handler(event: dict, context: dict) -> dict:
     bucket = os.environ["LAADS_BUCKET"]
     webhook_url: str | None = os.getenv("HLS_SLACK_ALERT_WEBHOOK") or None
     ssm_path = os.environ["LAADS_ALERT_STATE_SSM_PATH"]
+    stackname = os.environ["STACKNAME"]
     lookback = dt.timedelta(days=int(os.getenv("LAADS_LOOKBACK_DAYS", "14")))
     alert_interval = dt.timedelta(
         hours=int(os.getenv("LAADS_ALERT_INTERVAL_HOURS", "12"))
@@ -196,10 +200,12 @@ def handler(event: dict, context: dict) -> dict:
 
     if missing_days:
         new_state, alerted = _handle_outage(
-            state, missing_days, lookback, alert_interval, now, webhook_url
+            state, missing_days, lookback, alert_interval, now, webhook_url, stackname
         )
     else:
-        new_state, alerted = _handle_recovery_or_ok(state, lookback, now, webhook_url)
+        new_state, alerted = _handle_recovery_or_ok(
+            state, lookback, now, webhook_url, stackname
+        )
 
     _put_state(ssm_path, new_state)
     return {

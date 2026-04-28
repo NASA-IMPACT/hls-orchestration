@@ -387,6 +387,7 @@ class HlsStack(Stack):
                 "LAADS_LOOKBACK_DAYS": LAADS_LOOKBACK_DAYS,
                 "LAADS_ALERT_INTERVAL_HOURS": LAADS_ALERT_INTERVAL_HOURS,
                 "LAADS_LAG_HOURS": LAADS_LAG_HOURS,
+                "STACKNAME": STACKNAME,
             },
             timeout=120,
             layers=[self.hls_lambda_layer],
