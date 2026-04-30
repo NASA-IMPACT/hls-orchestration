@@ -36,6 +36,8 @@ class Lambda(Construct):
         """Create AWS Lambda stack."""
         super().__init__(scope, id, **kwargs)
 
+        env = {k: v for k, v in env.items() if v is not None} if env else None
+
         if package_code_dir is not None:
             absolute_path = os.path.join(
                 os.path.dirname(__file__),
