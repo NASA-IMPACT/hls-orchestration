@@ -391,7 +391,7 @@ class HlsStack(Stack):
             },
             timeout=120,
             layers=[self.hls_lambda_layer],
-            cron_str=LAADS_ALERT_CHECK_CRON,
+            cron_str=LAADS_ALERT_CHECK_CRON if LAADS_ALERT_WEBHOOK else None,
         )
 
         self.check_twin_granule = Lambda(
