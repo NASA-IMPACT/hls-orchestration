@@ -67,6 +67,7 @@ class Rds(Construct):
             cluster_identifier=f"rds-{os.getenv('HLS_STACKNAME')}",
             serverless_v2_min_capacity=min_capacity,
             serverless_v2_max_capacity=max_capacity,
+            serverless_v2_auto_pause_duration=Duration.minutes(10) if min_capacity == 0 else None,
             writer=aws_rds.ClusterInstance.serverless_v2(
                 id="serverless-1",
                 instance_identifier=f"rds-{os.getenv('HLS_STACKNAME')}-serverless-1",
@@ -80,18 +81,6 @@ class Rds(Construct):
             security_groups=[self.security_group],
             removal_policy=RemovalPolicy.RETAIN,
         )
-
-        # Only set auto-pause if min_capacity is 0 as Aurora Serverless v2 doesn't
-        # support auto-pausing with >0 min capacity
-        if min_capacity == 0:
-            # CDK doesn't yet support "SecondsUntilAutoPause" but there is work in
-            # progress to add it,
-            #   issue: https://github.com/aws/aws-cdk/issues/32280
-            #   PR: https://github.com/aws/aws-cdk/pull/32787
-            self.database.node.default_child.add_property_override(
-                "ServerlessV2ScalingConfiguration.SecondsUntilAutoPause",
-                600,
-            )
 
         self.arn = self.database.cluster_arn
 
