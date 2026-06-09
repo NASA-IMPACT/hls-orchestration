@@ -20,6 +20,7 @@ class Batch(Construct):
         ssh_keyname: str,
         efs: aws_efs.CfnFileSystem,
         use_cw: bool = True,
+        spot: bool = True,
         image_id: Optional[str] = None,
         **kwargs,
     ) -> None:
@@ -149,20 +150,38 @@ class Batch(Construct):
             )
         )
 
-        compute_resources = aws_batch.CfnComputeEnvironment.ComputeResourcesProperty(
-            #  allocation_strategy="BEST_FIT_PROGRESSIVE",
-            allocation_strategy="SPOT_CAPACITY_OPTIMIZED",
-            desiredv_cpus=0,
-            instance_role=ecs_instance_profile.ref,
-            instance_types=instance_types,
-            launch_template=launch_template_props,
-            maxv_cpus=maxv_cpus,
-            minv_cpus=0,
-            security_group_ids=[self.ecs_host_security_group.ref],
-            subnets=[s.subnet_id for s in network.public_subnets],
-            type="SPOT",
-            spot_iam_fleet_role=self.ecs_host_security_group.ref,
-        )
+        if spot:
+            compute_resources = (
+                aws_batch.CfnComputeEnvironment.ComputeResourcesProperty(
+                    allocation_strategy="SPOT_CAPACITY_OPTIMIZED",
+                    desiredv_cpus=0,
+                    instance_role=ecs_instance_profile.ref,
+                    instance_types=instance_types,
+                    launch_template=launch_template_props,
+                    maxv_cpus=maxv_cpus,
+                    minv_cpus=0,
+                    security_group_ids=[self.ecs_host_security_group.ref],
+                    subnets=[s.subnet_id for s in network.public_subnets],
+                    type="SPOT",
+                    spot_iam_fleet_role=self.ecs_host_security_group.ref,
+                )
+            )
+        else:
+            compute_resources = (
+                aws_batch.CfnComputeEnvironment.ComputeResourcesProperty(
+                    # SPOT_CAPACITY_OPTIMIZED is SPOT-only; EC2 uses BEST_FIT_*.
+                    allocation_strategy="BEST_FIT_PROGRESSIVE",
+                    desiredv_cpus=0,
+                    instance_role=ecs_instance_profile.ref,
+                    instance_types=instance_types,
+                    launch_template=launch_template_props,
+                    maxv_cpus=maxv_cpus,
+                    minv_cpus=0,
+                    security_group_ids=[self.ecs_host_security_group.ref],
+                    subnets=[s.subnet_id for s in network.public_subnets],
+                    type="EC2",
+                )
+            )
 
         compute_environment = aws_batch.CfnComputeEnvironment(
             self,

@@ -1,6 +1,6 @@
 import os
 
-from aws_cdk import RemovalPolicy, SecretValue, aws_ec2, aws_iam, aws_rds, aws_secretsmanager
+from aws_cdk import Duration, RemovalPolicy, SecretValue, aws_ec2, aws_iam, aws_rds, aws_secretsmanager
 from constructs import Construct
 from hlsconstructs.network import Network
 
