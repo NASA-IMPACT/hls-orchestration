@@ -124,6 +124,10 @@ except ValueError:
 
 REPLACE_EXISTING = getenv("HLS_REPLACE_EXISTING", "true") == "true"
 USE_CLOUD_WATCH = getenv("HLS_USE_CLOUD_WATCH", "false") == "true"
+# Use SPOT instances (cheaper, interruptible) by default. Set to "false" to use
+# On-Demand instances, e.g. in a dev environment where experiment turnaround
+# time matters more than the SPOT cost savings.
+USE_SPOT = getenv("HLS_BATCH_SPOT", "true").lower() == "true"
 GCC = getenv("GCC", None) == "true"
 INSTRUMENT_SCIENCE_CONTAINER = (
     getenv("HLS_INSTRUMENT_SCIENCE_CONTAINER", "false") == "true"
@@ -290,6 +294,7 @@ class HlsStack(Stack):
             instance_types=["r5d"],
             ssh_keyname=SSH_KEYNAME,
             use_cw=USE_CLOUD_WATCH,
+            spot=USE_SPOT,
             image_id=image_id,
         )
 
