@@ -253,6 +253,7 @@ class HlsStack(Stack):
             maxv_cpus=MAXV_CPUS,
             instance_types=["r5d"],
             ssh_keyname=SSH_KEYNAME,
+            stackname=STACKNAME,
             use_cw=USE_CLOUD_WATCH,
             image_id=image_id,
         )

@@ -16,12 +16,20 @@ class Batch(Construct):
         instance_types: list,
         maxv_cpus: int,
         ssh_keyname: str,
+        stackname: str,
         efs: aws_efs.CfnFileSystem = None,
         use_cw: bool = True,
         image_id=None,
+        ec2_tags: dict = None,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
+
+        # Tags applied to EC2 instances launched by the compute environment so
+        # that instance costs can be tracked per environment in Cost Explorer.
+        compute_tags = {"Name": stackname, "Stack": stackname}
+        if ec2_tags:
+            compute_tags.update(ec2_tags)
 
         self.ecs_host_security_group = aws_ec2.CfnSecurityGroup(
             self,
@@ -156,6 +164,7 @@ class Batch(Construct):
             subnets=[s.subnet_id for s in network.public_subnets],
             type="SPOT",
             spot_iam_fleet_role=self.ecs_host_security_group.ref,
+            tags=compute_tags,
         )
 
         compute_environment = aws_batch.CfnComputeEnvironment(
