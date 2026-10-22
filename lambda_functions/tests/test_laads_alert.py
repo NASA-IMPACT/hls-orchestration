@@ -199,3 +199,60 @@ def test_ssm_not_found_treated_as_available(mock_s3, mock_ssm, laads_env):
 
     assert result["previous_status"] == "available"
     assert result["missing_days"] == []
+
+
+@patch("lambda_functions.laads_alert.ssm")
+@patch("lambda_functions.laads_alert._post_slack")
+@patch("hls_lambda_layer.laads_utils.s3")
+def test_new_outage_not_throttled_by_stale_timestamp(
+    mock_s3, mock_post_slack, mock_ssm, laads_env, monkeypatch
+):
+    """New outage alerts immediately, ignoring a stale stored timestamp."""
+    monkeypatch.setenv("HLS_SLACK_ALERT_WEBHOOK", WEBHOOK)
+
+    mock_s3.list_objects_v2.return_value = {}
+    mock_ssm.get_parameter.return_value = _make_ssm_response(
+        {"status": "available", "last_alert_sent": _iso_hours_ago(0.5)}
+    )
+
+    result = handler({}, {})
+
+    assert result["alerted"] is True
+    mock_post_slack.assert_called_once()
+    assert "missing" in mock_post_slack.call_args[0][1].lower()
+
+
+@patch("lambda_functions.laads_alert.ssm")
+@patch("lambda_functions.laads_alert._post_slack")
+@patch("hls_lambda_layer.laads_utils.s3")
+def test_recovery_skipped_for_unreported_outage(
+    mock_s3, mock_post_slack, mock_ssm, laads_env, monkeypatch
+):
+    """Data recovered but the outage was never alerted -> no recovery message."""
+    monkeypatch.setenv("HLS_SLACK_ALERT_WEBHOOK", WEBHOOK)
+
+    mock_s3.list_objects_v2.return_value = {"Contents": ["key"]}
+    mock_ssm.get_parameter.return_value = _make_ssm_response(
+        {"status": "missing", "missing_since": "2026-04-10", "last_alert_sent": None}
+    )
+
+    result = handler({}, {})
+
+    assert result["previous_status"] == "missing"
+    assert result["alerted"] is False
+    mock_post_slack.assert_not_called()
+    saved = json.loads(mock_ssm.put_parameter.call_args[1]["Value"])
+    assert saved["status"] == "available"
+
+
+@patch("lambda_functions.laads_alert.ssm")
+@patch("hls_lambda_layer.laads_utils.s3")
+def test_available_does_not_record_alert_time(mock_s3, mock_ssm, laads_env):
+    """No alert sent -> last_alert_sent is not set."""
+    mock_s3.list_objects_v2.return_value = {"Contents": ["key"]}
+    mock_ssm.get_parameter.return_value = _make_ssm_response({"status": "available"})
+
+    handler({}, {})
+
+    saved = json.loads(mock_ssm.put_parameter.call_args[1]["Value"])
+    assert saved["last_alert_sent"] is None
