@@ -8,8 +8,10 @@ an outage. State is persisted in SSM Parameter Store to enable recovery detectio
 and alert throttling.
 
 The check can run frequently (e.g. every 30 minutes) but "missing" alerts are
-throttled to at most once every LAADS_ALERT_INTERVAL_HOURS hours. Recovery
-alerts fire immediately regardless of the throttle.
+throttled to at most once every LAADS_ALERT_INTERVAL_HOURS hours. The first
+alert of a new outage fires immediately. Recovery alerts fire immediately
+regardless of the throttle, but only if a "missing" alert was sent for the
+outage.
 
 Environment variables:
   LAADS_BUCKET                - S3 bucket containing LAADS auxiliary data
@@ -43,7 +45,8 @@ ssm = boto3.client("ssm")
 @dataclass
 class AlertState:
     status: Literal["available", "missing"] = "available"
-    last_alert_sent: dt.datetime | None = None  # UTC datetime of last Slack post
+    # UTC datetime of last "missing" Slack post in the current outage
+    last_alert_sent: dt.datetime | None = None
     missing_since: str | None = (
         None  # yyyy-mm-dd of first missing day in current outage
     )
@@ -117,8 +120,12 @@ def _check_recent_availability(
 
 
 def _alert_due(state: AlertState, alert_interval: dt.timedelta) -> bool:
-    """Return True if enough time has passed since the last "missing" alert."""
-    if state.last_alert_sent is None:
+    """Return True if a "missing" alert should be sent now.
+
+    True for a new outage, or if the alert interval has passed since the last
+    "missing" alert in the current outage.
+    """
+    if state.status != "missing" or state.last_alert_sent is None:
         return True
     return dt.datetime.now(tz=dt.timezone.utc) - state.last_alert_sent >= alert_interval
 
@@ -132,11 +139,12 @@ def _handle_outage(
     webhook_url: str | None,
     stackname: str,
 ) -> tuple[AlertState, bool]:
+    is_ongoing = state.status == "missing"
     new_state = AlertState(
         status="missing",
-        missing_since=state.missing_since or missing_days[0],
+        missing_since=(is_ongoing and state.missing_since) or missing_days[0],
         missing_days=missing_days,
-        last_alert_sent=state.last_alert_sent,
+        last_alert_sent=state.last_alert_sent if is_ongoing else None,
     )
     if not _alert_due(state, alert_interval):
         print(
@@ -163,10 +171,16 @@ def _handle_recovery_or_ok(
     webhook_url: str | None,
     stackname: str,
 ) -> tuple[AlertState, bool]:
-    new_state = AlertState(status="available", last_alert_sent=now)
+    new_state = AlertState(status="available")
     if state.status != "missing":
         print(
             f"LAADS data is available for all {lookback.days} days checked. No alert needed."
+        )
+        return new_state, False
+    if state.last_alert_sent is None:
+        print(
+            f"LAADS data has recovered (missing since {state.missing_since}). "
+            "Outage was never alerted, so no recovery alert sent."
         )
         return new_state, False
 
