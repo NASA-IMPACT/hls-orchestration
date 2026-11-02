@@ -60,18 +60,15 @@ jobs:
           role-session-name: ${{ github.actor }}
           aws-region: us-west-2
 
-      - name: Convert secrets and vars to environment variables
+      - name: Convert vars to environment variables
         shell: python
         run: |
           import os
 
-          secrets_and_vars = {
-              **${{ toJson(secrets) }},
-              **${{ toJson(vars) }},
-          }
+          deploy_vars = ${{ toJson(vars) }}
 
           with open(os.environ["GITHUB_ENV"], "a") as env_file:
-              for name, value in secrets_and_vars.items():
+              for name, value in deploy_vars.items():
                   # If the value contains a newline, use the delimiter syntax
                   # https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#multiline-strings
                   if "\n" in value:
@@ -81,6 +78,9 @@ jobs:
                       print(f"{name}={value}", file=env_file)
 
       - name: Deploy with tox
+        env:
+          HLS_LAADS_TOKEN: ${{ secrets.HLS_LAADS_TOKEN }}
+          HLS_SLACK_ALERT_WEBHOOK: ${{ secrets.HLS_SLACK_ALERT_WEBHOOK }}
         run: tox -v -e dev -r -- deploy --require-approval never
 
       - name: Run DB setup
