@@ -12,13 +12,14 @@ wall-clock time and peak memory of Fmask v4 vs. v5 side-by-side using experiment
 
 ### Enabling Metrics
 
-Two environment variables control metrics. Set them in the GitHub environment for your deployment target (or in
+These environment variables control metrics. Set them in the GitHub environment for your deployment target (or in
 `environment.sh` locally) before running `cdk deploy`.
 
 | Variable                           | Required              | Description                                                                                                                                                            |
 | ---------------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `HLS_METRIC_LOG_GROUP_NAME`        | Yes                   | Name of the CloudWatch Logs log group (e.g. `/hls/nextgen/metrics`). The log group is always created by the CDK stack regardless of whether instrumentation is active. |
 | `HLS_INSTRUMENT_SCIENCE_CONTAINER` | No (default: `false`) | Set to `true` to forward `METRIC_LOG_GROUP_NAME` to containers and grant `logs:PutLogEvents` to Batch task roles.                                                      |
+| `HLS_STAGE`                        | No                    | Deployment stage (e.g. `dev`, `prod`), set as `STAGE` in all Batch job definitions regardless of `HLS_INSTRUMENT_SCIENCE_CONTAINER`.                                   |
 
 Setting `HLS_METRIC_LOG_GROUP_NAME` without enabling `HLS_INSTRUMENT_SCIENCE_CONTAINER` is safe and intentional: it
 ensures the log group exists before instrumentation is turned on, so there is no "log group already exists" conflict

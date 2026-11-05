@@ -135,6 +135,8 @@ INSTRUMENT_SCIENCE_CONTAINER = (
 EXPERIMENT_ENV = {
     k: v for k, v in os.environ.items() if k.startswith("HLS_EXPERIMENT_")
 }
+STAGE = getenv("HLS_STAGE", None)
+STAGE_ENV = {"STAGE": STAGE} if STAGE else {}
 
 
 class HlsStack(Stack):
@@ -306,11 +308,16 @@ class HlsStack(Stack):
             timeout=259200,
             memory=10000,
             vcpus=2,
+            environment=STAGE_ENV,
         )
 
-        task_env = None
+        task_env = STAGE_ENV
         if INSTRUMENT_SCIENCE_CONTAINER:
-            task_env = {"METRIC_LOG_GROUP_NAME": METRIC_LOG_GROUP_NAME, **EXPERIMENT_ENV}
+            task_env = {
+                "METRIC_LOG_GROUP_NAME": METRIC_LOG_GROUP_NAME,
+                **EXPERIMENT_ENV,
+                **STAGE_ENV,
+            }
 
         self.sentinel_task = DockerBatchJob(
             self,

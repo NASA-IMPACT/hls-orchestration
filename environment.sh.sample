@@ -91,6 +91,9 @@ HLS_GCC_BOUNDARY_ARN=boudary_policy_arn
 # Use Cloudwatch metrics for containers
 # HLS_USE_CLOUD_WATCH=true
 
+# Deployment stage, set as the STAGE environment variable in all Batch job definitions.
+# HLS_STAGE=dev
+
 # Set to true to forward METRIC_LOG_GROUP_NAME to science containers and grant logs:PutLogEvents
 # HLS_INSTRUMENT_SCIENCE_CONTAINER=true
 
