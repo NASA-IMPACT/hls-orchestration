@@ -80,6 +80,8 @@ WRITABLE_BUCKETS = [
     for bucket in getenv("HLS_WRITABLE_BUCKETS", "").split(",")
     if bucket.strip()
 ]
+if DEBUG_BUCKET and DEBUG_BUCKET not in WRITABLE_BUCKETS:
+    WRITABLE_BUCKETS.append(DEBUG_BUCKET)
 
 
 # Cron settings
