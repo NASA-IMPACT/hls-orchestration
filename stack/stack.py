@@ -72,6 +72,16 @@ LAADS_ECR_URI = getenv(
 RDS_MIN_CAPACITY = int(getenv("HLS_RDS_MIN_CAPACITY", 4))
 RDS_MAX_CAPACITY = int(getenv("HLS_RDS_MAX_CAPACITY", 8))
 DEBUG_BUCKET = getenv("HLS_DEBUG_BUCKET", False)
+# Comma separated list of extra bucket names the science task roles can read
+# and write, e.g. for jobs submitted with command overrides that write
+# somewhere other than HLS_OUTPUT_BUCKET.
+WRITABLE_BUCKETS = [
+    bucket.strip()
+    for bucket in getenv("HLS_WRITABLE_BUCKETS", "").split(",")
+    if bucket.strip()
+]
+if DEBUG_BUCKET and DEBUG_BUCKET not in WRITABLE_BUCKETS:
+    WRITABLE_BUCKETS.append(DEBUG_BUCKET)
 
 
 # Cron settings
@@ -1253,6 +1263,19 @@ class HlsStack(Stack):
                 actions=_output_bucket_actions,
             )
         )
+        if WRITABLE_BUCKETS:
+            _writable_bucket_resources = [
+                arn
+                for bucket in WRITABLE_BUCKETS
+                for arn in (f"arn:aws:s3:::{bucket}", f"arn:aws:s3:::{bucket}/*")
+            ]
+            for task in [self.sentinel_task, self.landsat_task, self.landsat_tile_task]:
+                task.role.add_to_policy(
+                    aws_iam.PolicyStatement(
+                        resources=_writable_bucket_resources,
+                        actions=_output_bucket_actions,
+                    )
+                )
         # Cross account role assumption for GCC bucket
         self.batch.ecs_instance_role.add_to_policy(
             aws_iam.PolicyStatement(
