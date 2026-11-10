@@ -73,6 +73,10 @@ HLS_MAXV_CPUS=1200
 # Replace existing output in S3 buckets.
 HLS_REPLACE_EXISTING=true
 
+# Comma separated list of extra buckets that Sentinel/Landsat Batch task roles
+# can read and write (e.g. for debug jobs submitted with command overrides).
+HLS_WRITABLE_BUCKETS=
+
 # ssh keyname for use with Batch instance debugging.
 HLS_SSH_KEYNAME=hls-mount
 
